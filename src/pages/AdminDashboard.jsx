@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye, 
-  Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon, 
+  EyeOff, Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
   GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ChevronDown, 
   Moon, Sun, Shield, UserCheck, RefreshCw, Edit3, Lock, Mail, Phone, 
   Upload, FileCheck, Info, Maximize2, Trophy
@@ -37,6 +37,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Active Sidebar Tab: 'admissions' | 'dashboard' | 'fee_records' | 'media_gallery' | 'settings' | 'help'
   const [activeTab, setActiveTab] = useState('admissions');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Interactive Sidebar Badge State (Click-to-clear)
   const [clearedBadges, setClearedBadges] = useState({
@@ -60,6 +61,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   // Handle Tab Click with Badge Reset
   const handleTabSelect = (tabKey) => {
     setActiveTab(tabKey);
+    setIsSidebarOpen(false);
     if (tabKey === 'admissions' || tabKey === 'dashboard') {
       setClearedBadges(prev => ({ ...prev, admissions: true }));
     }
@@ -73,6 +75,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     setSearchQuery(value);
     if (value.trim() && activeTab !== 'admissions' && activeTab !== 'dashboard') {
       setActiveTab('admissions');
+      setIsSidebarOpen(false);
     }
   };
 
@@ -422,25 +425,43 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Export to CSV
   const handleExportCSV = () => {
-    const headers = ["Student ID", "Student Name", "Program", "Marks", "Merit %", "Payment Status", "Admin Status"];
-    const rows = filteredAdmissions.map(st => [
-      st.regId,
-      `"${st.fullName}"`,
-      `"${st.program}"`,
-      st.marksText || `${st.matricMarks}/${st.matricTotal}`,
-      `${st.meritPct}%`,
-      `"${st.paymentStatus}"`,
-      st.status
+    const headers = [
+      'Student ID', 'Student Name', "Father's Name", 'Date of Birth', 'Gender', 'CNIC',
+      'Domicile', 'Phone', 'Email', 'Address', 'Program', 'Matric Board',
+      'Matric Roll Number', 'Matric Passing Year', 'Matric Obtained Marks',
+      'Matric Total Marks', 'Intermediate Board', 'Intermediate Roll Number',
+      'Intermediate Passing Year', 'Intermediate Obtained Marks', 'Intermediate Total Marks',
+      'Marks', 'Merit Percentage', 'Payment Method', 'Transaction ID', 'Payment Status',
+      'Fee Slip Filename', 'Admin Status', 'Applied At'
+    ];
+    const rows = admissions.map(st => [
+      st.regId, st.fullName, st.fatherName, st.dob, st.gender, st.cnic, st.domicile,
+      st.phone || st.mobile, st.email, st.address, st.program, st.matricBoard,
+      st.matricRollNo, st.matricPassingYear, st.matricMarks, st.matricTotal,
+      st.interBoard, st.interRollNo, st.interPassingYear, st.interObtainedMarks,
+      st.interTotalMarks, st.marksText || `${st.matricMarks ?? ''}/${st.matricTotal ?? ''}`,
+      st.meritPct == null ? '' : `${st.meritPct}%`, st.paymentMethod, st.trxId,
+      st.paymentStatus, st.feeSlipName, st.status, st.appliedAt
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const escapeCsvValue = (value) => {
+      const text = String(value ?? '');
+      const safeText = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+      return `"${safeText.replaceAll('"', '""')}"`;
+    };
+    const csvContent = `\uFEFF${[headers, ...rows]
+      .map(row => row.map(escapeCsvValue).join(','))
+      .join('\r\n')}`;
+    const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const downloadUrl = URL.createObjectURL(csvBlob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", downloadUrl);
     link.setAttribute("download", `Admissions_Merit_List_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast("CSV file exported successfully!", "success");
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    showToast(`Exported ${admissions.length} admissions to CSV.`, "success");
   };
 
   // Handle Logout
@@ -463,19 +484,34 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   // Handle Save Settings
   const handleSaveSettings = (e) => {
     e.preventDefault();
-    localStorage.setItem('casdct_admin_name', adminName);
-    localStorage.setItem('casdct_admin_pass', adminPassword);
-    localStorage.setItem('casdct_principal_name', principalName);
-    localStorage.setItem('casdct_principal_message', principalMessage);
-    localStorage.setItem('casdct_principal_image', principalImage);
-    localStorage.setItem('casdct_college_phone', collegePhone);
-    localStorage.setItem('casdct_college_email', collegeEmail);
-    localStorage.setItem('casdct_merit_list_live', isMeritListLive ? 'true' : 'false');
-    window.dispatchEvent(new Event('casdct_merit_status_changed'));
+    const savedAdminName = adminName.trim();
+    const savedAdminPassword = adminPassword.trim();
+    if (!savedAdminName || !savedAdminPassword) {
+      showToast('Admin username and password cannot be empty.', 'error');
+      return;
+    }
 
-    setSettingsSaved(true);
-    showToast('Admin & Institutional Settings saved successfully!', 'success');
-    setTimeout(() => setSettingsSaved(false), 3000);
+    try {
+      localStorage.setItem('casdct_admin_name', savedAdminName);
+      localStorage.setItem('casdct_admin_pass', savedAdminPassword);
+      localStorage.setItem('casdct_principal_name', principalName);
+      localStorage.setItem('casdct_principal_message', principalMessage);
+      localStorage.setItem('casdct_principal_image', principalImage);
+      localStorage.setItem('casdct_college_phone', collegePhone);
+      localStorage.setItem('casdct_college_email', collegeEmail);
+      localStorage.setItem('casdct_merit_list_live', isMeritListLive ? 'true' : 'false');
+      setAdminName(savedAdminName);
+      setAdminPassword(savedAdminPassword);
+      window.dispatchEvent(new Event('casdct_merit_status_changed'));
+
+      setSettingsSaved(true);
+      showToast('Admin & Institutional Settings saved successfully!', 'success');
+      setTimeout(() => setSettingsSaved(false), 3000);
+    } catch (error) {
+      console.error('Unable to save admin settings:', error);
+      setSettingsSaved(false);
+      showToast('Settings could not be saved. Please check browser storage and try again.', 'error');
+    }
   };
 
   return (
@@ -534,7 +570,19 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       )}
 
       {/* ---------------- SIDEBAR NAVIGATION ---------------- */}
-      <aside className="w-full md:w-64 bg-[#052836] text-slate-200 flex-shrink-0 flex flex-col justify-between min-h-screen border-r border-[#0d3b4e]">
+      {isSidebarOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-label="Close navigation menu"
+        />
+      )}
+
+      <aside
+        id="admin-sidebar"
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col justify-between border-r border-[#0d3b4e] bg-[#052836] text-slate-200 transition-transform duration-300 md:relative md:z-auto md:min-h-screen md:w-64 md:flex-shrink-0 md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
         <div>
           {/* Logo & Header Title */}
           <div className="px-6 py-6 border-b border-[#0d3e52] flex items-center justify-between">
@@ -547,6 +595,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 <span className="text-[10px] text-teal-300/80 font-medium tracking-wider uppercase">GDC COLLEGE TANK</span>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(false)}
+              className="rounded-lg p-2 text-slate-300 hover:bg-[#0a3345] hover:text-white md:hidden"
+              aria-label="Close navigation menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Navigation Items */}
@@ -631,9 +687,19 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
         {/* Top Header Bar */}
-        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-20 shadow-sm">
+        <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 z-20 shadow-sm">
           {/* Header Title & Breadcrumb */}
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="rounded-xl border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 md:hidden"
+              aria-label="Open navigation menu"
+              aria-expanded={isSidebarOpen}
+              aria-controls="admin-sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
             <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400 flex items-center justify-center border border-teal-200/60 dark:border-teal-800">
               {activeTab === 'admissions' && <FileText className="w-6 h-6" />}
               {activeTab === 'dashboard' && <LayoutGrid className="w-6 h-6" />}
@@ -708,7 +774,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         </header>
 
         {/* Content Body based on activeTab */}
-        <div className="p-6 space-y-6">
+        <div key={activeTab} className="admin-content-enter p-6 space-y-6">
 
           {/* (Tabs 'admissions' and 'dashboard' show full top metrics + main table + media moderation section) */}
           {(activeTab === 'admissions' || activeTab === 'dashboard') && (
@@ -1379,12 +1445,23 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Password</label>
-                    <input 
-                      type={showPassword ? "text" : "password"}
-                      value={adminPassword} 
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 pr-12 py-2.5 text-sm font-semibold"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(value => !value)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-slate-400 dark:hover:text-white"
+                        aria-label={showPassword ? 'Hide admin password' : 'Show admin password'}
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1454,7 +1531,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 <div className="border border-slate-200 dark:border-slate-800 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40">
                   <h4 className="font-bold text-sm text-slate-900 dark:text-white">How to export student records to Excel / CSV?</h4>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                    Click the "Export CSV" button right above the Recent Admissions table. The downloadable `.csv` file contains Student ID, Name, Program, Marks, and Status.
+                    Click the "Export CSV" button right above the Recent Admissions table. The Excel-friendly CSV includes applicant details, marks, payment information, and admission status for all admissions.
                   </p>
                 </div>
               </div>

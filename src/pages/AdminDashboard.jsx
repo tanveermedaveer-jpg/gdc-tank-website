@@ -4,7 +4,7 @@ import {
   Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye, 
   EyeOff, Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
   GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ChevronDown, ClipboardList, FileUp,
-  Moon, Sun, Shield, UserCheck, RefreshCw, Edit3, Lock, Mail, Phone, 
+  Moon, Sun, Shield, UserCheck, RefreshCw, Edit3, Lock, Mail, Phone,
   Upload, FileCheck, Info, Maximize2, Trophy
 } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
@@ -19,6 +19,41 @@ import {
 const getTodayDateValue = () => {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+};
+
+const legacyDemoAdmissions = new Map([
+  ['STU-10214', 'Ayesha Khan'],
+  ['STU-10227', 'Bilal Ahmed'],
+  ['STU-10235', 'Zainab Fatima'],
+  ['STU-10241', 'Usman Ali'],
+  ['STU-10249', 'Fatima Noor'],
+  ['STU-10253', 'Hassan Raza'],
+  ['STU-10260', 'Maryam Saeed']
+]);
+
+const readStoredAdmissions = () => {
+  const stored = localStorage.getItem('casdct_admissions');
+  if (!stored) return [];
+
+  const parsed = JSON.parse(stored);
+  if (!Array.isArray(parsed)) {
+    throw new TypeError('Stored admissions data must be an array.');
+  }
+  const admissions = parsed.filter(admission =>
+    legacyDemoAdmissions.get(admission.regId) !== admission.fullName
+  );
+  if (admissions.length !== parsed.length) {
+    localStorage.setItem('casdct_admissions', JSON.stringify(admissions));
+  }
+  return admissions;
+};
+
+const formatRecordedFeeAmount = (admission) => {
+  const amount = admission.feeAmount ?? admission.paymentAmount ?? admission.amount;
+  if (amount === undefined || amount === null || amount === '' || !Number.isFinite(Number(amount))) {
+    return 'Not recorded';
+  }
+  return `Rs ${Number(amount).toLocaleString()}`;
 };
 
 export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: propSetDarkMode }) {
@@ -47,7 +82,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   // Active Sidebar Tab: 'admissions' | 'dashboard' | 'fee_records' | 'media_gallery' | 'examination_circulars' | 'settings' | 'help'
-  const [activeTab, setActiveTab] = useState('admissions');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Interactive Sidebar Badge State (Click-to-clear)
@@ -89,94 +124,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       setIsSidebarOpen(false);
     }
   };
-
-  // 1. Admissions List State (Defaults to 7 rows from mockup)
-  const defaultAdmissions = [
-    {
-      regId: 'STU-10214',
-      fullName: 'Ayesha Khan',
-      program: 'BS Computer Science',
-      matricMarks: 945,
-      matricTotal: 1050,
-      marksText: '945/1050',
-      meritPct: 91.8,
-      paymentStatus: 'Paid - EasyPaisa TRX: 98273641',
-      isPaid: true,
-      status: 'pending'
-    },
-    {
-      regId: 'STU-10227',
-      fullName: 'Bilal Ahmed',
-      program: 'BS Physics',
-      matricMarks: 782,
-      matricTotal: 1050,
-      marksText: '782/1050',
-      meritPct: 75.2,
-      paymentStatus: 'Paid - EasyPaisa TRX: 98143017',
-      isPaid: true,
-      status: 'pending'
-    },
-    {
-      regId: 'STU-10235',
-      fullName: 'Zainab Fatima',
-      program: 'FSC Pre-Medical',
-      matricMarks: 858,
-      matricTotal: 1050,
-      marksText: '858/1050',
-      meritPct: 82.4,
-      paymentStatus: 'Paid - EasyPaisa TRX: 98301155',
-      isPaid: true,
-      status: 'pending'
-    },
-    {
-      regId: 'STU-10241',
-      fullName: 'Usman Ali',
-      program: 'Matric',
-      matricMarks: 689,
-      matricTotal: 1000,
-      marksText: '689/1000',
-      meritPct: 68.9,
-      paymentStatus: 'Pending',
-      isPaid: false,
-      status: 'pending'
-    },
-    {
-      regId: 'STU-10249',
-      fullName: 'Fatima Noor',
-      program: 'BS Mathematics',
-      matricMarks: 651,
-      matricTotal: 1000,
-      marksText: '651/1000',
-      meritPct: 65.1,
-      paymentStatus: 'Pending',
-      isPaid: false,
-      status: 'pending'
-    },
-    {
-      regId: 'STU-10253',
-      fullName: 'Hassan Raza',
-      program: 'FSC Pre-Engineering',
-      matricMarks: 703,
-      matricTotal: 1050,
-      marksText: '703/1050',
-      meritPct: 67.0,
-      paymentStatus: 'Paid - EasyPaisa TRX: 98074211',
-      isPaid: true,
-      status: 'pending'
-    },
-    {
-      regId: 'STU-10260',
-      fullName: 'Maryam Saeed',
-      program: 'Matric',
-      matricMarks: 597,
-      matricTotal: 1000,
-      marksText: '597/1000',
-      meritPct: 59.7,
-      paymentStatus: 'Pending',
-      isPaid: false,
-      status: 'pending'
-    }
-  ];
 
   const [admissions, setAdmissions] = useState([]);
 
@@ -242,22 +189,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     setIsMeritListLive(storedMeritStatus === 'true');
 
     // Load Admissions & sort by merit score descending
-    const storedAdmissions = localStorage.getItem('casdct_admissions');
-    if (storedAdmissions) {
-      try {
-        const parsed = JSON.parse(storedAdmissions);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setAdmissions(sortMeritDescending(parsed));
-        } else {
-          setAdmissions(sortMeritDescending(defaultAdmissions));
-          localStorage.setItem('casdct_admissions', JSON.stringify(sortMeritDescending(defaultAdmissions)));
-        }
-      } catch (err) {
-        setAdmissions(sortMeritDescending(defaultAdmissions));
-      }
-    } else {
-      setAdmissions(sortMeritDescending(defaultAdmissions));
-      localStorage.setItem('casdct_admissions', JSON.stringify(sortMeritDescending(defaultAdmissions)));
+    try {
+      setAdmissions(sortMeritDescending(readStoredAdmissions()));
+    } catch (error) {
+      console.error('Unable to load stored admissions:', error);
+      setAdmissions([]);
+      showToast('Unable to read saved admission records.', 'error');
     }
 
     // Load Media Moderation (no fallback to demo data — always start from storage or empty)
@@ -288,22 +225,31 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
     // Real-time listener for new admission submissions from ApplyNow form
     const handleAdmissionSync = () => {
-      const stored = localStorage.getItem('casdct_admissions');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setAdmissions(sortMeritDescending(parsed));
-          }
-        } catch (e) {}
+      try {
+        setAdmissions(sortMeritDescending(readStoredAdmissions()));
+      } catch (error) {
+        console.error('Unable to sync stored admissions:', error);
+        showToast('Unable to refresh saved admission records.', 'error');
       }
     };
     window.addEventListener('casdct_admission_submitted', handleAdmissionSync);
-    return () => window.removeEventListener('casdct_admission_submitted', handleAdmissionSync);
+    const handleAdmissionsStorage = (event) => {
+      if (event.key === 'casdct_admissions') handleAdmissionSync();
+    };
+    window.addEventListener('storage', handleAdmissionsStorage);
+    return () => {
+      window.removeEventListener('casdct_admission_submitted', handleAdmissionSync);
+      window.removeEventListener('storage', handleAdmissionsStorage);
+    };
   }, []);
 
   useEffect(() => {
     if (activeTab !== 'examination_circulars') return undefined;
+    if (!supabase) {
+      setCircularsError('Supabase is not configured for examination circulars.');
+      setCircularsLoading(false);
+      return undefined;
+    }
 
     let isMounted = true;
     const fetchCirculars = async () => {
@@ -445,6 +391,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const pendingAdmissionsCount = useMemo(() => {
     return admissions.filter(a => a.status === 'pending').length;
   }, [admissions]);
+
+  const verifiedPaymentsCount = useMemo(() => {
+    return admissions.filter(admission => admission.isPaid === true).length;
+  }, [admissions]);
+
+  const pendingPaymentsCount = admissions.length - verifiedPaymentsCount;
 
   const pendingMediaCount = useMemo(() => {
     return mediaUploads.filter(m => m.status === 'pending').length;
@@ -948,9 +900,16 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         {/* Content Body based on activeTab */}
         <div key={activeTab} className="admin-content-enter p-6 space-y-6">
 
-          {/* (Tabs 'admissions' and 'dashboard' show full top metrics + main table + media moderation section) */}
+          {/* Dashboard overview and admissions management */}
           {(activeTab === 'admissions' || activeTab === 'dashboard') && (
             <>
+              {activeTab === 'dashboard' && (
+                <div>
+                  <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Dashboard</h1>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Live summary of saved admission and payment records.</p>
+                </div>
+              )}
+
               {/* ---------------- TOP METRICS CARDS ---------------- */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
@@ -964,10 +923,10 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Admissions</span>
                     </div>
                     <div className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1">
-                      1,245
+                      {admissions.length.toLocaleString()}
                     </div>
                     <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-2">
-                      <span>↑ +32 this month</span>
+                      <span>Applications recorded</span>
                     </div>
                   </div>
                   <Users className="w-24 h-24 text-emerald-500/5 dark:text-emerald-500/10 absolute -right-4 -bottom-4 pointer-events-none" />
@@ -983,7 +942,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Verifications</span>
                     </div>
                     <div className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1">
-                      42
+                      {pendingAdmissionsCount.toLocaleString()}
                     </div>
                     <div className="text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-2">
                       <AlertTriangle className="w-3.5 h-3.5" />
@@ -993,20 +952,20 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   <Clock className="w-24 h-24 text-amber-500/5 dark:text-amber-500/10 absolute -right-4 -bottom-4 pointer-events-none" />
                 </div>
 
-                {/* Metric 3: Total Fee Collected */}
+                {/* Metric 3: Verified Payments */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm relative overflow-hidden flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-2">
                       <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
                         <Wallet className="w-5 h-5" />
                       </div>
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Fee Collected</span>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Verified Payments</span>
                     </div>
                     <div className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1">
-                      Rs. 4.5M
+                      {verifiedPaymentsCount.toLocaleString()}
                     </div>
                     <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-2">
-                      <span>↑ +Rs 280K this month</span>
+                      <span>Paid admission records</span>
                     </div>
                   </div>
                   <Wallet className="w-24 h-24 text-emerald-500/5 dark:text-emerald-500/10 absolute -right-4 -bottom-4 pointer-events-none" />
@@ -1014,6 +973,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
               </div>
 
+              {activeTab === 'admissions' && (
+                <>
               {/* ---------------- FILTER & CONTROLS BAR ---------------- */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                 
@@ -1296,6 +1257,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 </div>
 
               </div>
+                </>
+              )}
             </>
           )}
 
@@ -1306,25 +1269,22 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">Fee Collection Summary</h2>
-                    <p className="text-xs text-slate-500">Track online admissions fees paid through EasyPaisa, JazzCash & Bank transfers.</p>
+                    <p className="text-xs text-slate-500">Review submitted payment details, verification status and any recorded amounts.</p>
                   </div>
-                  <button onClick={() => showToast("Syncing fee records from banking gateway...", "info")} className="bg-teal-600 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2">
-                    <RefreshCw className="w-3.5 h-3.5" /> Sync Banking Gateway
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-4 rounded-xl">
-                    <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold uppercase">Total Verified Revenue</span>
-                    <div className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200 mt-1">Rs 4,520,000</div>
+                    <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold uppercase">Verified Payments</span>
+                    <div className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200 mt-1">{verifiedPaymentsCount.toLocaleString()}</div>
                   </div>
                   <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-4 rounded-xl">
-                    <span className="text-xs text-amber-700 dark:text-amber-400 font-bold uppercase">Pending Slip Verifications</span>
-                    <div className="text-2xl font-extrabold text-amber-900 dark:text-amber-200 mt-1">Rs 185,000</div>
+                    <span className="text-xs text-amber-700 dark:text-amber-400 font-bold uppercase">Pending Fee Records</span>
+                    <div className="text-2xl font-extrabold text-amber-900 dark:text-amber-200 mt-1">{pendingPaymentsCount.toLocaleString()}</div>
                   </div>
                   <div className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 p-4 rounded-xl">
-                    <span className="text-xs text-sky-700 dark:text-sky-400 font-bold uppercase">EasyPaisa & Mobile Receipts</span>
-                    <div className="text-2xl font-extrabold text-sky-900 dark:text-sky-200 mt-1">312 Transactions</div>
+                    <span className="text-xs text-sky-700 dark:text-sky-400 font-bold uppercase">Admission Fee Records</span>
+                    <div className="text-2xl font-extrabold text-sky-900 dark:text-sky-200 mt-1">{admissions.length.toLocaleString()}</div>
                   </div>
                 </div>
 
@@ -1343,11 +1303,13 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {admissions.map(st => (
                         <tr key={st.regId} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                          <td className="p-3 font-semibold">{st.paymentStatus.includes('TRX:') ? st.paymentStatus.split('TRX:')[1].trim() : 'N/A'}</td>
+                          <td className="p-3 font-semibold">{st.trxId || st.paymentStatus?.match(/TRX:\s*(\S+)/i)?.[1] || 'N/A'}</td>
                           <td className="p-3 font-semibold text-slate-900 dark:text-white">{st.fullName}</td>
                           <td className="p-3">{st.program}</td>
-                          <td className="p-3 font-medium text-teal-700 dark:text-teal-400">EasyPaisa / Mobile Wallet</td>
-                          <td className="p-3 font-bold">Rs 2,500</td>
+                          <td className="p-3 font-medium text-teal-700 dark:text-teal-400">{st.paymentMethod || st.paymentStatus?.split(/\s+TRX:/i)[0]?.replace(/^Paid\s*-\s*/i, '') || 'N/A'}</td>
+                          <td className="p-3 font-bold">
+                            {formatRecordedFeeAmount(st)}
+                          </td>
                           <td className="p-3">
                             <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${st.isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
                               {st.isPaid ? 'Verified' : 'Pending Slip'}
@@ -1355,6 +1317,11 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                           </td>
                         </tr>
                       ))}
+                      {admissions.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-6 text-center text-slate-500">No admission fee records have been submitted.</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>

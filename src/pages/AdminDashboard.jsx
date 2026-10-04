@@ -301,6 +301,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const updateMediaState = (updatedList) => {
     setMediaUploads(updatedList);
     localStorage.setItem('casdct_media_moderation', JSON.stringify(updatedList));
+    window.dispatchEvent(new Event('casdct_media_updated'));
   };
 
   // Action: Approve Admission
@@ -326,11 +327,21 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   // Action: Approve Media
   const handleApproveMedia = (mediaId) => {
     const updated = mediaUploads.map(m => 
-      m.id === mediaId ? { ...m, status: 'approved' } : m
+      m.id === mediaId ? { ...m, status: 'approved', isApproved: true } : m
     );
     updateMediaState(updated);
     const item = mediaUploads.find(m => m.id === mediaId);
     showToast(`Approved media item "${item ? item.title : mediaId}"`, 'success');
+  };
+
+  // Action: Reject Media
+  const handleRejectMedia = (mediaId) => {
+    const updated = mediaUploads.map(m => 
+      m.id === mediaId ? { ...m, status: 'rejected', isApproved: false } : m
+    );
+    updateMediaState(updated);
+    const item = mediaUploads.find(m => m.id === mediaId);
+    showToast(`Rejected media item "${item ? item.title : mediaId}"`, 'error');
   };
 
   // Counts for badges
@@ -1085,37 +1096,63 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mediaUploads.map((media) => (
-                    <div key={media.id} className="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50 dark:bg-slate-800/50 flex flex-col justify-between">
-                      <div>
-                        <div className="relative h-44 rounded-xl overflow-hidden bg-black mb-3">
-                          <img src={media.thumbnail} alt={media.title} className="w-full h-full object-cover" />
-                          {media.type === 'video' && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                              <Play className="w-8 h-8 text-white fill-white" />
-                            </div>
-                          )}
-                        </div>
-                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{media.title}</h4>
-                        <p className="text-xs text-slate-500 mt-1">{media.uploadedBy} • {media.size} • {media.uploadedTime}</p>
-                      </div>
-
-                      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
-                        {media.status === 'approved' ? (
-                          <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                            <CheckCircle className="w-4 h-4" /> Approved
-                          </span>
-                        ) : (
-                          <button onClick={() => handleApproveMedia(media.id)} className="bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" /> Approve
-                          </button>
-                        )}
-                        <button onClick={() => setPreviewMedia(media)} className="bg-white dark:bg-slate-800 border text-slate-700 dark:text-slate-200 font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1">
-                          <Eye className="w-3.5 h-3.5" /> View Fullscreen
-                        </button>
-                      </div>
+                  {mediaUploads.length === 0 ? (
+                    <div className="col-span-full text-center py-12 text-slate-400">
+                      No media uploads pending moderation.
                     </div>
-                  ))}
+                  ) : (
+                    mediaUploads.map((media) => (
+                      <div key={media.id} className="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50 dark:bg-slate-800/50 flex flex-col justify-between">
+                        <div>
+                          <div className="relative h-44 rounded-xl overflow-hidden bg-black mb-3">
+                            <img src={media.thumbnail} alt={media.title} className="w-full h-full object-cover" />
+                            {media.type === 'video' && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                <Play className="w-8 h-8 text-white fill-white" />
+                              </div>
+                            )}
+                          </div>
+                          <h4 className="font-bold text-slate-900 dark:text-white text-sm">{media.title}</h4>
+                          <p className="text-xs text-slate-500 mt-1">{media.uploadedBy} • {media.size || 'Media'} • {media.uploadedTime || 'Recent'}</p>
+                          {media.desc && <p className="text-xs text-slate-400 italic mt-1 line-clamp-2">"{media.desc}"</p>}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                          {media.status === 'approved' || media.isApproved ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full flex items-center gap-1">
+                                <CheckCircle className="w-3.5 h-3.5" /> Approved & Live
+                              </span>
+                              <button onClick={() => handleRejectMedia(media.id)} className="text-xs font-bold text-rose-500 hover:text-rose-700 underline cursor-pointer">
+                                Unpublish
+                              </button>
+                            </div>
+                          ) : media.status === 'rejected' ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/60 px-3 py-1 rounded-full flex items-center gap-1">
+                                <XCircle className="w-3.5 h-3.5" /> Rejected
+                              </span>
+                              <button onClick={() => handleApproveMedia(media.id)} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 underline cursor-pointer">
+                                Approve
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <button onClick={() => handleApproveMedia(media.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1 cursor-pointer transition-colors">
+                                <Check className="w-3.5 h-3.5" /> Approve
+                              </button>
+                              <button onClick={() => handleRejectMedia(media.id)} className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1 cursor-pointer transition-colors">
+                                <X className="w-3.5 h-3.5" /> Reject
+                              </button>
+                            </>
+                          )}
+                          <button onClick={() => setPreviewMedia(media)} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1 ml-auto cursor-pointer">
+                            <Eye className="w-3.5 h-3.5" /> Preview
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

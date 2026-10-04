@@ -1,103 +1,106 @@
 import { useState, useEffect } from 'react';
-import { Eye, Image as ImageIcon, X, Download } from 'lucide-react';
+import { Eye, Image as ImageIcon, X, Download, Plus, Upload, CheckCircle2, Video } from 'lucide-react';
 import campusImg from '../assets/campus.png';
-import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Gallery() {
   const { t } = useLanguage();
-  const isUrdu = t('home') === '\u06c1\u0648\u0645';
+  const isUrdu = t('home') === 'ہوم';
 
   const [activeTab, setActiveTab] = useState('all');
   const [galleryItems, setGalleryItems] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
 
-  useEffect(() => {
-    const storedGallery = localStorage.getItem('casdct_gallery');
-    const defaultGallery = [
-      {
-        id: 1,
-        image: campusImg,
-        title: 'College Front Campus View',
-        titleEn: 'College Front Campus View',
-        titleUr: 'کالج کا مرکزی کیمپس منظر',
-        category: 'campus',
-        desc: 'Beautiful view of the college lawn and academic blocks reflecting after rain.',
-        descEn: 'Beautiful view of the college lawn and academic blocks reflecting after rain.',
-        descUr: 'کالج کے سبزہ زار اور تعلیمی بلاکس کا خوبصورت منظر۔'
-      },
-      {
-        id: 2,
-        image: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=800',
-        title: 'College Library & Reading Hall',
-        titleEn: 'College Library & Reading Hall',
-        titleUr: 'کالج لائبریری اور ریڈنگ ہال',
-        category: 'facilities',
-        desc: 'Students utilizing the references in the quiet study zones of the library.',
-        descEn: 'Students utilizing the references in the quiet study zones of the library.',
-        descUr: 'لائبریری کے پرسکون مطالعہ زون میں کتابوں سے استفادہ کرتے ہوئے طلباء۔'
-      },
-      {
-        id: 3,
-        image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800',
-        title: 'Sports & Athletics',
-        titleEn: 'Sports & Athletics',
-        titleUr: 'کھیل و سرگرمیاں',
-        category: 'sports',
-        desc: 'Academic session review for category sports.',
-        descEn: 'Academic session review for category sports.',
-        descUr: 'کالج میں کھیلوں اور غیر نصابی سرگرمیوں کا جائزہ۔'
-      },
-      {
-        id: 4,
-        image: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800',
-        title: 'Annual Sports Gala - Volleyball Tournament',
-        titleEn: 'Annual Sports Gala - Volleyball Tournament',
-        titleUr: 'سالانہ اسپورٹس گالا - والی بال ٹورنامنٹ',
-        category: 'sports',
-        desc: 'Intense volleyball matches played during the college annual sports week.',
-        descEn: 'Intense volleyball matches played during the college annual sports week.',
-        descUr: 'سالانہ سپورٹس ہفتے کے دوران کھیلے گئے والی بال کے دلچسپ میچ۔'
-      },
-      {
-        id: 5,
-        image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=800',
-        title: 'Science Lab - Chemistry Experiments',
-        titleEn: 'Science Lab - Chemistry Experiments',
-        titleUr: 'سائنس لیب - کیمسٹری تجربات',
-        category: 'facilities',
-        desc: 'F.Sc Pre-Medical students performing acid-base titration tests.',
-        descEn: 'F.Sc Pre-Medical students performing acid-base titration tests.',
-        descUr: 'کیمسٹری لیب میں تیزاب اور اساس کے تجربات کرتے ہوئے ایف ایس سی کے طلباء۔'
-      },
-      {
-        id: 6,
-        image: logoImg,
-        title: 'College Official Shield/Emblem',
-        titleEn: 'College Official Shield/Emblem',
-        titleUr: 'کالج کا سرکاری شیلڈ و نشان',
-        category: 'campus',
-        desc: 'Government Degree College Tank official shield emblem displaying motivational Arabic calligraphy.',
-        descEn: 'Government Degree College Tank official shield emblem displaying motivational Arabic calligraphy.',
-        descUr: 'گورنمنٹ ڈگری کالج ٹانک کا سرکاری نشان جو عربی کی خطاطی کو ظاہر کرتا ہے۔'
-      }
-    ];
+  // Upload Modal State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadCategory, setUploadCategory] = useState('campus');
+  const [uploadMediaType, setUploadMediaType] = useState('image');
+  const [uploadMediaUrl, setUploadMediaUrl] = useState('');
+  const [uploadDesc, setUploadDesc] = useState('');
+  const [uploaderName, setUploaderName] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
-    if (storedGallery) {
-      const parsed = JSON.parse(storedGallery);
-      const normalized = parsed.map(item => {
-        const def = defaultGallery.find(d => d.id === item.id);
-        if (def) {
-          return { ...def, ...item };
+  // Load ONLY APPROVED gallery items dynamically from database/localStorage
+  const loadApprovedGallery = () => {
+    const storedMedia = localStorage.getItem('casdct_media_moderation');
+    if (storedMedia) {
+      try {
+        const parsed = JSON.parse(storedMedia);
+        if (Array.isArray(parsed)) {
+          // Filter ONLY approved items (isApproved === true || status === 'approved')
+          const approved = parsed.filter(item => item.isApproved === true || item.status === 'approved');
+          // Map to standard gallery item format
+          const mapped = approved.map(item => ({
+            id: item.id,
+            image: item.thumbnail || item.image || item.mediaUrl,
+            mediaUrl: item.videoUrl || item.mediaUrl || item.thumbnail || item.image,
+            title: item.title,
+            category: item.category || 'campus',
+            desc: item.desc || item.uploadedTime || 'Campus media gallery contribution',
+            type: item.type || (item.videoUrl ? 'video' : 'image'),
+            uploadedBy: item.uploadedBy || 'Anonymous'
+          }));
+          setGalleryItems(mapped);
+        } else {
+          setGalleryItems([]);
         }
-        return item;
-      });
-      setGalleryItems(normalized);
+      } catch (e) {
+        setGalleryItems([]);
+      }
     } else {
-      localStorage.setItem('casdct_gallery', JSON.stringify(defaultGallery));
-      setGalleryItems(defaultGallery);
+      setGalleryItems([]);
     }
+  };
+
+  useEffect(() => {
+    loadApprovedGallery();
+    window.addEventListener('casdct_media_updated', loadApprovedGallery);
+    return () => window.removeEventListener('casdct_media_updated', loadApprovedGallery);
   }, []);
+
+  // Handle Media Submission by User
+  const handleSubmitMedia = (e) => {
+    e.preventDefault();
+    if (!uploadTitle.trim() || !uploadMediaUrl.trim()) return;
+
+    const newMedia = {
+      id: Date.now(),
+      title: uploadTitle.trim(),
+      type: uploadMediaType,
+      category: uploadCategory,
+      size: 'User Upload',
+      uploadedBy: uploaderName.trim() || 'Student / Visitor',
+      uploadedTime: 'Just now',
+      thumbnail: uploadMediaUrl.trim(),
+      videoUrl: uploadMediaType === 'video' ? uploadMediaUrl.trim() : null,
+      desc: uploadDesc.trim() || 'Uploaded by user',
+      status: 'pending',
+      isApproved: false
+    };
+
+    const storedMedia = localStorage.getItem('casdct_media_moderation');
+    let mediaList = [];
+    if (storedMedia) {
+      try {
+        const parsed = JSON.parse(storedMedia);
+        if (Array.isArray(parsed)) mediaList = parsed;
+      } catch (err) {}
+    }
+    mediaList.unshift(newMedia);
+    localStorage.setItem('casdct_media_moderation', JSON.stringify(mediaList));
+    window.dispatchEvent(new Event('casdct_media_updated'));
+
+    setUploadSuccess(true);
+    setTimeout(() => {
+      setUploadSuccess(false);
+      setIsUploadModalOpen(false);
+      setUploadTitle('');
+      setUploadMediaUrl('');
+      setUploadDesc('');
+      setUploaderName('');
+    }, 2000);
+  };
 
   const filteredItems = activeTab === 'all'
     ? galleryItems
@@ -126,12 +129,12 @@ export default function Gallery() {
   const tabLabels = {
     all: t('showAll'),
     campus: t('campus'),
-    facilities: isUrdu ? '\u0633\u06c1\u0648\u0644\u06cc\u0627\u062a' : 'Facilities',
+    facilities: isUrdu ? 'سہولیات' : 'Facilities',
     sports: t('sports')
   };
 
   return (
-    <div className="flex-grow">
+    <div className="flex-grow bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
       {/* Banner */}
       <section className="bg-slate-900 text-white py-16 relative">
         <div className="absolute inset-0 z-0">
@@ -140,118 +143,287 @@ export default function Gallery() {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif mb-4">{t('campusPhotoGallery')}</h1>
-          <p className="text-teal-300 text-sm sm:text-base font-semibold max-w-xl mx-auto uppercase tracking-wider">
+          <p className="text-teal-300 text-sm sm:text-base font-semibold max-w-xl mx-auto uppercase tracking-wider mb-6">
             {t('galleryBannerSub')}
           </p>
+
+          {/* User Upload Trigger Button */}
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="inline-flex items-center gap-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold px-6 py-3 rounded-2xl shadow-lg hover:shadow-teal-500/20 transition-all text-sm uppercase tracking-wide cursor-pointer"
+          >
+            <Plus className="w-5 h-5 stroke-[2.5]" />
+            <span>{isUrdu ? 'تصویر یا ویڈیو اپ لوڈ کریں' : 'Upload Media'}</span>
+          </button>
         </div>
       </section>
 
-      {/* Tabs and Grid */}
-      <section className="bg-white py-16">
+      {/* Main Gallery Section */}
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Tab buttons */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {['all', 'campus', 'facilities', 'sports'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-2 rounded-full text-sm font-bold uppercase tracking-wider border transition-colors ${activeTab === tab ? 'bg-teal-700 text-white border-teal-700' : 'bg-slate-50 border-slate-205 text-slate-600 hover:bg-slate-100'}`}
-              >
-                {tabLabels[tab]}
-              </button>
-            ))}
+          {/* Header & Category Tabs */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 pb-6 border-b border-slate-200 dark:border-slate-800">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 font-serif">
+              <ImageIcon className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              <span>{isUrdu ? 'منظور شدہ تصاویر و ویڈیوز' : 'Approved Campus Media'}</span>
+            </h2>
+
+            {/* Tabs */}
+            <div className="flex flex-wrap gap-2 bg-slate-200/70 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-300/60 dark:border-slate-800">
+              {['all', 'campus', 'facilities', 'sports'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    activeTab === tab
+                      ? 'bg-teal-700 text-white shadow-md'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {tabLabels[tab]}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Photos Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredItems.map((item) => (
-              <div key={item.id} className="group relative bg-slate-50 rounded-2xl overflow-hidden shadow-md border border-slate-100 hover:shadow-lg transition-shadow duration-300">
-                <div className="aspect-[4/3] w-full relative overflow-hidden bg-slate-200">
-                  <img 
-                    src={item.image} 
-                    alt={item.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button 
-                      type="button"
+          {/* Gallery Items Grid */}
+          {filteredItems.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center shadow-sm space-y-4 max-w-xl mx-auto my-8">
+              <div className="w-16 h-16 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center mx-auto">
+                <ImageIcon className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
+                {isUrdu ? 'گیلری کی کوئی آئٹم اپ لوڈ نہیں ہوئی' : 'No gallery items uploaded yet.'}
+              </h3>
+              <p className="text-sm text-slate-500">
+                {isUrdu
+                  ? 'کیمپس کی تصاویر اور ویڈیوز ایڈمن کی منظوری کے بعد یہاں ظاہر ہوں گی۔'
+                  : 'Be the first to share campus photos! Uploaded media will appear here once approved by the admin.'}
+              </p>
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Submit First Media</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative h-60 overflow-hidden bg-slate-950">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          e.target.src = campusImg;
+                        }}
+                      />
+                      {item.type === 'video' && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-teal-500/90 text-slate-950 flex items-center justify-center shadow-lg">
+                            <Video className="w-6 h-6 fill-current" />
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-teal-300 text-[11px] font-extrabold px-3 py-1 rounded-full border border-teal-500/30 uppercase tracking-wider">
+                        {item.category}
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base mb-2 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed line-clamp-2">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-5 pt-0 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 mt-4">
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      By: {item.uploadedBy}
+                    </span>
+                    <button
                       onClick={() => setSelectedImage(item)}
-                      className="bg-white p-3 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all hover:scale-110 cursor-pointer focus:outline-none flex items-center justify-center"
-                      title="Preview Photo"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors cursor-pointer"
                     >
-                      <Eye className="w-5 h-5 text-teal-700" />
+                      <Eye className="w-4 h-4" />
+                      <span>{isUrdu ? 'دیکھیں' : 'View Full'}</span>
                     </button>
                   </div>
                 </div>
-                <div className="p-5">
-                  <span className="text-[10px] font-bold text-teal-750 uppercase tracking-widest block mb-1">
-                    {tabLabels[item.category] || item.category}
-                  </span>
-                  <h3 className={`font-serif font-bold text-slate-800 text-base leading-tight mb-2 ${isUrdu ? 'text-right' : 'text-left'}`}>
-                    {isUrdu ? (item.titleUr || item.title) : (item.titleEn || item.title)}
-                  </h3>
-                  <p className={`text-slate-500 text-xs leading-relaxed ${isUrdu ? 'text-right' : 'text-left'}`}>
-                    {isUrdu ? (item.descUr || item.desc) : (item.descEn || item.desc)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
         </div>
       </section>
 
-      {/* Lightbox / Image Viewer Modal */}
-      {selectedImage && (
-        <div 
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 p-4 sm:p-6 backdrop-blur-sm transition-opacity duration-300"
-          onClick={() => setSelectedImage(null)}
-        >
-          {/* Close Button */}
-          <button 
-            type="button"
-            onClick={() => setSelectedImage(null)}
-            className="absolute top-4 right-4 text-white hover:text-teal-400 bg-slate-900/60 p-2.5 rounded-full border border-slate-700/50 hover:scale-105 transition-all shadow-md focus:outline-none z-10 cursor-pointer flex items-center justify-center"
-            aria-label="Close Preview"
-            title="Close Preview"
-          >
-            <X className="w-6 h-6" />
-          </button>
+      {/* USER UPLOAD MEDIA MODAL */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl border border-slate-200 dark:border-slate-800">
+            <button
+              onClick={() => setIsUploadModalOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-          {/* Modal Container */}
-          <div 
-            className="relative max-w-4xl w-full flex flex-col items-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Image Preview */}
-            <div className="bg-slate-900/50 p-2 rounded-2xl border border-slate-800/80 shadow-2xl max-h-[70vh] flex items-center justify-center overflow-hidden">
-              <img 
-                src={selectedImage.image} 
-                alt={selectedImage.title} 
-                className="max-w-full max-h-[68vh] object-contain rounded-xl"
-              />
-            </div>
-
-            {/* Info and Download Button Underneath */}
-            <div className="mt-4 text-center max-w-xl space-y-3">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+                <Upload className="w-5 h-5" />
+              </div>
               <div>
-                <h4 className="text-white text-base sm:text-lg font-bold font-serif leading-snug">
-                  {isUrdu ? (selectedImage.titleUr || selectedImage.title) : (selectedImage.titleEn || selectedImage.title)}
-                </h4>
-                <p className="text-slate-400 text-xs mt-1">
-                  {isUrdu ? (selectedImage.descUr || selectedImage.desc) : (selectedImage.descEn || selectedImage.desc)}
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white font-serif">
+                  {isUrdu ? 'میڈیا اپ لوڈ کریں' : 'Upload Photo / Video'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {isUrdu ? 'ایڈمن کی منظوری کے بعد گیلری میں شائع ہوگی' : 'Submissions will be displayed after Admin Approval.'}
                 </p>
               </div>
+            </div>
 
-              {/* Download Button */}
-              <button 
-                type="button"
+            {uploadSuccess ? (
+              <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 p-6 rounded-2xl text-center space-y-2">
+                <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+                <h4 className="font-bold text-base">Submitted for Moderation!</h4>
+                <p className="text-xs">Your photo/video has been submitted successfully and is currently pending admin approval.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitMedia} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={uploadTitle}
+                    onChange={(e) => setUploadTitle(e.target.value)}
+                    placeholder="Enter media title..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                    <select
+                      value={uploadCategory}
+                      onChange={(e) => setUploadCategory(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold"
+                    >
+                      <option value="campus">Campus</option>
+                      <option value="facilities">Facilities</option>
+                      <option value="sports">Sports</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Media Type</label>
+                    <select
+                      value={uploadMediaType}
+                      onChange={(e) => setUploadMediaType(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold"
+                    >
+                      <option value="image">Photo (Image)</option>
+                      <option value="video">Video</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Photo / Video URL</label>
+                  <input
+                    type="url"
+                    required
+                    value={uploadMediaUrl}
+                    onChange={(e) => setUploadMediaUrl(e.target.value)}
+                    placeholder="Paste image or video URL link..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Your Name (Optional)</label>
+                  <input
+                    type="text"
+                    value={uploaderName}
+                    onChange={(e) => setUploaderName(e.target.value)}
+                    placeholder="Enter your name or student ID..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description</label>
+                  <textarea
+                    rows={2}
+                    value={uploadDesc}
+                    onChange={(e) => setUploadDesc(e.target.value)}
+                    placeholder="Provide a brief caption or context..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs sm:text-sm"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsUploadModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+                  >
+                    Submit for Approval
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN PREVIEW MODAL */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <div className="relative max-w-4xl w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 z-10 text-white/80 hover:text-white bg-slate-950/60 p-2 rounded-full backdrop-blur-md transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="relative max-h-[70vh] flex items-center justify-center bg-black">
+              {selectedImage.type === 'video' ? (
+                <video src={selectedImage.mediaUrl} controls autoPlay className="max-h-[70vh] w-full object-contain" />
+              ) : (
+                <img src={selectedImage.image} alt={selectedImage.title} className="max-h-[70vh] w-full object-contain" />
+              )}
+            </div>
+
+            <div className="p-6 bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-800">
+              <div>
+                <h3 className="text-lg font-bold font-serif">{selectedImage.title}</h3>
+                <p className="text-xs text-slate-400 mt-1">{selectedImage.desc}</p>
+              </div>
+              <button
                 onClick={() => handleDownload(selectedImage.image, selectedImage.title)}
-                className="bg-teal-600 hover:bg-teal-705 text-white font-bold px-6 py-2.5 rounded-full text-xs uppercase tracking-wider shadow-md hover:scale-105 transition-all focus:outline-none flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer"
               >
                 <Download className="w-4 h-4" />
-                {isUrdu ? '\u0641\u0648\u0679\u0648 \u0688\u0627\u0624\u0646 \u0644\u0648\u0688 \u06a9\u0631\u06cc\u06ba' : 'Download Photo'}
+                <span>Download Media</span>
               </button>
             </div>
           </div>

@@ -11,10 +11,14 @@ export default function Admission() {
   const [admissions, setAdmissions] = useState([]);
   const [selectedProgram, setSelectedProgram] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMeritListLive, setIsMeritListLive] = useState(false);
 
-  // Load admissions from localStorage on mount and sort by merit descending
+  // Load admissions and merit list status from localStorage on mount and sync on changes
   useEffect(() => {
     const loadMeritList = () => {
+      const liveStatus = localStorage.getItem('casdct_merit_list_live');
+      setIsMeritListLive(liveStatus === 'true');
+
       const stored = localStorage.getItem('casdct_admissions');
       if (stored) {
         try {
@@ -29,7 +33,11 @@ export default function Admission() {
     };
     loadMeritList();
     window.addEventListener('casdct_admission_submitted', loadMeritList);
-    return () => window.removeEventListener('casdct_admission_submitted', loadMeritList);
+    window.addEventListener('casdct_merit_status_changed', loadMeritList);
+    return () => {
+      window.removeEventListener('casdct_admission_submitted', loadMeritList);
+      window.removeEventListener('casdct_merit_status_changed', loadMeritList);
+    };
   }, []);
 
   // Filtered public merit list sorted descending by merit percentage
@@ -228,98 +236,114 @@ export default function Admission() {
 
           </div>
 
-          {/* PUBLIC LIVE MERIT RANKING LIST (Automatically Sorted Descending by Merit Score) */}
-          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-                  <Trophy className="w-6 h-6" />
+          {/* PUBLIC LIVE MERIT RANKING LIST (Strictly Controlled by Admin Publish Status) */}
+          {isMeritListLive ? (
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                    <Trophy className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
+                      {isUrdu ? 'لائیو میرٹ پاکستان رینکنگ لسٹ 2026' : 'Live Merit Ranking List (Fall 2026)'}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {isUrdu ? 'خالصتاً میرٹ نمبرات کی ترجیحی ترتیب میں لائیو درجہ بندی' : 'Candidates ranked in automatic descending order based on Merit Score'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
-                    {isUrdu ? 'لائیو میرٹ پاکستان رینکنگ لسٹ 2026' : 'Live Merit Ranking List (Fall 2026)'}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {isUrdu ? 'خالصتاً میرٹ نمبرات کی ترجیحی ترتیب میں لائیو درجہ بندی' : 'Candidates ranked in automatic descending order based on Merit Score'}
-                  </p>
+
+                {/* Filters */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search candidate name or ID..."
+                      className="bg-white dark:bg-slate-800 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700"
+                    />
+                  </div>
+                  <select
+                    value={selectedProgram}
+                    onChange={(e) => setSelectedProgram(e.target.value)}
+                    className="bg-white dark:bg-slate-800 text-xs sm:text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold"
+                  >
+                    <option value="All">All Programs</option>
+                    <option value="BS">BS Programs</option>
+                    <option value="FSc">FSc / Intermediate</option>
+                    <option value="Matric">Matric / SSC</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Filters */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input 
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search candidate name or ID..."
-                    className="bg-white dark:bg-slate-800 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700"
-                  />
-                </div>
-                <select
-                  value={selectedProgram}
-                  onChange={(e) => setSelectedProgram(e.target.value)}
-                  className="bg-white dark:bg-slate-800 text-xs sm:text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold"
-                >
-                  <option value="All">All Programs</option>
-                  <option value="BS">BS Programs</option>
-                  <option value="FSc">FSc / Intermediate</option>
-                  <option value="Matric">Matric / SSC</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Merit List Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                <thead>
-                  <tr className="bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase font-bold text-[11px] tracking-wider">
-                    <th className="py-3 px-4">Merit Rank</th>
-                    <th className="py-3 px-4">Student ID</th>
-                    <th className="py-3 px-4">Applicant Name</th>
-                    <th className="py-3 px-4">Program</th>
-                    <th className="py-3 px-4">Marks Obtained</th>
-                    <th className="py-3 px-4">Merit Score %</th>
-                    <th className="py-3 px-4">Verification Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
-                  {publicMeritList.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-6 text-center text-slate-400">
-                        No registered candidates found matching your criteria.
-                      </td>
+              {/* Merit List Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                  <thead>
+                    <tr className="bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase font-bold text-[11px] tracking-wider">
+                      <th className="py-3 px-4">Merit Rank</th>
+                      <th className="py-3 px-4">Student ID</th>
+                      <th className="py-3 px-4">Applicant Name</th>
+                      <th className="py-3 px-4">Program</th>
+                      <th className="py-3 px-4">Marks Obtained</th>
+                      <th className="py-3 px-4">Merit Score %</th>
+                      <th className="py-3 px-4">Verification Status</th>
                     </tr>
-                  ) : (
-                    publicMeritList.map((st, index) => (
-                      <tr key={st.regId} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/40">
-                        <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-white">
-                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs ${index === 0 ? 'bg-amber-400 text-slate-950 font-bold shadow' : index === 1 ? 'bg-slate-300 text-slate-900 font-bold' : index === 2 ? 'bg-amber-700 text-white font-bold' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                            #{index + 1}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-teal-700 dark:text-teal-400">{st.regId}</td>
-                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{st.fullName}</td>
-                        <td className="py-3.5 px-4">{st.program}</td>
-                        <td className="py-3.5 px-4">{st.marksText || `${st.matricMarks}/${st.matricTotal}`}</td>
-                        <td className="py-3.5 px-4">
-                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                            {st.meritPct}%
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${st.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                            {st.status === 'approved' ? 'Approved' : 'Pending Verification'}
-                          </span>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
+                    {publicMeritList.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-6 text-center text-slate-400">
+                          No registered candidates found matching your criteria.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      publicMeritList.map((st, index) => (
+                        <tr key={st.regId} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/40">
+                          <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-white">
+                            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs ${index === 0 ? 'bg-amber-400 text-slate-950 font-bold shadow' : index === 1 ? 'bg-slate-300 text-slate-900 font-bold' : index === 2 ? 'bg-amber-700 text-white font-bold' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                              #{index + 1}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-teal-700 dark:text-teal-400">{st.regId}</td>
+                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{st.fullName}</td>
+                          <td className="py-3.5 px-4">{st.program}</td>
+                          <td className="py-3.5 px-4">{st.marksText || `${st.matricMarks}/${st.matricTotal}`}</td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                              {st.meritPct}%
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${st.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                              {st.status === 'approved' ? 'Approved' : 'Pending Verification'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-400 flex items-center justify-center mx-auto font-bold">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
+                {isUrdu ? 'میرٹ لسٹ جلد شائع کی جائے گی' : 'Merit List Will Be Announced Soon'}
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+                {isUrdu 
+                  ? 'آن لائن داخلہ درخواستوں کی جانچ پڑتال جاری ہے۔ حتمی میرٹ لسٹ جلد یہاں آن لائن اور کالج نوٹس بورڈ پر شائع کی جائے گی۔' 
+                  : 'Admission applications are currently undergoing official document verification. The official merit list will be published here upon admin approval.'}
+              </p>
+            </div>
+          )}
 
         </div>
       </section>

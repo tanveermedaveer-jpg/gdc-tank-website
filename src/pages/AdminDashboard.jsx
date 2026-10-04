@@ -5,7 +5,7 @@ import {
   Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon, 
   GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ChevronDown, 
   Moon, Sun, Shield, UserCheck, RefreshCw, Edit3, Lock, Mail, Phone, 
-  Upload, FileCheck, Info, Maximize2
+  Upload, FileCheck, Info, Maximize2, Trophy
 } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
 import principalImg from '../assets/principal.jpg';
@@ -206,6 +206,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [collegePhone, setCollegePhone] = useState('');
   const [collegeEmail, setCollegeEmail] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [isMeritListLive, setIsMeritListLive] = useState(false);
 
   // Helper: Sort list by merit percentage descending (highest score first)
   const sortMeritDescending = (list) => {
@@ -214,6 +215,10 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Load from localStorage on mount
   useEffect(() => {
+    // Load Merit List Live status
+    const storedMeritStatus = localStorage.getItem('casdct_merit_list_live');
+    setIsMeritListLive(storedMeritStatus === 'true');
+
     // Load Admissions & sort by merit score descending
     const storedAdmissions = localStorage.getItem('casdct_admissions');
     if (storedAdmissions) {
@@ -393,6 +398,17 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     navigate('/login');
   };
 
+  // Handle Toggle Live Merit List Publishing Status
+  const handleToggleMeritListLive = (newStatus) => {
+    setIsMeritListLive(newStatus);
+    localStorage.setItem('casdct_merit_list_live', newStatus ? 'true' : 'false');
+    window.dispatchEvent(new Event('casdct_merit_status_changed'));
+    showToast(
+      newStatus ? 'Merit List is now LIVE and published for the public!' : 'Merit List is now UNPUBLISHED and hidden from the public.',
+      newStatus ? 'success' : 'error'
+    );
+  };
+
   // Handle Save Settings
   const handleSaveSettings = (e) => {
     e.preventDefault();
@@ -403,6 +419,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     localStorage.setItem('casdct_principal_image', principalImage);
     localStorage.setItem('casdct_college_phone', collegePhone);
     localStorage.setItem('casdct_college_email', collegeEmail);
+    localStorage.setItem('casdct_merit_list_live', isMeritListLive ? 'true' : 'false');
+    window.dispatchEvent(new Event('casdct_merit_status_changed'));
 
     setSettingsSaved(true);
     showToast('Admin & Institutional Settings saved successfully!', 'success');
@@ -749,27 +767,49 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   </select>
                 </div>
 
-                {/* Right Side Action: Export CSV */}
-                <button
-                  onClick={handleExportCSV}
-                  className="w-full sm:w-auto bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-sm"
-                >
-                  <Download className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                  <span>Export CSV</span>
-                </button>
+                {/* Right Side Actions: Publish Toggle & Export CSV */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMeritListLive(!isMeritListLive)}
+                    className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm border ${
+                      isMeritListLive 
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500' 
+                        : 'bg-amber-500 hover:bg-amber-600 text-white border-amber-400'
+                    }`}
+                  >
+                    <span className={`w-2.5 h-2.5 rounded-full ${isMeritListLive ? 'bg-emerald-200 animate-pulse' : 'bg-white'}`} />
+                    <span>{isMeritListLive ? 'Merit List: LIVE (Published)' : 'Merit List: UNPUBLISHED'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleExportCSV}
+                    className="w-full sm:w-auto bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-sm"
+                  >
+                    <Download className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <span>Export CSV</span>
+                  </button>
+                </div>
               </div>
 
               {/* ---------------- ADMISSIONS & MERIT LIST TABLE ---------------- */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
                 
                 {/* Table Section Header */}
-                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white font-sans">
-                    Recent Admissions & Merit List
-                  </h2>
-                  <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800 text-xs font-bold px-3 py-1 rounded-full">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    <span>{pendingAdmissionsCount} pending moderation</span>
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white font-sans">
+                      Recent Admissions & Merit List
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Public Visibility Status: <span className={isMeritListLive ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>{isMeritListLive ? 'Published to Admission Page' : 'Hidden from Public'}</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800 text-xs font-bold px-3 py-1 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                      <span>{pendingAdmissionsCount} pending moderation</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1096,6 +1136,31 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               )}
 
               <form onSubmit={handleSaveSettings} className="space-y-5">
+                {/* Merit List Publishing Control Card */}
+                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-amber-500" />
+                      Public Live Merit Ranking List Control
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Control whether student merit rankings are publicly visible on the Admissions page.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMeritListLive(!isMeritListLive)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+                      isMeritListLive 
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md' 
+                        : 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                    }`}
+                  >
+                    <span className={`w-2.5 h-2.5 rounded-full ${isMeritListLive ? 'bg-emerald-200 animate-pulse' : 'bg-slate-500'}`} />
+                    <span>{isMeritListLive ? 'Merit List: Published (Live)' : 'Merit List: Unpublished (Hidden)'}</span>
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Username</label>

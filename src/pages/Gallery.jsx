@@ -15,11 +15,12 @@ export default function Gallery() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadCategory, setUploadCategory] = useState('facilities');
-  const [uploadMediaType, setUploadMediaType] = useState('image');
-  const [uploadMediaUrl, setUploadMediaUrl] = useState('');
+  const [uploadFile, setUploadFile] = useState(null);        // actual File object
+  const [uploadFilePreview, setUploadFilePreview] = useState(''); // object URL for preview
   const [uploadDesc, setUploadDesc] = useState('');
   const [uploaderName, setUploaderName] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load ONLY APPROVED gallery items dynamically from database/localStorage
   const loadApprovedGallery = () => {
@@ -59,47 +60,70 @@ export default function Gallery() {
     return () => window.removeEventListener('casdct_media_updated', loadApprovedGallery);
   }, []);
 
-  // Handle Media Submission by User
+  // Handle file selection — auto-detect type and create preview
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadFile(file);
+    // Revoke any previous object URL to avoid memory leaks
+    if (uploadFilePreview) URL.revokeObjectURL(uploadFilePreview);
+    setUploadFilePreview(URL.createObjectURL(file));
+  };
+
+  // Handle Media Submission by User (file → base64 → localStorage)
   const handleSubmitMedia = (e) => {
     e.preventDefault();
-    if (!uploadTitle.trim() || !uploadMediaUrl.trim()) return;
+    if (!uploadTitle.trim() || !uploadFile) return;
 
-    const newMedia = {
-      id: Date.now(),
-      title: uploadTitle.trim(),
-      type: uploadMediaType,
-      category: uploadCategory,
-      size: 'User Upload',
-      uploadedBy: uploaderName.trim() || 'Student / Visitor',
-      uploadedTime: 'Just now',
-      thumbnail: uploadMediaUrl.trim(),
-      videoUrl: uploadMediaType === 'video' ? uploadMediaUrl.trim() : null,
-      desc: uploadDesc.trim() || 'Uploaded by user',
-      status: 'pending',
-      isApproved: false
+    setIsSubmitting(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      const detectedType = uploadFile.type.startsWith('video/') ? 'video' : 'image';
+
+      const newMedia = {
+        id: Date.now(),
+        title: uploadTitle.trim(),
+        type: detectedType,
+        category: uploadCategory,
+        size: uploadFile.size > 1024 * 1024
+          ? `${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${Math.round(uploadFile.size / 1024)} KB`,
+        uploadedBy: uploaderName.trim() || 'Student / Visitor',
+        uploadedTime: 'Just now',
+        thumbnail: dataUrl,
+        videoUrl: detectedType === 'video' ? dataUrl : null,
+        desc: uploadDesc.trim() || 'Uploaded by user',
+        status: 'pending',
+        isApproved: false
+      };
+
+      const storedMedia = localStorage.getItem('casdct_media_moderation');
+      let mediaList = [];
+      if (storedMedia) {
+        try {
+          const parsed = JSON.parse(storedMedia);
+          if (Array.isArray(parsed)) mediaList = parsed;
+        } catch (err) {}
+      }
+      mediaList.unshift(newMedia);
+      localStorage.setItem('casdct_media_moderation', JSON.stringify(mediaList));
+      window.dispatchEvent(new Event('casdct_media_updated'));
+
+      setIsSubmitting(false);
+      setUploadSuccess(true);
+      setTimeout(() => {
+        setUploadSuccess(false);
+        setIsUploadModalOpen(false);
+        setUploadTitle('');
+        setUploadFile(null);
+        setUploadFilePreview('');
+        setUploadDesc('');
+        setUploaderName('');
+      }, 2500);
     };
-
-    const storedMedia = localStorage.getItem('casdct_media_moderation');
-    let mediaList = [];
-    if (storedMedia) {
-      try {
-        const parsed = JSON.parse(storedMedia);
-        if (Array.isArray(parsed)) mediaList = parsed;
-      } catch (err) {}
-    }
-    mediaList.unshift(newMedia);
-    localStorage.setItem('casdct_media_moderation', JSON.stringify(mediaList));
-    window.dispatchEvent(new Event('casdct_media_updated'));
-
-    setUploadSuccess(true);
-    setTimeout(() => {
-      setUploadSuccess(false);
-      setIsUploadModalOpen(false);
-      setUploadTitle('');
-      setUploadMediaUrl('');
-      setUploadDesc('');
-      setUploaderName('');
-    }, 2000);
+    reader.onerror = () => setIsSubmitting(false);
+    reader.readAsDataURL(uploadFile);
   };
 
   const filteredItems = activeTab === 'all'
@@ -146,13 +170,20 @@ export default function Gallery() {
             {t('galleryBannerSub')}
           </p>
 
-          {/* User Upload Trigger Button */}
+          {/* Visitor Upload Instructions */}
+          <p className="text-slate-300 text-sm max-w-lg mx-auto mb-5 leading-relaxed">
+            {isUrdu
+              ? 'اپنی کیمپس کی یادیں اور تصاویر کالج انتظامیہ کے ساتھ شیئر کریں۔ اپ لوڈ کردہ میڈیا ایڈمن کی منظوری کے بعد گیلری میں شائع ہوگا۔'
+              : 'Share your campus memories and photos with the college administration. Uploads will appear in the public gallery after admin approval.'}
+          </p>
+
+          {/* Single Upload Button */}
           <button
             onClick={() => setIsUploadModalOpen(true)}
             className="inline-flex items-center gap-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold px-6 py-3 rounded-2xl shadow-lg hover:shadow-teal-500/20 transition-all text-sm uppercase tracking-wide cursor-pointer"
           >
             <Plus className="w-5 h-5 stroke-[2.5]" />
-            <span>{isUrdu ? 'تصویر یا ویڈیو اپ لوڈ کریں' : 'Upload Media'}</span>
+            <span>{isUrdu ? 'تصویر یا ویڈیو اپ لوڈ کریں' : 'Upload Media / Share with College'}</span>
           </button>
         </div>
       </section>
@@ -188,25 +219,18 @@ export default function Gallery() {
 
           {/* Gallery Items Grid */}
           {filteredItems.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center shadow-sm space-y-4 max-w-xl mx-auto my-8">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center shadow-sm space-y-3 max-w-xl mx-auto my-8">
               <div className="w-16 h-16 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center mx-auto">
                 <ImageIcon className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
-                {isUrdu ? 'گیلری کی کوئی آئٹم اپ لوڈ نہیں ہوئی' : 'No gallery items uploaded yet.'}
+                {isUrdu ? 'گیلری کی کوئی آئٹم موجود نہیں' : 'No gallery items uploaded yet.'}
               </h3>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 leading-relaxed">
                 {isUrdu
-                  ? 'کیمپس کی تصاویر اور ویڈیوز ایڈمن کی منظوری کے بعد یہاں ظاہر ہوں گی۔'
-                  : 'Be the first to share campus photos! Uploaded media will appear here once approved by the admin.'}
+                  ? 'ایڈمن کی منظوری کے بعد کیمپس کے بہترین لمحات یہاں ظاہر ہوں گے۔'
+                  : 'Approved campus moments will appear here. Use the Upload button above to share your photos and videos with the admin.'}
               </p>
-              <button
-                onClick={() => setIsUploadModalOpen(true)}
-                className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow transition-all cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Submit First Media</span>
-              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -295,11 +319,13 @@ export default function Gallery() {
             {uploadSuccess ? (
               <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 p-6 rounded-2xl text-center space-y-2">
                 <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
-                <h4 className="font-bold text-base">Submitted for Moderation!</h4>
-                <p className="text-xs">Your photo/video has been submitted successfully and is currently pending admin approval.</p>
+                <h4 className="font-bold text-base">Success!</h4>
+                <p className="text-xs leading-relaxed">Your media has been successfully submitted to the college admin. It will be reviewed and published in the public gallery shortly after approval.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmitMedia} className="space-y-4">
+
+                {/* Title */}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label>
                   <input
@@ -307,48 +333,72 @@ export default function Gallery() {
                     required
                     value={uploadTitle}
                     onChange={(e) => setUploadTitle(e.target.value)}
-                    placeholder="Enter media title..."
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold"
+                    placeholder="Enter a descriptive title..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                    <select
-                      value={uploadCategory}
-                      onChange={(e) => setUploadCategory(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold"
-                    >
-                      <option value="facilities">Facilities</option>
-                      <option value="sports">Sports</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Media Type</label>
-                    <select
-                      value={uploadMediaType}
-                      onChange={(e) => setUploadMediaType(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold"
-                    >
-                      <option value="image">Photo (Image)</option>
-                      <option value="video">Video</option>
-                    </select>
-                  </div>
-                </div>
-
+                {/* Category */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Photo / Video URL</label>
-                  <input
-                    type="url"
-                    required
-                    value={uploadMediaUrl}
-                    onChange={(e) => setUploadMediaUrl(e.target.value)}
-                    placeholder="Paste image or video URL link..."
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold"
-                  />
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                  <select
+                    value={uploadCategory}
+                    onChange={(e) => setUploadCategory(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                  >
+                    <option value="facilities">Facilities</option>
+                    <option value="sports">Sports</option>
+                  </select>
                 </div>
 
+                {/* File Browse Input */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Photo / Video File</label>
+                  <label
+                    htmlFor="gallery-file-upload"
+                    className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                      uploadFile
+                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/30'
+                        : 'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 hover:border-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-950/20'
+                    } py-5 px-4`}
+                  >
+                    {uploadFile ? (
+                      <div className="text-center space-y-1">
+                        {uploadFile.type.startsWith('video/') ? (
+                          <Video className="w-8 h-8 text-teal-600 dark:text-teal-400 mx-auto" />
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-teal-600 dark:text-teal-400 mx-auto" />
+                        )}
+                        <p className="text-xs font-bold text-teal-700 dark:text-teal-300 truncate max-w-xs">{uploadFile.name}</p>
+                        <p className="text-[10px] text-slate-400">
+                          {uploadFile.size > 1024 * 1024
+                            ? `${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB`
+                            : `${Math.round(uploadFile.size / 1024)} KB`}
+                          {' • '}{uploadFile.type.startsWith('video/') ? 'Video' : 'Image'}
+                        </p>
+                        <p className="text-[10px] text-teal-500 font-semibold">Click to change file</p>
+                      </div>
+                    ) : (
+                      <div className="text-center space-y-2">
+                        <Upload className="w-8 h-8 text-slate-400 mx-auto" />
+                        <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          <span className="text-teal-600 dark:text-teal-400 font-bold">Click to browse</span> or drag & drop
+                        </p>
+                        <p className="text-[10px] text-slate-400">Supports JPG, PNG, GIF, MP4, MOV (max 20 MB)</p>
+                      </div>
+                    )}
+                    <input
+                      id="gallery-file-upload"
+                      type="file"
+                      accept="image/*,video/*"
+                      required
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                </div>
+
+                {/* Your Name */}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Your Name (Optional)</label>
                   <input
@@ -356,18 +406,19 @@ export default function Gallery() {
                     value={uploaderName}
                     onChange={(e) => setUploaderName(e.target.value)}
                     placeholder="Enter your name or student ID..."
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
 
+                {/* Description */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description (Optional)</label>
                   <textarea
                     rows={2}
                     value={uploadDesc}
                     onChange={(e) => setUploadDesc(e.target.value)}
-                    placeholder="Provide a brief caption or context..."
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs sm:text-sm"
+                    placeholder="Add a brief caption or context..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
 
@@ -375,15 +426,20 @@ export default function Gallery() {
                   <button
                     type="button"
                     onClick={() => setIsUploadModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-teal-600 hover:bg-teal-700 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer"
+                    disabled={isSubmitting}
+                    className="bg-teal-600 hover:bg-teal-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
                   >
-                    Submit for Approval
+                    {isSubmitting ? (
+                      <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</>
+                    ) : (
+                      <><Upload className="w-3.5 h-3.5" /> Submit for Approval</>
+                    )}
                   </button>
                 </div>
               </form>

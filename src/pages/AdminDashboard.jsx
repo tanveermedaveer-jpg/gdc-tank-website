@@ -166,35 +166,18 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   const [admissions, setAdmissions] = useState([]);
 
-  // 2. Media Moderation List State (Defaults to 2 items from mockup)
-  const defaultMediaUploads = [
-    {
-      id: 1,
-      title: 'campus_tour.mp4',
-      type: 'video',
-      size: '24 MB',
-      uploadedBy: 'Media Team',
-      uploadedTime: 'Uploaded 1h ago',
-      duration: '04:21',
-      thumbnail: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&q=80&w=800',
-      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      status: 'pending'
-    },
-    {
-      id: 2,
-      title: 'building_view.jpg',
-      type: 'image',
-      size: '11 MB',
-      uploadedBy: 'Media Team',
-      uploadedTime: 'Uploaded 2h ago',
-      badge: 'JPG',
-      thumbnail: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=800',
-      status: 'pending'
-    }
-  ];
-
+  // 2. Media Moderation List State (starts completely empty — no demo data)
   const [mediaUploads, setMediaUploads] = useState([]);
   const [previewMedia, setPreviewMedia] = useState(null);
+
+  // Admin Upload Modal State
+  const [isAdminUploadOpen, setIsAdminUploadOpen] = useState(false);
+  const [adminUploadTitle, setAdminUploadTitle] = useState('');
+  const [adminUploadCategory, setAdminUploadCategory] = useState('facilities');
+  const [adminUploadType, setAdminUploadType] = useState('image');
+  const [adminUploadUrl, setAdminUploadUrl] = useState('');
+  const [adminUploadDesc, setAdminUploadDesc] = useState('');
+  const [adminUploadSuccess, setAdminUploadSuccess] = useState(false);
 
   // Settings state
   const [adminName, setAdminName] = useState('');
@@ -215,6 +198,22 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Load from localStorage on mount
   useEffect(() => {
+    // One-time migration: purge any old demo media items (campus_tour.mp4, building_view.jpg)
+    const storedMediaRaw = localStorage.getItem('casdct_media_moderation');
+    if (storedMediaRaw) {
+      try {
+        const parsedRaw = JSON.parse(storedMediaRaw);
+        const DEMO_IDS = new Set([1, 2]);
+        const DEMO_TITLES = new Set(['campus_tour.mp4', 'building_view.jpg']);
+        if (Array.isArray(parsedRaw)) {
+          const cleaned = parsedRaw.filter(m => !DEMO_IDS.has(m.id) && !DEMO_TITLES.has(m.title));
+          if (cleaned.length !== parsedRaw.length) {
+            localStorage.setItem('casdct_media_moderation', JSON.stringify(cleaned));
+          }
+        }
+      } catch (_) {}
+    }
+
     // Load Merit List Live status
     const storedMeritStatus = localStorage.getItem('casdct_merit_list_live');
     setIsMeritListLive(storedMeritStatus === 'true');
@@ -238,23 +237,17 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       localStorage.setItem('casdct_admissions', JSON.stringify(sortMeritDescending(defaultAdmissions)));
     }
 
-    // Load Media Moderation
+    // Load Media Moderation (no fallback to demo data — always start from storage or empty)
     const storedMedia = localStorage.getItem('casdct_media_moderation');
     if (storedMedia) {
       try {
         const parsedMedia = JSON.parse(storedMedia);
-        if (Array.isArray(parsedMedia) && parsedMedia.length > 0) {
-          setMediaUploads(parsedMedia);
-        } else {
-          setMediaUploads(defaultMediaUploads);
-          localStorage.setItem('casdct_media_moderation', JSON.stringify(defaultMediaUploads));
-        }
+        setMediaUploads(Array.isArray(parsedMedia) ? parsedMedia : []);
       } catch (err) {
-        setMediaUploads(defaultMediaUploads);
+        setMediaUploads([]);
       }
     } else {
-      setMediaUploads(defaultMediaUploads);
-      localStorage.setItem('casdct_media_moderation', JSON.stringify(defaultMediaUploads));
+      setMediaUploads([]);
     }
 
     // Load Credentials and Settings
@@ -343,14 +336,45 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     showToast(`Category updated to "${newCategory === 'sports' ? 'Sports' : 'Facilities'}"`, 'success');
   };
 
-  // Action: Reject Media
+  // Action: Reject / Delete Media — permanently removes the item from the list
   const handleRejectMedia = (mediaId) => {
-    const updated = mediaUploads.map(m => 
-      m.id === mediaId ? { ...m, status: 'rejected', isApproved: false } : m
-    );
-    updateMediaState(updated);
     const item = mediaUploads.find(m => m.id === mediaId);
-    showToast(`Rejected media item "${item ? item.title : mediaId}"`, 'error');
+    const updated = mediaUploads.filter(m => m.id !== mediaId);
+    updateMediaState(updated);
+    showToast(`Deleted media item "${item ? item.title : mediaId}"`, 'error');
+  };
+
+  // Action: Admin Direct Upload (auto-approved, instantly public)
+  const handleAdminUploadMedia = (e) => {
+    e.preventDefault();
+    if (!adminUploadTitle.trim() || !adminUploadUrl.trim()) return;
+
+    const newMedia = {
+      id: Date.now(),
+      title: adminUploadTitle.trim(),
+      type: adminUploadType,
+      category: adminUploadCategory,
+      size: 'Admin Upload',
+      uploadedBy: 'Admin',
+      uploadedTime: 'Just now',
+      thumbnail: adminUploadUrl.trim(),
+      videoUrl: adminUploadType === 'video' ? adminUploadUrl.trim() : null,
+      desc: adminUploadDesc.trim() || 'Uploaded by Admin',
+      status: 'approved',
+      isApproved: true
+    };
+
+    const updated = [newMedia, ...mediaUploads];
+    updateMediaState(updated);
+    setAdminUploadSuccess(true);
+    showToast(`Media "${newMedia.title}" uploaded and published!`, 'success');
+    setTimeout(() => {
+      setAdminUploadSuccess(false);
+      setIsAdminUploadOpen(false);
+      setAdminUploadTitle('');
+      setAdminUploadUrl('');
+      setAdminUploadDesc('');
+    }, 2000);
   };
 
   // Counts for badges
@@ -1093,6 +1117,116 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </div>
           )}
 
+          {/* ---------------- ADMIN UPLOAD MEDIA MODAL ---------------- */}
+          {isAdminUploadOpen && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl border border-slate-200 dark:border-slate-800">
+                <button
+                  onClick={() => setIsAdminUploadOpen(false)}
+                  className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white font-sans">Upload New Media</h3>
+                    <p className="text-xs text-slate-500">Media uploaded by admin is auto-approved and instantly visible in the public gallery.</p>
+                  </div>
+                </div>
+
+                {adminUploadSuccess ? (
+                  <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 p-6 rounded-2xl text-center space-y-2">
+                    <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto" />
+                    <h4 className="font-bold text-base">Published Successfully!</h4>
+                    <p className="text-xs">Your media has been uploaded and is now live in the public gallery.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleAdminUploadMedia} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={adminUploadTitle}
+                        onChange={(e) => setAdminUploadTitle(e.target.value)}
+                        placeholder="Enter media title..."
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                        <select
+                          value={adminUploadCategory}
+                          onChange={(e) => setAdminUploadCategory(e.target.value)}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                        >
+                          <option value="facilities">Facilities</option>
+                          <option value="sports">Sports</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Media Type</label>
+                        <select
+                          value={adminUploadType}
+                          onChange={(e) => setAdminUploadType(e.target.value)}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                        >
+                          <option value="image">Photo (Image)</option>
+                          <option value="video">Video</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Photo / Video URL</label>
+                      <input
+                        type="url"
+                        required
+                        value={adminUploadUrl}
+                        onChange={(e) => setAdminUploadUrl(e.target.value)}
+                        placeholder="Paste image or video URL link..."
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description (Optional)</label>
+                      <textarea
+                        rows={2}
+                        value={adminUploadDesc}
+                        onChange={(e) => setAdminUploadDesc(e.target.value)}
+                        placeholder="Provide a brief caption or context..."
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      />
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsAdminUploadOpen(false)}
+                        className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="bg-teal-600 hover:bg-teal-700 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
+                      >
+                        <Upload className="w-4 h-4" /> Upload & Publish
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ---------------- MEDIA GALLERY MODERATION TAB ---------------- */}
           {activeTab === 'media_gallery' && (
             <div className="space-y-6">
@@ -1102,6 +1236,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">Media Gallery Moderation Center</h2>
                     <p className="text-xs text-slate-500">Approve or review photo uploads from campus tours, sports galas, and lab practicals.</p>
                   </div>
+                  <button
+                    onClick={() => setIsAdminUploadOpen(true)}
+                    className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-4 h-4" /> Upload New Media
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

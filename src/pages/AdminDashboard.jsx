@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye, 
@@ -15,6 +15,14 @@ import {
   MAX_CIRCULAR_SIZE_BYTES,
   supabase
 } from '../lib/supabase';
+import { deleteMediaAsset, getMediaAsset, saveMediaAsset } from '../lib/mediaAssets';
+
+const isVideoMediaFile = (file) =>
+  file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
+
+const isSupportedMediaFile = (file) =>
+  file.type.startsWith('image/') || file.type.startsWith('video/') ||
+  /\.(jpe?g|png|gif|webp|bmp|svg|mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
 
 const getTodayDateValue = () => {
   const today = new Date();
@@ -135,10 +143,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [isAdminUploadOpen, setIsAdminUploadOpen] = useState(false);
   const [adminUploadTitle, setAdminUploadTitle] = useState('');
   const [adminUploadCategory, setAdminUploadCategory] = useState('facilities');
-  const [adminUploadType, setAdminUploadType] = useState('image');
-  const [adminUploadUrl, setAdminUploadUrl] = useState('');
+  const [adminUploadFile, setAdminUploadFile] = useState(null);
+  const [adminUploadError, setAdminUploadError] = useState('');
+  const [isDraggingAdminUpload, setIsDraggingAdminUpload] = useState(false);
+  const [isUploadingAdminMedia, setIsUploadingAdminMedia] = useState(false);
   const [adminUploadDesc, setAdminUploadDesc] = useState('');
   const [adminUploadSuccess, setAdminUploadSuccess] = useState(false);
+  const [mediaAssetUrls, setMediaAssetUrls] = useState({});
+  const adminUploadCloseTimer = useRef(null);
 
   // Settings state
   const [adminName, setAdminName] = useState(() => localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad');
@@ -160,6 +172,10 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [collegeEmail, setCollegeEmail] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [isMeritListLive, setIsMeritListLive] = useState(false);
+
+  useEffect(() => () => {
+    if (adminUploadCloseTimer.current) window.clearTimeout(adminUploadCloseTimer.current);
+  }, []);
 
   // Helper: Sort list by merit percentage descending (highest score first)
   const sortMeritDescending = (list) => {
@@ -244,6 +260,32 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    const objectUrls = [];
+
+    Promise.all(mediaUploads.filter(media => media.storageKey).map(async (media) => {
+      const file = await getMediaAsset(media.storageKey);
+      if (!file) {
+        throw new Error(`The saved media file for "${media.title}" could not be found.`);
+      }
+      const url = URL.createObjectURL(file);
+      objectUrls.push(url);
+      return [media.id, url];
+    })).then((entries) => {
+      if (isMounted) setMediaAssetUrls(Object.fromEntries(entries));
+    }).catch((error) => {
+      if (!isMounted) return;
+      console.error('Unable to load saved admin media files:', error);
+      showToast('Some saved media files could not be loaded.', 'error');
+    });
+
+    return () => {
+      isMounted = false;
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [mediaUploads]);
+
+  useEffect(() => {
     if (activeTab !== 'examination_circulars') return undefined;
     if (!supabase) {
       setCircularsError('Supabase is not configured for examination circulars.');
@@ -302,8 +344,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Sync Media to localStorage on change
   const updateMediaState = (updatedList) => {
-    setMediaUploads(updatedList);
     localStorage.setItem('casdct_media_moderation', JSON.stringify(updatedList));
+    setMediaUploads(updatedList);
     window.dispatchEvent(new Event('casdct_media_updated'));
   };
 
@@ -347,44 +389,101 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   // Action: Reject / Delete Media — permanently removes the item from the list
-  const handleRejectMedia = (mediaId) => {
+  const handleRejectMedia = async (mediaId) => {
     const item = mediaUploads.find(m => m.id === mediaId);
     const updated = mediaUploads.filter(m => m.id !== mediaId);
-    updateMediaState(updated);
+    try {
+      if (item?.storageKey) await deleteMediaAsset(item.storageKey);
+      updateMediaState(updated);
+    } catch (error) {
+      console.error('Unable to delete media item:', error);
+      showToast('Unable to delete this media item. Please try again.', 'error');
+      return;
+    }
     showToast(`Deleted media item "${item ? item.title : mediaId}"`, 'error');
   };
 
   // Action: Admin Direct Upload (auto-approved, instantly public)
-  const handleAdminUploadMedia = (e) => {
+  const handleAdminUploadFileChange = (file) => {
+    if (!file) return;
+    if (!isSupportedMediaFile(file)) {
+      setAdminUploadError('Choose an image or video file.');
+      setAdminUploadFile(null);
+      return;
+    }
+    setAdminUploadError('');
+    setAdminUploadFile(file);
+  };
+
+  const resetAdminUpload = () => {
+    if (adminUploadCloseTimer.current) {
+      window.clearTimeout(adminUploadCloseTimer.current);
+      adminUploadCloseTimer.current = null;
+    }
+    setIsAdminUploadOpen(false);
+    setAdminUploadTitle('');
+    setAdminUploadFile(null);
+    setAdminUploadError('');
+    setAdminUploadDesc('');
+    setIsDraggingAdminUpload(false);
+    setAdminUploadSuccess(false);
+  };
+
+  const handleAdminUploadMedia = async (e) => {
     e.preventDefault();
-    if (!adminUploadTitle.trim() || !adminUploadUrl.trim()) return;
+    if (!adminUploadTitle.trim() || !adminUploadFile) {
+      setAdminUploadError('Enter a title and choose an image or video file.');
+      return;
+    }
 
-    const newMedia = {
-      id: Date.now(),
-      title: adminUploadTitle.trim(),
-      type: adminUploadType,
-      category: adminUploadCategory,
-      size: 'Admin Upload',
-      uploadedBy: 'Admin',
-      uploadedTime: 'Just now',
-      thumbnail: adminUploadUrl.trim(),
-      videoUrl: adminUploadType === 'video' ? adminUploadUrl.trim() : null,
-      desc: adminUploadDesc.trim() || 'Uploaded by Admin',
-      status: 'approved',
-      isApproved: true
-    };
-
-    const updated = [newMedia, ...mediaUploads];
-    updateMediaState(updated);
-    setAdminUploadSuccess(true);
-    showToast(`Media "${newMedia.title}" uploaded and published!`, 'success');
-    setTimeout(() => {
-      setAdminUploadSuccess(false);
-      setIsAdminUploadOpen(false);
-      setAdminUploadTitle('');
-      setAdminUploadUrl('');
-      setAdminUploadDesc('');
-    }, 2000);
+    setIsUploadingAdminMedia(true);
+    setAdminUploadError('');
+    const id = Date.now();
+    const storageKey = `admin-${id}`;
+    let assetSaved = false;
+    try {
+      await saveMediaAsset(storageKey, adminUploadFile);
+      assetSaved = true;
+      const newMedia = {
+        id,
+        storageKey,
+        fileName: adminUploadFile.name,
+        mimeType: adminUploadFile.type || (isVideoMediaFile(adminUploadFile) ? 'video/*' : 'image/*'),
+        title: adminUploadTitle.trim(),
+        type: isVideoMediaFile(adminUploadFile) ? 'video' : 'image',
+        category: adminUploadCategory,
+        size: adminUploadFile.size > 1024 * 1024
+          ? `${(adminUploadFile.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${Math.max(1, Math.round(adminUploadFile.size / 1024))} KB`,
+        uploadedBy: 'Admin',
+        uploadedTime: 'Just now',
+        thumbnail: null,
+        videoUrl: null,
+        desc: adminUploadDesc.trim() || 'Uploaded by Admin',
+        status: 'approved',
+        isApproved: true
+      };
+      updateMediaState([newMedia, ...mediaUploads]);
+      setAdminUploadSuccess(true);
+      showToast(`Media "${newMedia.title}" uploaded and published!`, 'success');
+      adminUploadCloseTimer.current = window.setTimeout(() => {
+        adminUploadCloseTimer.current = null;
+        setAdminUploadSuccess(false);
+        resetAdminUpload();
+      }, 2000);
+    } catch (error) {
+      console.error('Unable to upload admin media:', error);
+      if (assetSaved) {
+        try {
+          await deleteMediaAsset(storageKey);
+        } catch (cleanupError) {
+          console.error('Unable to clean up failed media upload:', cleanupError);
+        }
+      }
+      setAdminUploadError(error.message || 'Unable to upload media. Please try again.');
+    } finally {
+      setIsUploadingAdminMedia(false);
+    }
   };
 
   // Counts for badges
@@ -654,9 +753,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             
             <div className="rounded-xl overflow-hidden bg-black flex items-center justify-center max-h-96 mb-6">
               {previewMedia.type === 'video' ? (
-                <video src={previewMedia.videoUrl} controls autoPlay className="max-h-96 w-full object-contain" />
+                <video src={mediaAssetUrls[previewMedia.id] || previewMedia.videoUrl || previewMedia.thumbnail} controls autoPlay className="max-h-96 w-full object-contain" />
               ) : (
-                <img src={previewMedia.thumbnail} alt={previewMedia.title} className="max-h-96 w-full object-contain" />
+                <img src={mediaAssetUrls[previewMedia.id] || previewMedia.thumbnail} alt={previewMedia.title} className="max-h-96 w-full object-contain" />
               )}
             </div>
 
@@ -1198,6 +1297,13 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         {/* Overlay Icon / Badges */}
                         {media.type === 'video' ? (
                           <>
+                            {!mediaAssetUrls[media.id] && (
+                              <img
+                                src={media.thumbnail || principalImg}
+                                alt=""
+                                className="absolute inset-0 h-full w-full object-cover opacity-80"
+                              />
+                            )}
                             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                               <div className="w-9 h-9 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow-lg">
                                 <Play className="w-4 h-4 fill-slate-900 ml-0.5" />
@@ -1209,6 +1315,11 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                           </>
                         ) : (
                           <>
+                            <img
+                              src={mediaAssetUrls[media.id] || media.thumbnail || principalImg}
+                              alt={media.title}
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
                             <div className="absolute bottom-2 left-2 bg-black/60 text-white p-1 rounded">
                               <ImageIcon className="w-3.5 h-3.5" />
                             </div>
@@ -1334,7 +1445,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl border border-slate-200 dark:border-slate-800">
                 <button
-                  onClick={() => setIsAdminUploadOpen(false)}
+                  onClick={resetAdminUpload}
                   className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
                   <X className="w-5 h-5" />
@@ -1370,41 +1481,74 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                        <select
-                          value={adminUploadCategory}
-                          onChange={(e) => setAdminUploadCategory(e.target.value)}
-                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
-                        >
-                          <option value="facilities">Facilities</option>
-                          <option value="sports">Sports</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Media Type</label>
-                        <select
-                          value={adminUploadType}
-                          onChange={(e) => setAdminUploadType(e.target.value)}
-                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
-                        >
-                          <option value="image">Photo (Image)</option>
-                          <option value="video">Video</option>
-                        </select>
-                      </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                      <select
+                        value={adminUploadCategory}
+                        onChange={(e) => setAdminUploadCategory(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                      >
+                        <option value="facilities">Facilities</option>
+                        <option value="sports">Sports</option>
+                      </select>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Photo / Video URL</label>
-                      <input
-                        type="url"
-                        required
-                        value={adminUploadUrl}
-                        onChange={(e) => setAdminUploadUrl(e.target.value)}
-                        placeholder="Paste image or video URL link..."
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      />
+                      <span className="block text-xs font-bold text-slate-500 uppercase mb-1">Photo / Video File</span>
+                      <label
+                        htmlFor="admin-media-file"
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          setIsDraggingAdminUpload(true);
+                        }}
+                        onDragLeave={() => setIsDraggingAdminUpload(false)}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          setIsDraggingAdminUpload(false);
+                          handleAdminUploadFileChange(event.dataTransfer.files[0]);
+                        }}
+                        className={`flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors ${
+                          isDraggingAdminUpload
+                            ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/30'
+                            : 'border-slate-300 bg-slate-50 hover:border-teal-400 dark:border-slate-700 dark:bg-slate-800'
+                        }`}
+                      >
+                        <input
+                          id="admin-media-file"
+                          type="file"
+                          accept="image/*,video/*"
+                          className="sr-only"
+                          onChange={(event) => {
+                            handleAdminUploadFileChange(event.currentTarget.files[0]);
+                            event.currentTarget.value = '';
+                          }}
+                        />
+                        {adminUploadFile ? (
+                          <>
+                            {isVideoMediaFile(adminUploadFile)
+                              ? <Play className="mb-2 h-7 w-7 text-teal-600 dark:text-teal-400" />
+                              : <ImageIcon className="mb-2 h-7 w-7 text-teal-600 dark:text-teal-400" />}
+                            <span className="max-w-full truncate text-sm font-bold text-teal-700 dark:text-teal-300">{adminUploadFile.name}</span>
+                            <span className="mt-1 text-xs text-slate-500">
+                              {adminUploadFile.size > 1024 * 1024
+                                ? `${(adminUploadFile.size / (1024 * 1024)).toFixed(1)} MB`
+                                : `${Math.max(1, Math.round(adminUploadFile.size / 1024))} KB`}
+                              {' · '}Click to replace
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mb-2 h-7 w-7 text-slate-400" />
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                              <span className="text-teal-600 dark:text-teal-400">Choose a file</span> or drag it here
+                            </span>
+                            <span className="mt-1 text-xs text-slate-500">Image and video files</span>
+                          </>
+                        )}
+                      </label>
+                      {adminUploadError && (
+                        <p role="alert" className="mt-2 text-xs font-semibold text-rose-600 dark:text-rose-400">{adminUploadError}</p>
+                      )}
                     </div>
 
                     <div>
@@ -1421,16 +1565,17 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     <div className="pt-2 flex justify-end gap-3">
                       <button
                         type="button"
-                        onClick={() => setIsAdminUploadOpen(false)}
+                        onClick={resetAdminUpload}
                         className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="bg-teal-600 hover:bg-teal-700 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
+                        disabled={isUploadingAdminMedia}
+                        className="bg-teal-600 hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
                       >
-                        <Upload className="w-4 h-4" /> Upload & Publish
+                        <Upload className="w-4 h-4" /> {isUploadingAdminMedia ? 'Uploading...' : 'Upload & Publish'}
                       </button>
                     </div>
                   </form>
@@ -1466,7 +1611,21 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       <div key={media.id} className="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50 dark:bg-slate-800/50 flex flex-col justify-between">
                         <div>
                           <div className="relative h-44 rounded-xl overflow-hidden bg-black mb-3">
-                            <img src={media.thumbnail} alt={media.title} className="w-full h-full object-cover" />
+                            {media.type === 'video' ? (
+                              <video
+                                src={mediaAssetUrls[media.id] || media.videoUrl}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <img
+                                src={mediaAssetUrls[media.id] || media.thumbnail}
+                                alt={media.title}
+                                className="h-full w-full object-cover"
+                              />
+                            )}
                             {media.type === 'video' && (
                               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                                 <Play className="w-8 h-8 text-white fill-white" />

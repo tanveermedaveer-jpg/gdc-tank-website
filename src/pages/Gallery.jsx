@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Eye, Image as ImageIcon, X, Download, Plus, Upload, CheckCircle2, Video } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
+import { getMediaAsset } from '../lib/mediaAssets';
 
 export default function Gallery() {
   const { t } = useLanguage();
@@ -22,42 +23,83 @@ export default function Gallery() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load ONLY APPROVED gallery items dynamically from database/localStorage
-  const loadApprovedGallery = () => {
-    const storedMedia = localStorage.getItem('casdct_media_moderation');
-    if (storedMedia) {
+  useEffect(() => {
+    let isMounted = true;
+    let currentObjectUrls = [];
+    let loadSequence = 0;
+
+    const loadApprovedGallery = async () => {
+      const sequence = ++loadSequence;
+      const storedMedia = localStorage.getItem('casdct_media_moderation');
+      if (!storedMedia) {
+        if (!isMounted || sequence !== loadSequence) return;
+        currentObjectUrls.forEach(url => URL.revokeObjectURL(url));
+        currentObjectUrls = [];
+        setGalleryItems([]);
+        return;
+      }
+
       try {
         const parsed = JSON.parse(storedMedia);
-        if (Array.isArray(parsed)) {
-          // Filter ONLY approved items (isApproved === true || status === 'approved')
-          const approved = parsed.filter(item => item.isApproved === true || item.status === 'approved');
-          // Map to standard gallery item format
-          const mapped = approved.map(item => ({
+        if (!Array.isArray(parsed)) throw new TypeError('Saved gallery media must be an array.');
+        const createdObjectUrls = [];
+        const approved = parsed.filter(item => item.isApproved === true || item.status === 'approved');
+        const mapped = await Promise.all(approved.map(async (item) => {
+          let assetUrl;
+          if (item.storageKey) {
+            try {
+              const file = await getMediaAsset(item.storageKey);
+              if (file) {
+                assetUrl = URL.createObjectURL(file);
+                createdObjectUrls.push(assetUrl);
+              } else {
+                console.error(`Saved gallery media file is missing for "${item.title}".`);
+              }
+            } catch (error) {
+              console.error(`Unable to load saved gallery media file for "${item.title}":`, error);
+            }
+          }
+          const fallbackUrl = item.thumbnail || item.image || item.mediaUrl || campusImg;
+          const mediaUrl = assetUrl || item.videoUrl || item.mediaUrl || item.thumbnail || item.image || campusImg;
+          return {
             id: item.id,
-            image: item.thumbnail || item.image || item.mediaUrl,
-            mediaUrl: item.videoUrl || item.mediaUrl || item.thumbnail || item.image,
+            image: assetUrl || fallbackUrl,
+            mediaUrl,
+            fileName: item.fileName,
             title: item.title,
             category: item.category || 'campus',
             desc: item.desc || item.uploadedTime || 'Campus media gallery contribution',
             type: item.type || (item.videoUrl ? 'video' : 'image'),
             uploadedBy: item.uploadedBy || 'Anonymous'
-          }));
-          setGalleryItems(mapped);
-        } else {
-          setGalleryItems([]);
-        }
-      } catch (e) {
-        setGalleryItems([]);
-      }
-    } else {
-      setGalleryItems([]);
-    }
-  };
+          };
+        }));
 
-  useEffect(() => {
+        if (!isMounted || sequence !== loadSequence) {
+          createdObjectUrls.forEach(url => URL.revokeObjectURL(url));
+          return;
+        }
+        currentObjectUrls.forEach(url => URL.revokeObjectURL(url));
+        currentObjectUrls = createdObjectUrls;
+        setGalleryItems(mapped);
+      } catch (error) {
+        console.error('Unable to load approved gallery media:', error);
+        if (isMounted) setGalleryItems([]);
+      }
+    };
+
+    const handleStorage = (event) => {
+      if (event.key === 'casdct_media_moderation') loadApprovedGallery();
+    };
+
     loadApprovedGallery();
     window.addEventListener('casdct_media_updated', loadApprovedGallery);
-    return () => window.removeEventListener('casdct_media_updated', loadApprovedGallery);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('casdct_media_updated', loadApprovedGallery);
+      window.removeEventListener('storage', handleStorage);
+      currentObjectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
   }, []);
 
   // Handle file selection — auto-detect type and create preview
@@ -130,8 +172,8 @@ export default function Gallery() {
     ? galleryItems
     : galleryItems.filter(item => item.category === activeTab);
 
-  const handleDownload = (imgUrl, title) => {
-    const filename = title ? `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.jpg` : 'gdc-tank-photo.jpg';
+  const handleDownload = (imgUrl, title, fileName) => {
+    const filename = fileName || (title ? `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.jpg` : 'gdc-tank-photo.jpg');
     fetch(imgUrl)
       .then(res => res.blob())
       .then(blob => {
@@ -241,14 +283,25 @@ export default function Gallery() {
                 >
                   <div>
                     <div className="relative h-60 overflow-hidden bg-slate-950">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                          e.target.src = campusImg;
-                        }}
-                      />
+                      {item.type === 'video' ? (
+                        <video
+                          src={item.mediaUrl}
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            e.target.src = campusImg;
+                          }}
+                        />
+                      )}
                       {item.type === 'video' && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <div className="w-12 h-12 rounded-full bg-teal-500/90 text-slate-950 flex items-center justify-center shadow-lg">
@@ -473,7 +526,11 @@ export default function Gallery() {
                 <p className="text-xs text-slate-400 mt-1">{selectedImage.desc}</p>
               </div>
               <button
-                onClick={() => handleDownload(selectedImage.image, selectedImage.title)}
+                onClick={() => handleDownload(
+                  selectedImage.type === 'video' ? selectedImage.mediaUrl : selectedImage.image,
+                  selectedImage.title,
+                  selectedImage.fileName
+                )}
                 className="inline-flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow cursor-pointer"
               >
                 <Download className="w-4 h-4" />

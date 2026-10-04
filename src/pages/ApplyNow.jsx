@@ -181,7 +181,7 @@ export default function ApplyNow() {
             {t('onlineAdmissionReg')}
           </h1>
           <p className="text-teal-300 text-sm sm:text-base font-semibold max-w-xl mx-auto uppercase tracking-wider">
-            {t('academicSession')} • Fall 2026
+            {t('academicSession')} • 2026-2027
           </p>
         </div>
       </section>
@@ -245,7 +245,7 @@ export default function ApplyNow() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* Left Side: Dynamic Admission Form */}
+              {/* Left Side: Clean Dynamic Admission Form */}
               <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg">
                 
                 {/* Form Header */}
@@ -315,7 +315,7 @@ export default function ApplyNow() {
                         <input 
                           type="text" name="studentName" value={formData.studentName} onChange={handleChange} required
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                          placeholder="e.g. Muhammad Ali"
+                          placeholder="Enter your full name"
                         />
                       </div>
                       <div>
@@ -325,7 +325,7 @@ export default function ApplyNow() {
                         <input 
                           type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} required
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                          placeholder="e.g. Ahmad Khan"
+                          placeholder="Enter father's name"
                         />
                       </div>
                     </div>
@@ -359,7 +359,7 @@ export default function ApplyNow() {
                         <input 
                           type="text" name="domicile" value={formData.domicile} onChange={handleChange} required
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                          placeholder="e.g. Tank"
+                          placeholder="Enter your domicile district"
                         />
                       </div>
                     </div>
@@ -372,7 +372,7 @@ export default function ApplyNow() {
                         <input 
                           type="text" name="cnic" value={formData.cnic} onChange={handleChange} required
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                          placeholder="e.g. 12201-1234567-1"
+                          placeholder="Enter CNIC or Form-B number"
                         />
                       </div>
                       <div>
@@ -382,7 +382,7 @@ export default function ApplyNow() {
                         <input 
                           type="tel" name="mobile" value={formData.mobile} onChange={handleChange} required
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                          placeholder="e.g. 0300-1234567"
+                          placeholder="Enter active mobile number"
                         />
                       </div>
                     </div>
@@ -395,7 +395,7 @@ export default function ApplyNow() {
                         <input 
                           type="email" name="email" value={formData.email} onChange={handleChange}
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                          placeholder="e.g. student@gmail.com"
+                          placeholder="Enter your email address"
                         />
                       </div>
                       <div>
@@ -405,7 +405,7 @@ export default function ApplyNow() {
                         <input 
                           type="text" name="address" value={formData.address} onChange={handleChange} required
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                          placeholder="e.g. Main Street, Tank City"
+                          placeholder="Enter complete residential address"
                         />
                       </div>
                     </div>
@@ -449,7 +449,7 @@ export default function ApplyNow() {
                             <input 
                               type="text" name="matricBoard" value={formData.matricBoard} onChange={handleChange} required={!isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. BISE Bannu / D.I. Khan"
+                              placeholder="Enter board name (e.g. BISE D.I. Khan)"
                             />
                           </div>
                           <div>
@@ -459,7 +459,7 @@ export default function ApplyNow() {
                             <input 
                               type="text" name="matricRollNo" value={formData.matricRollNo} onChange={handleChange} required={!isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. 452109"
+                              placeholder="Enter roll number"
                             />
                           </div>
                           <div>
@@ -469,7 +469,7 @@ export default function ApplyNow() {
                             <input 
                               type="text" name="matricPassingYear" value={formData.matricPassingYear} onChange={handleChange} required={!isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. 2025"
+                              placeholder="Enter passing year (e.g. 2026)"
                             />
                           </div>
                         </div>
@@ -482,7 +482,7 @@ export default function ApplyNow() {
                             <input 
                               type="number" name="matricObtainedMarks" value={formData.matricObtainedMarks} onChange={handleChange} required={!isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
-                              placeholder="e.g. 850"
+                              placeholder="Enter obtained marks"
                             />
                           </div>
                           <div>
@@ -492,7 +492,7 @@ export default function ApplyNow() {
                             <input 
                               type="number" name="matricTotalMarks" value={formData.matricTotalMarks} onChange={handleChange} required={!isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
-                              placeholder="e.g. 1100"
+                              placeholder="Enter total marks"
                             />
                           </div>
                         </div>
@@ -520,7 +520,7 @@ export default function ApplyNow() {
                             <input 
                               type="text" name="interBoard" value={formData.interBoard} onChange={handleChange} required={isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. BISE Bannu / D.I. Khan"
+                              placeholder="Enter board name (e.g. BISE D.I. Khan)"
                             />
                           </div>
                           <div>
@@ -530,7 +530,7 @@ export default function ApplyNow() {
                             <input 
                               type="text" name="interRollNo" value={formData.interRollNo} onChange={handleChange} required={isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. 784102"
+                              placeholder="Enter roll number"
                             />
                           </div>
                           <div>
@@ -540,7 +540,7 @@ export default function ApplyNow() {
                             <input 
                               type="text" name="interPassingYear" value={formData.interPassingYear} onChange={handleChange} required={isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. 2026"
+                              placeholder="Enter passing year (e.g. 2026)"
                             />
                           </div>
                         </div>
@@ -553,7 +553,7 @@ export default function ApplyNow() {
                             <input 
                               type="number" name="interObtainedMarks" value={formData.interObtainedMarks} onChange={handleChange} required={isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
-                              placeholder="e.g. 920"
+                              placeholder="Enter obtained marks"
                             />
                           </div>
                           <div>
@@ -563,7 +563,7 @@ export default function ApplyNow() {
                             <input 
                               type="number" name="interTotalMarks" value={formData.interTotalMarks} onChange={handleChange} required={isBsProgram}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
-                              placeholder="e.g. 1100"
+                              placeholder="Enter total marks"
                             />
                           </div>
                         </div>
@@ -603,7 +603,7 @@ export default function ApplyNow() {
                         <input 
                           type="text" name="trxId" value={formData.trxId} onChange={handleChange} required
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold"
-                          placeholder="e.g. 98273641 or Bank Slip No"
+                          placeholder="Enter transaction ID or bank receipt number"
                         />
                       </div>
                     </div>

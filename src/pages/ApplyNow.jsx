@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { 
   ShieldCheck, CheckCircle2, ChevronRight, FileText, User, 
-  GraduationCap, Clipboard, CreditCard, Upload, AlertCircle, FileCheck, Layers
+  GraduationCap, Clipboard, CreditCard, Upload, AlertCircle, FileCheck
 } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
@@ -21,13 +21,7 @@ export default function ApplyNow() {
     email: '',
     address: '',
     program: 'BS Computer Science',
-    // Matric Details
-    matricBoard: '',
-    matricRollNo: '',
-    matricPassingYear: '',
-    matricObtainedMarks: '',
-    matricTotalMarks: '',
-    // Intermediate / F.Sc Details
+    // Intermediate / F.Sc Details (Primary Academic Section)
     interBoard: '',
     interRollNo: '',
     interPassingYear: '',
@@ -43,33 +37,21 @@ export default function ApplyNow() {
   const [submittedStudent, setSubmittedStudent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Condition to show Intermediate/F.Sc section: Show for BS or FSc/Inter programs; Hide completely for Matric
-  const showInterSection = useMemo(() => {
-    return formData.program !== 'Matric' && !formData.program.toLowerCase().includes('matric');
-  }, [formData.program]);
-
-  // Dynamic Merit Percentage Calculation
+  // Dynamic Merit Percentage Calculation based on Intermediate Marks
   const calculatedMerit = useMemo(() => {
-    if (showInterSection) {
-      const obt = parseFloat(formData.interObtainedMarks);
-      const tot = parseFloat(formData.interTotalMarks);
-      if (obt > 0 && tot > 0 && obt <= tot) {
-        return ((obt / tot) * 100).toFixed(1);
-      }
-    }
-    const obt = parseFloat(formData.matricObtainedMarks);
-    const tot = parseFloat(formData.matricTotalMarks);
+    const obt = parseFloat(formData.interObtainedMarks);
+    const tot = parseFloat(formData.interTotalMarks);
     if (obt > 0 && tot > 0 && obt <= tot) {
       return ((obt / tot) * 100).toFixed(1);
     }
     return null;
-  }, [showInterSection, formData.interObtainedMarks, formData.interTotalMarks, formData.matricObtainedMarks, formData.matricTotalMarks]);
+  }, [formData.interObtainedMarks, formData.interTotalMarks]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Fee Slip Upload
+  // Handle Fee Slip File Upload
   const handleFeeSlipUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -91,12 +73,7 @@ export default function ApplyNow() {
       const randomNum = Math.floor(10200 + Math.random() * 800);
       const generatedId = `STU-${randomNum}`;
       const meritValue = calculatedMerit ? parseFloat(calculatedMerit) : 0;
-
-      // Construct marks text string according to level
-      let marksText = `${formData.matricObtainedMarks}/${formData.matricTotalMarks}`;
-      if (showInterSection && formData.interObtainedMarks && formData.interTotalMarks) {
-        marksText = `${formData.interObtainedMarks}/${formData.interTotalMarks}`;
-      }
+      const marksText = `${formData.interObtainedMarks}/${formData.interTotalMarks}`;
 
       const newRecord = {
         regId: generatedId,
@@ -112,16 +89,13 @@ export default function ApplyNow() {
         email: formData.email,
         address: formData.address,
         program: formData.program,
-        matricBoard: formData.matricBoard,
-        matricRollNo: formData.matricRollNo,
-        matricPassingYear: formData.matricPassingYear,
-        matricMarks: Number(formData.matricObtainedMarks || 0),
-        matricTotal: Number(formData.matricTotalMarks || 1100),
-        interBoard: showInterSection ? formData.interBoard : '',
-        interRollNo: showInterSection ? formData.interRollNo : '',
-        interPassingYear: showInterSection ? formData.interPassingYear : '',
-        interObtainedMarks: showInterSection ? formData.interObtainedMarks : '',
-        interTotalMarks: showInterSection ? formData.interTotalMarks : '',
+        interBoard: formData.interBoard,
+        interRollNo: formData.interRollNo,
+        interPassingYear: formData.interPassingYear,
+        interObtainedMarks: formData.interObtainedMarks,
+        interTotalMarks: formData.interTotalMarks,
+        matricMarks: Number(formData.interObtainedMarks || 0),
+        matricTotal: Number(formData.interTotalMarks || 1100),
         marksText: marksText,
         meritPct: meritValue,
         paymentMethod: formData.paymentMethod,
@@ -159,8 +133,6 @@ export default function ApplyNow() {
       setFormData({
         studentName: '', fatherName: '', dob: '', gender: 'male', cnic: '',
         domicile: '', mobile: '', email: '', address: '', program: 'BS Computer Science',
-        matricBoard: '', matricRollNo: '', matricPassingYear: '',
-        matricObtainedMarks: '', matricTotalMarks: '',
         interBoard: '', interRollNo: '', interPassingYear: '',
         interObtainedMarks: '', interTotalMarks: '',
         paymentMethod: 'EasyPaisa', trxId: ''
@@ -247,7 +219,7 @@ export default function ApplyNow() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* Left Side: Dynamic Admission Form */}
+              {/* Left Side: Admission Registration Form */}
               <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg">
                 
                 {/* Form Header */}
@@ -280,22 +252,20 @@ export default function ApplyNow() {
                         name="program" value={formData.program} onChange={handleChange}
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white cursor-pointer shadow-sm"
                       >
-                        <option value="BS Computer Science">BS Computer Science (4-Year)</option>
-                        <option value="BS Physics">BS Physics (4-Year)</option>
-                        <option value="BS Chemistry">BS Chemistry (4-Year)</option>
-                        <option value="BS English">BS English (4-Year)</option>
-                        <option value="BS Mathematics">BS Mathematics (4-Year)</option>
-                        <option value="FSC Pre-Medical">FSC Pre-Medical (HSSC)</option>
-                        <option value="FSC Pre-Engineering">FSC Pre-Engineering (HSSC)</option>
-                        <option value="ICS (Computer Science)">ICS Computer Science (HSSC)</option>
-                        <option value="FA (Arts & Humanities)">FA Arts & Humanities (HSSC)</option>
-                        <option value="Matric">Matric Science / SSC</option>
+                        <optgroup label="BS Undergraduate Degree Programs (4-Year)">
+                          <option value="BS Computer Science">BS Computer Science (4-Year)</option>
+                          <option value="BS Physics">BS Physics (4-Year)</option>
+                          <option value="BS Chemistry">BS Chemistry (4-Year)</option>
+                          <option value="BS English">BS English (4-Year)</option>
+                          <option value="BS Mathematics">BS Mathematics (4-Year)</option>
+                        </optgroup>
+                        <optgroup label="Intermediate Programs (HSSC)">
+                          <option value="FSC Pre-Medical">FSC Pre-Medical (HSSC)</option>
+                          <option value="FSC Pre-Engineering">FSC Pre-Engineering (HSSC)</option>
+                          <option value="ICS (Computer Science)">ICS Computer Science (HSSC)</option>
+                          <option value="FA (Arts & Humanities)">FA Arts & Humanities (HSSC)</option>
+                        </optgroup>
                       </select>
-                      
-                      <div className="mt-2 text-[11px] text-teal-700 dark:text-teal-400 font-semibold flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5" />
-                        <span>Form sections update dynamically based on program ({showInterSection ? 'Intermediate + Matric sections enabled' : 'Matric section enabled only'}).</span>
-                      </div>
                     </div>
                   </div>
 
@@ -410,14 +380,12 @@ export default function ApplyNow() {
                     </div>
                   </div>
 
-                  {/* STEP 3: DYNAMIC ACADEMIC BACKGROUND & MERIT CALCULATION */}
-                  <div className="space-y-6">
-                    
-                    {/* Header with Calculated Merit Indicator */}
+                  {/* STEP 3: INTERMEDIATE (F.Sc / HSSC) ACADEMIC DETAILS SECTION (PRIMARY ACADEMIC SECTION) */}
+                  <div className="space-y-5">
                     <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                       <h3 className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center">
                         <GraduationCap className="w-4 h-4 mr-2" />
-                        Step 3: Academic Details & Merit Score
+                        Step 3: Intermediate (F.Sc / HSSC) Academic Details & Merit Score
                       </h3>
                       {calculatedMerit && (
                         <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
@@ -427,32 +395,26 @@ export default function ApplyNow() {
                       )}
                     </div>
 
-                    {/* Section 1: Matric Academic Details (Always shown) */}
-                    <div className="space-y-4 bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/70 dark:border-slate-700">
-                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-                        Matriculation (SSC) Academic Details
-                      </h4>
-
+                    <div className="space-y-4 bg-teal-50/50 dark:bg-slate-800/60 p-5 rounded-2xl border border-teal-200/60 dark:border-slate-700">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div>
                           <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                            Matric Board *
+                            Intermediate Board *
                           </label>
                           <input 
-                            type="text" name="matricBoard" value={formData.matricBoard} onChange={handleChange} required
+                            type="text" name="interBoard" value={formData.interBoard} onChange={handleChange} required
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                             placeholder="e.g. BISE Bannu / D.I. Khan"
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                            Matric Roll No *
+                            Inter Roll No *
                           </label>
                           <input 
-                            type="text" name="matricRollNo" value={formData.matricRollNo} onChange={handleChange} required
+                            type="text" name="interRollNo" value={formData.interRollNo} onChange={handleChange} required
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                            placeholder="e.g. 452109"
+                            placeholder="e.g. 784102"
                           />
                         </div>
                         <div>
@@ -460,9 +422,9 @@ export default function ApplyNow() {
                             Passing Year *
                           </label>
                           <input 
-                            type="text" name="matricPassingYear" value={formData.matricPassingYear} onChange={handleChange} required
+                            type="text" name="interPassingYear" value={formData.interPassingYear} onChange={handleChange} required
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                            placeholder="e.g. 2025"
+                            placeholder="e.g. 2026"
                           />
                         </div>
                       </div>
@@ -470,98 +432,26 @@ export default function ApplyNow() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                           <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                            Matric Obtained Marks *
+                            Intermediate Obtained Marks *
                           </label>
                           <input 
-                            type="number" name="matricObtainedMarks" value={formData.matricObtainedMarks} onChange={handleChange} required
+                            type="number" name="interObtainedMarks" value={formData.interObtainedMarks} onChange={handleChange} required
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
-                            placeholder="e.g. 850"
+                            placeholder="e.g. 920"
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                            Matric Total Marks *
+                            Intermediate Total Marks *
                           </label>
                           <input 
-                            type="number" name="matricTotalMarks" value={formData.matricTotalMarks} onChange={handleChange} required
+                            type="number" name="interTotalMarks" value={formData.interTotalMarks} onChange={handleChange} required
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
                             placeholder="e.g. 1100"
                           />
                         </div>
                       </div>
                     </div>
-
-                    {/* Section 2: Intermediate (F.Sc / HSSC) Academic Details (Dynamically shown ONLY for BS & Inter programs; hidden completely for Matric) */}
-                    {showInterSection && (
-                      <div className="space-y-4 bg-teal-50/50 dark:bg-slate-800/60 p-5 rounded-2xl border border-teal-200/60 dark:border-slate-700 transition-all duration-300">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-teal-800 dark:text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            Intermediate (F.Sc / HSSC) Academic Details
-                          </h4>
-                          <span className="text-[10px] font-bold bg-teal-600 text-white px-2.5 py-0.5 rounded-md uppercase">
-                            Required for {formData.program}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                          <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                              Intermediate Board *
-                            </label>
-                            <input 
-                              type="text" name="interBoard" value={formData.interBoard} onChange={handleChange} required={showInterSection}
-                              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. BISE Bannu / D.I. Khan"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                              Inter Roll No *
-                            </label>
-                            <input 
-                              type="text" name="interRollNo" value={formData.interRollNo} onChange={handleChange} required={showInterSection}
-                              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. 784102"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                              Passing Year *
-                            </label>
-                            <input 
-                              type="text" name="interPassingYear" value={formData.interPassingYear} onChange={handleChange} required={showInterSection}
-                              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                              placeholder="e.g. 2026"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                          <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                              Intermediate Obtained Marks *
-                            </label>
-                            <input 
-                              type="number" name="interObtainedMarks" value={formData.interObtainedMarks} onChange={handleChange} required={showInterSection}
-                              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
-                              placeholder="e.g. 920"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                              Intermediate Total Marks *
-                            </label>
-                            <input 
-                              type="number" name="interTotalMarks" value={formData.interTotalMarks} onChange={handleChange} required={showInterSection}
-                              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
-                              placeholder="e.g. 1100"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                   </div>
 
                   {/* STEP 4: PAYMENT DETAILS SECTION */}
@@ -663,11 +553,11 @@ export default function ApplyNow() {
                   <ul className="space-y-4 text-right text-xs sm:text-sm text-slate-200 leading-relaxed" dir="rtl">
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
-                      <span>آن لائن ایڈمیشن فارم میں تمام معلوماتی خانے درست اور تعلیمی اسناد کے مطابق پر کریں۔</span>
+                      <span>آن لائن ایڈمیشن فارم میں تمام معلوماتی خانے درست اور انٹرمیڈیٹ سند کے مطابق پر کریں۔</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
-                      <span>میٹرک پروگرام کے لیے صرف میٹرک نمبرات؛ جبکہ دیگر بی ایس اور انٹرمیڈیٹ پروگرامز کے لیے انٹر نمبرات کا اندراج کریں۔</span>
+                      <span>بی ایس اور انٹرمیڈیٹ پروگرامز کے لیے انٹر نمبرات کا درست اندراج لازمی ہے۔</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>

@@ -48,7 +48,7 @@ function AppContent() {
       {!isAdminRoute && <NewsTicker />}
 
       {/* Navigation - Hidden on Admin Dashboard and Login Pages */}
-      {!isAdminRoute && <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />}
+      {!isAdminRoute && <Navbar />}
 
       {/* Main Content Area */}
       <main className="flex-grow flex flex-col">

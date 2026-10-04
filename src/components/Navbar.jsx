@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Sun, Moon } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function Navbar({ darkMode, setDarkMode }) {
+export default function Navbar() {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [aboutDropdown, setAboutDropdown] = useState(false);
@@ -53,11 +53,11 @@ export default function Navbar({ darkMode, setDarkMode }) {
     <header className="w-full z-50">
       {/* Main Navbar */}
       <nav className={`w-full bg-white dark:bg-slate-900 shadow-md transition-all duration-300 ${isScrolled ? 'sticky top-0 shadow-lg border-b border-gray-100 dark:border-slate-800' : ''}`}>
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex items-center justify-between h-20 gap-6 whitespace-nowrap">
+        <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 2xl:px-10">
+          <div className="flex items-center justify-between min-h-20 gap-3 xl:gap-4">
             
             {/* Left side: Logo & Navigation Links grouped together */}
-            <div className="flex items-center gap-6 xl:gap-8 flex-grow">
+            <div className="flex min-w-0 flex-1 items-center gap-3 xl:gap-4 2xl:gap-6">
               {/* Logo Section */}
               <Link to="/" className="flex items-center py-4 flex-shrink-0 group gap-2.5">
                 <img 
@@ -76,10 +76,10 @@ export default function Navbar({ darkMode, setDarkMode }) {
               </Link>
 
               {/* Desktop Navigation Links */}
-              <div className="hidden xl:flex items-center gap-3.5">
+              <div className="hidden min-w-0 flex-1 items-center justify-between gap-0.5 xl:flex 2xl:gap-1.5">
                 <Link 
                   to="/" 
-                  className={`px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === '/' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('home')}
                 </Link>
@@ -91,7 +91,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
                   onMouseLeave={() => setAboutDropdown(false)}
                 >
                   <button 
-                    className={`flex items-center px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname.startsWith('/about') ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    className={`flex items-center px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname.startsWith('/about') ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                   >
                     {t('aboutUs')}
                     <ChevronDown className="ml-0.5 w-3 h-3" />
@@ -120,7 +120,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
                   onMouseLeave={() => setAcademicsDropdown(false)}
                 >
                   <button 
-                    className={`flex items-center px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname.startsWith('/academics') ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    className={`flex items-center px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname.startsWith('/academics') ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                   >
                     {t('academics')}
                     <ChevronDown className="ml-0.5 w-3 h-3" />
@@ -203,49 +203,49 @@ export default function Navbar({ darkMode, setDarkMode }) {
    
                 <Link 
                   to="/admission" 
-                  className={`px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === '/admission' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/admission' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('admission')}
                 </Link>
    
                 <Link 
                   to="/departments" 
-                  className={`px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === '/departments' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/departments' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('departments')}
                 </Link>
    
                 <Link 
                   to="/examination" 
-                  className={`px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === '/examination' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/examination' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('examination')}
                 </Link>
    
                 <Link 
                   to="/faculty" 
-                  className={`px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === '/faculty' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/faculty' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('faculty')}
                 </Link>
    
                 <Link 
                   to="/facilities" 
-                  className={`px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === '/facilities' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/facilities' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('facilities')}
                 </Link>
    
                 <Link 
                   to="/gallery" 
-                  className={`px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === '/gallery' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/gallery' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('gallery')}
                 </Link>
    
                 <Link 
                   to="/contact" 
-                  className={`px-2 py-2 rounded-md text-[11px] font-medium transition-colors duration-200 whitespace-nowrap ${location.pathname === '/contact' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/contact' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('contactUs')}
                 </Link>
@@ -253,32 +253,17 @@ export default function Navbar({ darkMode, setDarkMode }) {
             </div>
 
             {/* Right side: Action Buttons Section */}
-            <div className="hidden xl:flex items-center gap-3 flex-shrink-0">
-              <button 
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-805 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
-                aria-label="Toggle Dark Mode"
-                title="Toggle Dark Mode"
-              >
-                {darkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4" />}
-              </button>
+            <div className="hidden xl:flex items-center flex-shrink-0">
               <Link 
                 to="/apply" 
-                className="px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors duration-200 whitespace-nowrap"
+                className="px-3 2xl:px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-colors duration-200 whitespace-nowrap shadow-sm"
               >
                 {t('applyNow')}
               </Link>
             </div>
 
             {/* Hamburger Button for Mobile */}
-            <div className="flex xl:hidden items-center gap-2">
-              <button 
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-805 text-slate-500 dark:text-slate-400 transition-colors focus:outline-none"
-                aria-label="Toggle Dark Mode"
-              >
-                {darkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4" />}
-              </button>
+            <div className="flex xl:hidden items-center">
               <button 
                 onClick={() => setIsOpen(!isOpen)}
                 className="text-slate-800 dark:text-slate-200 hover:text-teal-700 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-500"

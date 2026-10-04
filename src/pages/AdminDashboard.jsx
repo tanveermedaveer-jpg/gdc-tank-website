@@ -198,7 +198,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Load from localStorage on mount
   useEffect(() => {
+    const isLogged = (localStorage.getItem('casdct_is_logged_in') || '').trim() === 'true';
+    if (!isLogged) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     // One-time migration: purge any old demo media items (campus_tour.mp4, building_view.jpg)
+
     const storedMediaRaw = localStorage.getItem('casdct_media_moderation');
     if (storedMediaRaw) {
       try {
@@ -439,7 +446,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   // Handle Logout
   const handleLogout = () => {
     localStorage.removeItem('casdct_is_logged_in');
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   // Handle Toggle Live Merit List Publishing Status

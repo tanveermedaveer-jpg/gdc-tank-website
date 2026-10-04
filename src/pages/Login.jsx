@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Lock, ArrowLeft, Eye, EyeOff, X } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 
@@ -9,13 +9,25 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect automatically if user is already logged in
+  useEffect(() => {
+    const isLoggedIn = (localStorage.getItem('casdct_is_logged_in') || '').trim() === 'true';
+    if (isLoggedIn) {
+      const targetPath = location.state?.from?.pathname || '/admin';
+      navigate(targetPath, { replace: true });
+    }
+  }, [navigate, location]);
 
   // Set default admin credentials on mount if not present
   useEffect(() => {
     const storedAdminName = localStorage.getItem('casdct_admin_name');
     const storedAdminPass = localStorage.getItem('casdct_admin_pass');
-    if (!storedAdminName || !storedAdminPass) {
+    if (!storedAdminName || !storedAdminName.trim()) {
       localStorage.setItem('casdct_admin_name', 'Shabir Ahmad');
+    }
+    if (!storedAdminPass || !storedAdminPass.trim()) {
       localStorage.setItem('casdct_admin_pass', '122011577');
     }
   }, []);
@@ -24,22 +36,22 @@ export default function Login() {
     e.preventDefault();
     
     // Read current credentials from localStorage (fallback to defaults)
-    const storedAdminName = localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad';
-    const storedAdminPass = localStorage.getItem('casdct_admin_pass') || '122011577';
+    const storedAdminName = (localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad').trim();
+    const storedAdminPass = (localStorage.getItem('casdct_admin_pass') || '122011577').trim();
 
     if (username.trim() === storedAdminName && password.trim() === storedAdminPass) {
       setError('');
       setUsername('');
       setPassword('');
       localStorage.setItem('casdct_is_logged_in', 'true');
-      navigate('/admin');
+      const targetPath = location.state?.from?.pathname || '/admin';
+      navigate(targetPath, { replace: true });
     } else {
-      setError('Invalid Name or Password');
-      alert('Invalid Name or Password');
-      setUsername('');
+      setError('Invalid Username or Password');
       setPassword('');
     }
   };
+
 
   return (
     <div className="flex-grow flex items-center justify-center py-16 relative bg-slate-900">

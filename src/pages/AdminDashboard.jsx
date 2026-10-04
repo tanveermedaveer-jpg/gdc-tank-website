@@ -194,8 +194,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [adminUploadSuccess, setAdminUploadSuccess] = useState(false);
 
   // Settings state
-  const [adminName, setAdminName] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
+  const [adminName, setAdminName] = useState(() => localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad');
+  const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('casdct_admin_pass') || '122011577');
   const [showPassword, setShowPassword] = useState(false);
   const [circulars, setCirculars] = useState([]);
   const [circularTitle, setCircularTitle] = useState('');
@@ -222,10 +222,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   // Load local dashboard data on mount
   useEffect(() => {
     // One-time migration: purge any old demo media items (campus_tour.mp4, building_view.jpg)
-    localStorage.removeItem('casdct_is_logged_in');
-    localStorage.removeItem('casdct_admin_name');
-    localStorage.removeItem('casdct_admin_pass');
-
     const storedMediaRaw = localStorage.getItem('casdct_media_moderation');
     if (storedMediaRaw) {
       try {
@@ -289,16 +285,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     setPrincipalImage(sPImg);
     setCollegePhone(sPhone);
     setCollegeEmail(sEmail);
-
-    supabase.auth.getUser()
-      .then(({ data, error }) => {
-        if (error) throw error;
-        if (isAdminUser(data.user)) setAdminName(data.user.email || '');
-      })
-      .catch((error) => {
-        console.error('Unable to load the admin account details:', error);
-        showToast('Unable to load the signed-in admin account details.', 'error');
-      });
 
     // Real-time listener for new admission submissions from ApplyNow form
     const handleAdmissionSync = () => {
@@ -533,15 +519,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   // Handle Logout
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      navigate('/login', { replace: true });
-    } catch (error) {
-      console.error('Unable to sign out admin:', error);
-      showToast(error.message || 'Unable to sign out. Please try again.', 'error');
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('casdct_is_logged_in');
+    navigate('/login', { replace: true });
   };
 
   // Handle Toggle Live Merit List Publishing Status
@@ -556,36 +536,22 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   // Handle Save Settings
-  const handleSaveSettings = async (e) => {
+  const handleSaveSettings = (e) => {
     e.preventDefault();
     const savedAdminName = adminName.trim();
     const savedAdminPassword = adminPassword.trim();
     if (!savedAdminName) {
-      showToast('Admin email cannot be empty.', 'error');
+      showToast('Admin username cannot be empty.', 'error');
       return;
     }
-    if (savedAdminPassword && savedAdminPassword.length < 8) {
-      showToast('New admin passwords must be at least 8 characters.', 'error');
+    if (!savedAdminPassword) {
+      showToast('Admin password cannot be empty.', 'error');
       return;
     }
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError) throw authError;
-      const authUpdates = {};
-      if (savedAdminName !== authData.user.email) authUpdates.email = savedAdminName;
-      if (savedAdminPassword) authUpdates.password = savedAdminPassword;
-      const emailChangeRequested = Boolean(authUpdates.email);
-      let emailChangePending = false;
-
-      if (Object.keys(authUpdates).length > 0) {
-        const { data, error } = await supabase.auth.updateUser(authUpdates);
-        if (error) throw error;
-        emailChangePending = emailChangeRequested;
-        setAdminName(data.user?.email || savedAdminName);
-        setAdminPassword('');
-      }
-
+      localStorage.setItem('casdct_admin_name', savedAdminName);
+      localStorage.setItem('casdct_admin_pass', savedAdminPassword);
       localStorage.setItem('casdct_principal_name', principalName);
       localStorage.setItem('casdct_principal_message', principalMessage);
       localStorage.setItem('casdct_principal_image', principalImage);
@@ -594,18 +560,15 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       localStorage.setItem('casdct_merit_list_live', isMeritListLive ? 'true' : 'false');
       window.dispatchEvent(new Event('casdct_merit_status_changed'));
 
+      setAdminName(savedAdminName);
+      setAdminPassword(savedAdminPassword);
       setSettingsSaved(true);
-      showToast(
-        emailChangePending
-          ? 'Settings saved. Confirm the email change using the verification link sent to your new address.'
-          : 'Admin & Institutional Settings saved successfully!',
-        'success'
-      );
+      showToast('Admin & Institutional Settings saved successfully!', 'success');
       setTimeout(() => setSettingsSaved(false), 3000);
     } catch (error) {
       console.error('Unable to save admin settings:', error);
       setSettingsSaved(false);
-      showToast(error.message || 'Settings could not be saved. Please try again.', 'error');
+      showToast('Settings could not be saved. Please check browser storage and try again.', 'error');
     }
   };
 
@@ -1739,7 +1702,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Credentials & College Settings</h2>
-                <p className="text-xs text-slate-500">Update your Supabase admin email, optional password, institutional information, and principal desk message.</p>
+                <p className="text-xs text-slate-500">Update your admin username, password, institutional information, and principal desk message.</p>
               </div>
 
               {settingsSaved && (
@@ -1776,25 +1739,25 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Email</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Username</label>
                     <input 
-                      type="email"
+                      type="text"
                       required
+                      autoComplete="username"
                       value={adminName} 
                       onChange={(e) => setAdminName(e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">New Admin Password</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Password</label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
                         autoComplete="new-password"
-                        minLength={8}
-                        placeholder="Leave blank to keep current password"
+                        required
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 pr-12 py-2.5 text-sm font-semibold"
                       />
                       <button
@@ -1807,7 +1770,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-500">Leave blank to keep the current password. New passwords must be at least 8 characters.</p>
                   </div>
                 </div>
 

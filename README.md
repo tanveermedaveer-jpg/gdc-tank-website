@@ -17,7 +17,9 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ## Admin authentication and examination circulars
 
-Admin sign-in and shared examination circular publishing use Supabase. Public visitors can read published circulars; uploading and deleting circulars requires a Supabase Auth account with the `admin` application-metadata role.
+The admin dashboard login uses the configured admin username and password stored in this browser's local storage (`casdct_admin_name` and `casdct_admin_pass`; defaults are `Shabir Ahmad` and `122011577`). This legacy client-side login is not server-secure and credentials do not sync between browsers.
+
+Public examination circulars are stored in Supabase. Public visitors can read published circulars; uploading and deleting circulars still requires a Supabase Auth session with the `admin` application-metadata role. The dashboard's local username/password login does not establish a Supabase session.
 
 1. Create a Supabase project and run [`supabase/setup.sql`](./supabase/setup.sql) in its SQL Editor.
 2. Create the initial admin account in **Authentication → Users**. Disable public sign-ups in the Supabase Auth settings.

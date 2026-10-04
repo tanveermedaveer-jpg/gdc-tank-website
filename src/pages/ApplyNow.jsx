@@ -27,7 +27,7 @@ export default function ApplyNow() {
     matricPassingYear: '',
     matricObtainedMarks: '',
     matricTotalMarks: '',
-    // Intermediate / F.Sc Details (for BS program applicants)
+    // Intermediate / F.Sc Details
     interBoard: '',
     interRollNo: '',
     interPassingYear: '',
@@ -43,18 +43,14 @@ export default function ApplyNow() {
   const [submittedStudent, setSubmittedStudent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Program Level Identifiers
-  const isBsProgram = useMemo(() => {
-    return formData.program.startsWith('BS');
+  // Condition to show Intermediate/F.Sc section: Show for BS or FSc/Inter programs; Hide completely for Matric
+  const showInterSection = useMemo(() => {
+    return formData.program !== 'Matric' && !formData.program.toLowerCase().includes('matric');
   }, [formData.program]);
 
-  const isInterProgram = useMemo(() => {
-    return formData.program.startsWith('FSC') || formData.program.startsWith('ICS') || formData.program.startsWith('FA');
-  }, [formData.program]);
-
-  // Dynamic Merit Percentage Calculation (Inter marks for BS applicants, Matric marks for Intermediate applicants)
+  // Dynamic Merit Percentage Calculation
   const calculatedMerit = useMemo(() => {
-    if (isBsProgram) {
+    if (showInterSection) {
       const obt = parseFloat(formData.interObtainedMarks);
       const tot = parseFloat(formData.interTotalMarks);
       if (obt > 0 && tot > 0 && obt <= tot) {
@@ -67,13 +63,13 @@ export default function ApplyNow() {
       return ((obt / tot) * 100).toFixed(1);
     }
     return null;
-  }, [isBsProgram, formData.interObtainedMarks, formData.interTotalMarks, formData.matricObtainedMarks, formData.matricTotalMarks]);
+  }, [showInterSection, formData.interObtainedMarks, formData.interTotalMarks, formData.matricObtainedMarks, formData.matricTotalMarks]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Fee Slip File Upload
+  // Handle Fee Slip Upload
   const handleFeeSlipUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -98,8 +94,8 @@ export default function ApplyNow() {
 
       // Construct marks text string according to level
       let marksText = `${formData.matricObtainedMarks}/${formData.matricTotalMarks}`;
-      if (isBsProgram && formData.interObtainedMarks && formData.interTotalMarks) {
-        marksText = `HSSC: ${formData.interObtainedMarks}/${formData.interTotalMarks} (SSC: ${formData.matricObtainedMarks}/${formData.matricTotalMarks})`;
+      if (showInterSection && formData.interObtainedMarks && formData.interTotalMarks) {
+        marksText = `${formData.interObtainedMarks}/${formData.interTotalMarks}`;
       }
 
       const newRecord = {
@@ -121,11 +117,11 @@ export default function ApplyNow() {
         matricPassingYear: formData.matricPassingYear,
         matricMarks: Number(formData.matricObtainedMarks || 0),
         matricTotal: Number(formData.matricTotalMarks || 1100),
-        interBoard: formData.interBoard,
-        interRollNo: formData.interRollNo,
-        interPassingYear: formData.interPassingYear,
-        interObtainedMarks: formData.interObtainedMarks,
-        interTotalMarks: formData.interTotalMarks,
+        interBoard: showInterSection ? formData.interBoard : '',
+        interRollNo: showInterSection ? formData.interRollNo : '',
+        interPassingYear: showInterSection ? formData.interPassingYear : '',
+        interObtainedMarks: showInterSection ? formData.interObtainedMarks : '',
+        interTotalMarks: showInterSection ? formData.interTotalMarks : '',
         marksText: marksText,
         meritPct: meritValue,
         paymentMethod: formData.paymentMethod,
@@ -138,7 +134,7 @@ export default function ApplyNow() {
         appliedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       };
 
-      // Save to localStorage admissions collection
+      // Save to localStorage admissions collection (Maintains descending merit ranking)
       const storedAdmissions = localStorage.getItem('casdct_admissions');
       let admissionsArray = [];
       if (storedAdmissions) {
@@ -149,10 +145,10 @@ export default function ApplyNow() {
         }
       }
       
-      const updatedAdmissions = [newRecord, ...admissionsArray];
+      const updatedAdmissions = [...admissionsArray, newRecord].sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0));
       localStorage.setItem('casdct_admissions', JSON.stringify(updatedAdmissions));
 
-      // Trigger custom window event for real-time sync with Admin Dashboard
+      // Trigger custom window event for real-time sync with Admin Dashboard & Public Merit List
       window.dispatchEvent(new Event('casdct_admission_submitted'));
 
       setSubmittedStudent(newRecord);
@@ -236,7 +232,7 @@ export default function ApplyNow() {
               
               <div className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed max-w-md mx-auto space-y-2">
                 <p>Your application has been registered successfully and transmitted to the <strong>GDC Tank Admission Desk</strong>.</p>
-                <p className="text-slate-500">Please bring your original Matric/Inter certificates, CNIC/Form-B, and fee deposit slip to the college admission desk.</p>
+                <p className="text-slate-500">Please bring your original academic certificates, CNIC/Form-B, and fee deposit receipt to the college admission desk.</p>
               </div>
 
               <div className="pt-4">
@@ -269,7 +265,7 @@ export default function ApplyNow() {
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                   
-                  {/* STEP 1: PROGRAM OF CHOICE (Placed first for immediate dynamic UI updates) */}
+                  {/* STEP 1: PROGRAM SELECTION */}
                   <div className="space-y-5 bg-teal-50/40 dark:bg-slate-850 p-6 rounded-2xl border border-teal-100/70 dark:border-slate-800">
                     <h3 className="text-xs font-bold text-teal-800 dark:text-teal-400 uppercase tracking-wider flex items-center border-b border-teal-100 dark:border-slate-800 pb-2">
                       <Clipboard className="w-4 h-4 mr-2" />
@@ -298,7 +294,7 @@ export default function ApplyNow() {
                       
                       <div className="mt-2 text-[11px] text-teal-700 dark:text-teal-400 font-semibold flex items-center gap-1.5">
                         <Layers className="w-3.5 h-3.5" />
-                        <span>Form requirements automatically adapt to your selected program level ({isBsProgram ? 'BS Degree Level' : isInterProgram ? 'Intermediate HSSC Level' : 'Matric SSC Level'}).</span>
+                        <span>Form sections update dynamically based on program ({showInterSection ? 'Intermediate + Matric sections enabled' : 'Matric section enabled only'}).</span>
                       </div>
                     </div>
                   </div>
@@ -421,7 +417,7 @@ export default function ApplyNow() {
                     <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                       <h3 className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center">
                         <GraduationCap className="w-4 h-4 mr-2" />
-                        Step 3: Academic Background & Merit Calculation
+                        Step 3: Academic Details & Merit Score
                       </h3>
                       {calculatedMerit && (
                         <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
@@ -495,16 +491,16 @@ export default function ApplyNow() {
                       </div>
                     </div>
 
-                    {/* Section 2: Intermediate / F.Sc Academic Details (Dynamically shown ONLY for BS programs) */}
-                    {isBsProgram && (
-                      <div className="space-y-4 bg-teal-50/50 dark:bg-slate-800/60 p-5 rounded-2xl border border-teal-200/60 dark:border-slate-700 animate-fadeIn">
+                    {/* Section 2: Intermediate (F.Sc / HSSC) Academic Details (Dynamically shown ONLY for BS & Inter programs; hidden completely for Matric) */}
+                    {showInterSection && (
+                      <div className="space-y-4 bg-teal-50/50 dark:bg-slate-800/60 p-5 rounded-2xl border border-teal-200/60 dark:border-slate-700 transition-all duration-300">
                         <div className="flex items-center justify-between">
                           <h4 className="text-xs font-bold text-teal-800 dark:text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                             Intermediate (F.Sc / HSSC) Academic Details
                           </h4>
-                          <span className="text-[10px] font-bold bg-teal-600 text-white px-2 py-0.5 rounded-md uppercase">
-                            Required for BS Program
+                          <span className="text-[10px] font-bold bg-teal-600 text-white px-2.5 py-0.5 rounded-md uppercase">
+                            Required for {formData.program}
                           </span>
                         </div>
 
@@ -514,7 +510,7 @@ export default function ApplyNow() {
                               Intermediate Board *
                             </label>
                             <input 
-                              type="text" name="interBoard" value={formData.interBoard} onChange={handleChange} required={isBsProgram}
+                              type="text" name="interBoard" value={formData.interBoard} onChange={handleChange} required={showInterSection}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                               placeholder="e.g. BISE Bannu / D.I. Khan"
                             />
@@ -524,7 +520,7 @@ export default function ApplyNow() {
                               Inter Roll No *
                             </label>
                             <input 
-                              type="text" name="interRollNo" value={formData.interRollNo} onChange={handleChange} required={isBsProgram}
+                              type="text" name="interRollNo" value={formData.interRollNo} onChange={handleChange} required={showInterSection}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                               placeholder="e.g. 784102"
                             />
@@ -534,7 +530,7 @@ export default function ApplyNow() {
                               Passing Year *
                             </label>
                             <input 
-                              type="text" name="interPassingYear" value={formData.interPassingYear} onChange={handleChange} required={isBsProgram}
+                              type="text" name="interPassingYear" value={formData.interPassingYear} onChange={handleChange} required={showInterSection}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                               placeholder="e.g. 2026"
                             />
@@ -547,7 +543,7 @@ export default function ApplyNow() {
                               Intermediate Obtained Marks *
                             </label>
                             <input 
-                              type="number" name="interObtainedMarks" value={formData.interObtainedMarks} onChange={handleChange} required={isBsProgram}
+                              type="number" name="interObtainedMarks" value={formData.interObtainedMarks} onChange={handleChange} required={showInterSection}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
                               placeholder="e.g. 920"
                             />
@@ -557,7 +553,7 @@ export default function ApplyNow() {
                               Intermediate Total Marks *
                             </label>
                             <input 
-                              type="number" name="interTotalMarks" value={formData.interTotalMarks} onChange={handleChange} required={isBsProgram}
+                              type="number" name="interTotalMarks" value={formData.interTotalMarks} onChange={handleChange} required={showInterSection}
                               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
                               placeholder="e.g. 1100"
                             />
@@ -667,11 +663,11 @@ export default function ApplyNow() {
                   <ul className="space-y-4 text-right text-xs sm:text-sm text-slate-200 leading-relaxed" dir="rtl">
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
-                      <span>آن لائن ایڈمیشن فارم میں تمام معلوماتی خانے درست اور میٹرک/انٹر سند کے مطابق پر کریں۔</span>
+                      <span>آن لائن ایڈمیشن فارم میں تمام معلوماتی خانے درست اور تعلیمی اسناد کے مطابق پر کریں۔</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
-                      <span>بی ایس (BS) ڈگری پروگرامز کے لیے میٹرک اور انٹرمیڈیٹ دونوں کے تعلیمی نمبرات کا اندراج لازمی ہے۔</span>
+                      <span>میٹرک پروگرام کے لیے صرف میٹرک نمبرات؛ جبکہ دیگر بی ایس اور انٹرمیڈیٹ پروگرامز کے لیے انٹر نمبرات کا اندراج کریں۔</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>

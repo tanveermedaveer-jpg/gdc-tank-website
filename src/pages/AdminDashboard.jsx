@@ -3,12 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye, 
   EyeOff, Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
-  GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ChevronDown, 
+  GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ChevronDown, ClipboardList, FileUp,
   Moon, Sun, Shield, UserCheck, RefreshCw, Edit3, Lock, Mail, Phone, 
   Upload, FileCheck, Info, Maximize2, Trophy
 } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
 import principalImg from '../assets/principal.jpg';
+import {
+  CIRCULARS_BUCKET,
+  isAdminUser,
+  MAX_CIRCULAR_SIZE_BYTES,
+  supabase
+} from '../lib/supabase';
+
+const getTodayDateValue = () => {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+};
 
 export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: propSetDarkMode }) {
   const navigate = useNavigate();
@@ -35,7 +46,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     }
   };
 
-  // Active Sidebar Tab: 'admissions' | 'dashboard' | 'fee_records' | 'media_gallery' | 'settings' | 'help'
+  // Active Sidebar Tab: 'admissions' | 'dashboard' | 'fee_records' | 'media_gallery' | 'examination_circulars' | 'settings' | 'help'
   const [activeTab, setActiveTab] = useState('admissions');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -186,6 +197,15 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [adminName, setAdminName] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [circulars, setCirculars] = useState([]);
+  const [circularTitle, setCircularTitle] = useState('');
+  const [circularPublishDate, setCircularPublishDate] = useState(getTodayDateValue);
+  const [circularFile, setCircularFile] = useState(null);
+  const [circularsLoading, setCircularsLoading] = useState(false);
+  const [circularsError, setCircularsError] = useState('');
+  const [circularRefreshKey, setCircularRefreshKey] = useState(0);
+  const [isUploadingCircular, setIsUploadingCircular] = useState(false);
+  const [deletingCircularId, setDeletingCircularId] = useState(null);
   const [principalName, setPrincipalName] = useState('');
   const [principalMessage, setPrincipalMessage] = useState('');
   const [principalImage, setPrincipalImage] = useState('');
@@ -199,15 +219,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     return [...list].sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0));
   };
 
-  // Load from localStorage on mount
+  // Load local dashboard data on mount
   useEffect(() => {
-    const isLogged = (localStorage.getItem('casdct_is_logged_in') || '').trim() === 'true';
-    if (!isLogged) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
     // One-time migration: purge any old demo media items (campus_tour.mp4, building_view.jpg)
+    localStorage.removeItem('casdct_is_logged_in');
+    localStorage.removeItem('casdct_admin_name');
+    localStorage.removeItem('casdct_admin_pass');
 
     const storedMediaRaw = localStorage.getItem('casdct_media_moderation');
     if (storedMediaRaw) {
@@ -261,21 +278,27 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     }
 
     // Load Credentials and Settings
-    const sName = localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad';
-    const sPass = localStorage.getItem('casdct_admin_pass') || '122011577';
     const sPName = localStorage.getItem('casdct_principal_name') || 'Prof. Shabir Ahmad';
     const sPMessage = localStorage.getItem('casdct_principal_message') || 'It is a matter of great pride and privilege to welcome you to Government Degree College, Tank.';
     const sPImg = localStorage.getItem('casdct_principal_image') || principalImg;
     const sPhone = localStorage.getItem('casdct_college_phone') || '+92 (0963) 510111';
     const sEmail = localStorage.getItem('casdct_college_email') || 'info@casdct.edu.pk';
 
-    setAdminName(sName);
-    setAdminPassword(sPass);
     setPrincipalName(sPName);
     setPrincipalMessage(sPMessage);
     setPrincipalImage(sPImg);
     setCollegePhone(sPhone);
     setCollegeEmail(sEmail);
+
+    supabase.auth.getUser()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (isAdminUser(data.user)) setAdminName(data.user.email || '');
+      })
+      .catch((error) => {
+        console.error('Unable to load the admin account details:', error);
+        showToast('Unable to load the signed-in admin account details.', 'error');
+      });
 
     // Real-time listener for new admission submissions from ApplyNow form
     const handleAdmissionSync = () => {
@@ -292,6 +315,51 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     window.addEventListener('casdct_admission_submitted', handleAdmissionSync);
     return () => window.removeEventListener('casdct_admission_submitted', handleAdmissionSync);
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'examination_circulars') return undefined;
+
+    let isMounted = true;
+    const fetchCirculars = async () => {
+      setCircularsLoading(true);
+      setCircularsError('');
+      const { data, error } = await supabase
+        .from('examination_circulars')
+        .select('id, title, publish_date, storage_path, file_name, created_at')
+        .order('publish_date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (!isMounted) return;
+      if (error) {
+        console.error('Unable to load examination circulars in admin:', error);
+        setCircularsError(error.message);
+      } else {
+        setCirculars(data || []);
+      }
+      setCircularsLoading(false);
+    };
+
+    fetchCirculars().catch((error) => {
+      if (!isMounted) return;
+      console.error('Unable to load examination circulars in admin:', error);
+      setCircularsError(error.message || 'Unable to load examination circulars.');
+      setCircularsLoading(false);
+    });
+
+    const channel = supabase
+      .channel('admin-examination-circulars')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'examination_circulars'
+      }, fetchCirculars)
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [activeTab, circularRefreshKey]);
 
   // Sync Admissions to localStorage on change (Maintains descending merit order)
   const updateAdmissionsState = (updatedList) => {
@@ -465,9 +533,15 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   // Handle Logout
-  const handleLogout = () => {
-    localStorage.removeItem('casdct_is_logged_in');
-    navigate('/login', { replace: true });
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Unable to sign out admin:', error);
+      showToast(error.message || 'Unable to sign out. Please try again.', 'error');
+    }
   };
 
   // Handle Toggle Live Merit List Publishing Status
@@ -482,35 +556,160 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   // Handle Save Settings
-  const handleSaveSettings = (e) => {
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
     const savedAdminName = adminName.trim();
     const savedAdminPassword = adminPassword.trim();
-    if (!savedAdminName || !savedAdminPassword) {
-      showToast('Admin username and password cannot be empty.', 'error');
+    if (!savedAdminName) {
+      showToast('Admin email cannot be empty.', 'error');
+      return;
+    }
+    if (savedAdminPassword && savedAdminPassword.length < 8) {
+      showToast('New admin passwords must be at least 8 characters.', 'error');
       return;
     }
 
     try {
-      localStorage.setItem('casdct_admin_name', savedAdminName);
-      localStorage.setItem('casdct_admin_pass', savedAdminPassword);
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      const authUpdates = {};
+      if (savedAdminName !== authData.user.email) authUpdates.email = savedAdminName;
+      if (savedAdminPassword) authUpdates.password = savedAdminPassword;
+      const emailChangeRequested = Boolean(authUpdates.email);
+      let emailChangePending = false;
+
+      if (Object.keys(authUpdates).length > 0) {
+        const { data, error } = await supabase.auth.updateUser(authUpdates);
+        if (error) throw error;
+        emailChangePending = emailChangeRequested;
+        setAdminName(data.user?.email || savedAdminName);
+        setAdminPassword('');
+      }
+
       localStorage.setItem('casdct_principal_name', principalName);
       localStorage.setItem('casdct_principal_message', principalMessage);
       localStorage.setItem('casdct_principal_image', principalImage);
       localStorage.setItem('casdct_college_phone', collegePhone);
       localStorage.setItem('casdct_college_email', collegeEmail);
       localStorage.setItem('casdct_merit_list_live', isMeritListLive ? 'true' : 'false');
-      setAdminName(savedAdminName);
-      setAdminPassword(savedAdminPassword);
       window.dispatchEvent(new Event('casdct_merit_status_changed'));
 
       setSettingsSaved(true);
-      showToast('Admin & Institutional Settings saved successfully!', 'success');
+      showToast(
+        emailChangePending
+          ? 'Settings saved. Confirm the email change using the verification link sent to your new address.'
+          : 'Admin & Institutional Settings saved successfully!',
+        'success'
+      );
       setTimeout(() => setSettingsSaved(false), 3000);
     } catch (error) {
       console.error('Unable to save admin settings:', error);
       setSettingsSaved(false);
-      showToast('Settings could not be saved. Please check browser storage and try again.', 'error');
+      showToast(error.message || 'Settings could not be saved. Please try again.', 'error');
+    }
+  };
+
+  const handleUploadCircular = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!circularTitle.trim() || !circularPublishDate || !circularFile) {
+      showToast('Enter a title and publish date, and select a PDF file.', 'error');
+      return;
+    }
+    if ((circularFile.type && circularFile.type !== 'application/pdf') || !circularFile.name.toLowerCase().endsWith('.pdf')) {
+      showToast('Only PDF files can be uploaded as examination circulars.', 'error');
+      return;
+    }
+    if (circularFile.size > MAX_CIRCULAR_SIZE_BYTES) {
+      showToast('PDF files must be 10 MB or smaller.', 'error');
+      return;
+    }
+
+    setIsUploadingCircular(true);
+    const storagePath = `${crypto.randomUUID()}.pdf`;
+    let uploadedPath = '';
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!isAdminUser(authData.user)) {
+        throw new Error('Only an authenticated admin can publish circulars.');
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from(CIRCULARS_BUCKET)
+        .upload(storagePath, circularFile, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+      if (uploadError) throw uploadError;
+      uploadedPath = storagePath;
+
+      const { data, error } = await supabase
+        .from('examination_circulars')
+        .insert({
+          title: circularTitle.trim(),
+          publish_date: circularPublishDate,
+          storage_path: storagePath,
+          file_name: circularFile.name
+        })
+        .select('id, title, publish_date, storage_path, file_name, created_at')
+        .single();
+      if (error) throw error;
+
+      setCirculars((current) => [data, ...current.filter((item) => item.id !== data.id)].sort((a, b) =>
+        b.publish_date.localeCompare(a.publish_date) || b.created_at.localeCompare(a.created_at)
+      ));
+      setCircularTitle('');
+      setCircularPublishDate(getTodayDateValue());
+      setCircularFile(null);
+      form.reset();
+      showToast('Examination circular published successfully.', 'success');
+    } catch (error) {
+      console.error('Unable to publish examination circular:', error);
+      if (uploadedPath) {
+        try {
+          const { error: cleanupError } = await supabase.storage
+            .from(CIRCULARS_BUCKET)
+            .remove([uploadedPath]);
+          if (cleanupError) console.error('Unable to clean up the uploaded PDF after publishing failed:', cleanupError);
+        } catch (cleanupError) {
+          console.error('Unable to clean up the uploaded PDF after publishing failed:', cleanupError);
+        }
+      }
+      showToast(error.message || 'Unable to publish the examination circular.', 'error');
+    } finally {
+      setIsUploadingCircular(false);
+    }
+  };
+
+  const handleDeleteCircular = async (circular) => {
+    if (!window.confirm(`Remove "${circular.title}" from the public examination page?`)) return;
+
+    setDeletingCircularId(circular.id);
+    try {
+      const { error } = await supabase
+        .from('examination_circulars')
+        .delete()
+        .eq('id', circular.id);
+      if (error) throw error;
+
+      setCirculars((current) => current.filter((item) => item.id !== circular.id));
+      try {
+        const { error: storageError } = await supabase.storage
+          .from(CIRCULARS_BUCKET)
+          .remove([circular.storage_path]);
+        if (storageError) throw storageError;
+      } catch (storageError) {
+        console.error('Circular was unpublished but its PDF could not be deleted:', storageError);
+        showToast('Circular removed from public view, but its stored PDF could not be deleted.', 'error');
+        return;
+      }
+      showToast('Examination circular removed.', 'success');
+    } catch (error) {
+      console.error('Unable to remove examination circular:', error);
+      showToast(error.message || 'Unable to remove the examination circular.', 'error');
+    } finally {
+      setDeletingCircularId(null);
     }
   };
 
@@ -654,6 +853,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </button>
 
             <button
+              onClick={() => handleTabSelect('examination_circulars')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'examination_circulars' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
+            >
+              <ClipboardList className="w-5 h-5 text-violet-400" />
+              <span>Examination / Circulars</span>
+            </button>
+
+            <button
               onClick={() => handleTabSelect('settings')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'settings' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
             >
@@ -705,6 +912,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               {activeTab === 'dashboard' && <LayoutGrid className="w-6 h-6" />}
               {activeTab === 'fee_records' && <CreditCard className="w-6 h-6" />}
               {activeTab === 'media_gallery' && <ImageIcon className="w-6 h-6" />}
+              {activeTab === 'examination_circulars' && <ClipboardList className="w-6 h-6" />}
               {activeTab === 'settings' && <Settings className="w-6 h-6" />}
               {activeTab === 'help' && <HelpCircle className="w-6 h-6" />}
             </div>
@@ -714,6 +922,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 {activeTab === 'dashboard' && 'Dashboard Overview'}
                 {activeTab === 'fee_records' && 'Fee Records & Receipts'}
                 {activeTab === 'media_gallery' && 'Media Gallery Moderation'}
+                {activeTab === 'examination_circulars' && 'Examination / Circulars Management'}
                 {activeTab === 'settings' && 'System & Portal Settings'}
                 {activeTab === 'help' && 'Help & Admin Support'}
               </h1>
@@ -1393,12 +1602,144 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </div>
           )}
 
+          {/* ---------------- EXAMINATION CIRCULARS TAB ---------------- */}
+          {activeTab === 'examination_circulars' && (
+            <div className="space-y-6">
+              <section className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                <div className="mb-5">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Examination / Circulars Management</h2>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Publish PDF circulars to the public Examination page. PDFs are limited to 10 MB.
+                  </p>
+                </div>
+
+                <form onSubmit={handleUploadCircular} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="md:col-span-2">
+                    <label htmlFor="circular-title" className="mb-1 block text-xs font-bold uppercase text-slate-500">Circular Title</label>
+                    <input
+                      id="circular-title"
+                      type="text"
+                      required
+                      maxLength={180}
+                      value={circularTitle}
+                      onChange={(event) => setCircularTitle(event.target.value)}
+                      placeholder="For example: Intermediate Annual-I Date Sheet"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="circular-publish-date" className="mb-1 block text-xs font-bold uppercase text-slate-500">Publish Date</label>
+                    <input
+                      id="circular-publish-date"
+                      type="date"
+                      required
+                      value={circularPublishDate}
+                      onChange={(event) => setCircularPublishDate(event.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="circular-file" className="mb-1 block text-xs font-bold uppercase text-slate-500">PDF File</label>
+                    <input
+                      id="circular-file"
+                      type="file"
+                      required
+                      accept=".pdf,application/pdf"
+                      onChange={(event) => setCircularFile(event.target.files?.[0] || null)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3 md:col-span-2">
+                    <span className="truncate text-xs text-slate-500">
+                      {circularFile ? `${circularFile.name} (${(circularFile.size / (1024 * 1024)).toFixed(2)} MB)` : 'Select a PDF file (maximum 10 MB).'}
+                    </span>
+                    <button
+                      type="submit"
+                      disabled={isUploadingCircular}
+                      className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <FileUp className="h-4 w-4" />
+                      {isUploadingCircular ? 'Publishing…' : 'Publish Circular'}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Published Examination Circulars</h3>
+                    <p className="mt-1 text-xs text-slate-500">These files are available to all visitors on the Examination page.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCircularRefreshKey((key) => key + 1)}
+                    disabled={circularsLoading}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${circularsLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+
+                {circularsLoading ? (
+                  <p role="status" className="p-6 text-sm text-slate-500">Loading circulars…</p>
+                ) : circularsError ? (
+                  <div role="alert" className="p-6 text-sm text-rose-700">
+                    <p>Unable to load examination circulars: {circularsError}</p>
+                  </div>
+                ) : circulars.length === 0 ? (
+                  <p className="p-6 text-sm text-slate-500">No examination circulars have been published.</p>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {circulars.map((circular) => {
+                      const fileUrl = supabase.storage
+                        .from(CIRCULARS_BUCKET)
+                        .getPublicUrl(circular.storage_path).data.publicUrl;
+                      return (
+                        <div key={circular.id} className="flex flex-wrap items-center justify-between gap-4 p-4 sm:px-6">
+                          <div className="min-w-0">
+                            <p className="break-words text-sm font-bold text-slate-900 dark:text-white">{circular.title}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              Published {new Date(`${circular.publish_date}T00:00:00`).toLocaleDateString()} · {circular.file_name}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50 dark:border-slate-700 dark:text-teal-300 dark:hover:bg-slate-800"
+                            >
+                              View PDF
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCircular(circular)}
+                              disabled={deletingCircularId === circular.id}
+                              aria-label={`Remove ${circular.title}`}
+                              className="rounded-lg border border-rose-200 p-2 text-rose-700 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950"
+                            >
+                              {deletingCircularId === circular.id
+                                ? <RefreshCw className="h-4 w-4 animate-spin" />
+                                : <Trash2 className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
           {/* ---------------- SETTINGS TAB ---------------- */}
           {activeTab === 'settings' && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Credentials & College Settings</h2>
-                <p className="text-xs text-slate-500">Update your security passkeys, institutional information, and principal desk message.</p>
+                <p className="text-xs text-slate-500">Update your Supabase admin email, optional password, institutional information, and principal desk message.</p>
               </div>
 
               {settingsSaved && (
@@ -1435,21 +1776,25 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Username</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Email</label>
                     <input 
-                      type="text" 
+                      type="email"
+                      required
                       value={adminName} 
                       onChange={(e) => setAdminName(e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Password</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">New Admin Password</label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
+                        autoComplete="new-password"
+                        minLength={8}
+                        placeholder="Leave blank to keep current password"
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 pr-12 py-2.5 text-sm font-semibold"
                       />
                       <button
@@ -1462,6 +1807,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    <p className="mt-1 text-[11px] text-slate-500">Leave blank to keep the current password. New passwords must be at least 8 characters.</p>
                   </div>
                 </div>
 

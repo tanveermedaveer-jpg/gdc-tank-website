@@ -1,15 +1,61 @@
-import { Download, Landmark, FileText, CheckSquare, ShieldAlert } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Download, Landmark, FileText, CheckSquare, ShieldAlert, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import campusImg from '../assets/campus.png';
+import { CIRCULARS_BUCKET, supabase } from '../lib/supabase';
 
 export default function Examination() {
-  const { t } = useLanguage();
-  const downloads = [
-    { name: 'BISE DI Khan Intermediate Date Sheet (HSSC Annual-I 2026)', size: '1.2 MB', date: 'Aug 18, 2026' },
-    { name: 'Gomal University BS Semester-I & III Date Sheet 2026', size: '950 KB', date: 'Aug 15, 2026' },
-    { name: 'Internal Assessment Criteria & Quiz Policy Guidelines', size: '420 KB', date: 'Aug 01, 2026' },
-    { name: 'HSSC Inter-I & II Registration Form 2026', size: '2.5 MB', date: 'July 25, 2026' }
-  ];
+  const { t, language } = useLanguage();
+  const [circulars, setCirculars] = useState([]);
+  const [isLoadingCirculars, setIsLoadingCirculars] = useState(Boolean(supabase));
+  const [circularsError, setCircularsError] = useState(
+    supabase ? '' : 'Circulars are temporarily unavailable because this service is not configured.'
+  );
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const loadCirculars = useCallback(async (isActive = () => true) => {
+    if (!supabase) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('examination_circulars')
+        .select('id, title, publish_date, storage_path, file_name')
+        .order('publish_date', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      if (!isActive()) return;
+      setCirculars(data || []);
+      setCircularsError('');
+    } catch (error) {
+      if (!isActive()) return;
+      console.error('Unable to load examination circulars:', error);
+      setCircularsError('Circulars could not be loaded. Please try again.');
+    } finally {
+      if (isActive()) setIsLoadingCirculars(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!supabase) return undefined;
+
+    const channel = supabase
+      .channel('public-examination-circulars')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'examination_circulars'
+      }, () => loadCirculars(() => isMounted))
+      .subscribe();
+    Promise.resolve().then(() => {
+      if (isMounted) loadCirculars(() => isMounted);
+    });
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [loadCirculars, reloadKey]);
 
   return (
     <div className="flex-grow">
@@ -120,31 +166,75 @@ export default function Examination() {
                 </h4>
                 <p className="text-xs leading-relaxed">
                   {t('home') === 'ہوم' ? (
-                    'ڈیٹ شیٹ اور امتحانی نتائج سرکاری طور پر BISE DI Khan اور گومل یونیورسٹی کی ویب سائٹس پر شائع کیے جاتے ہیں۔ نیچے دیئے گئے لنکس طلباء کی سہولت کے لیے ہیں۔'
+                    'ڈیٹ شیٹ اور امتحانی نتائج سرکاری طور پر BISE DI Khan اور گومل یونیورسٹی کی ویب سائٹس پر شائع کیے جاتے ہیں۔ کالج کے امتحانی سرکلر اسی صفحے پر انتظامیہ کے ذریعے شائع کیے جاتے ہیں۔'
                   ) : (
-                    'Date sheets and results are officially published on BISE DI Khan and Gomal University websites. The download links provided below are local mirrors for student convenience.'
+                    'Date sheets and results are officially published on the BISE D.I. Khan and Gomal University websites. College examination circulars are published here by the administration.'
                   )}
                 </p>
               </div>
 
-              {/* Downloads list */}
+              {/* Published circulars */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
                 <h3 className="text-lg font-bold text-blue-950 font-serif border-b border-slate-200 pb-3 flex items-center">
                   <FileText className="w-5 h-5 text-teal-650 mr-2" />
                   {t('circularDownloads')}
                 </h3>
                 <div className="mt-4 space-y-4">
-                  {downloads.map((dl, idx) => (
-                    <div key={idx} className="bg-white p-3 rounded-lg border border-slate-100 flex justify-between items-start group shadow-sm hover:shadow transition-shadow">
-                      <div>
-                        <span className="font-bold text-xs sm:text-sm text-slate-800 block leading-tight">{dl.name}</span>
-                        <span className="text-[10px] text-slate-400 block mt-1">Size: {dl.size} | Published: {dl.date}</span>
-                      </div>
-                      <button className="bg-teal-50 group-hover:bg-teal-650 group-hover:text-white p-2 rounded-lg text-teal-700 transition-colors">
-                        <Download className="w-4 h-4" />
+                  {isLoadingCirculars ? (
+                    <p role="status" className="text-sm text-slate-500">
+                      {language === 'ur' ? 'سرکلر لوڈ ہو رہے ہیں...' : 'Loading examination circulars…'}
+                    </p>
+                  ) : circularsError ? (
+                    <div role="alert" className="flex flex-wrap items-center justify-between gap-3 text-sm text-rose-700">
+                      <span>{circularsError}</span>
+                      <button
+                        type="button"
+                        disabled={!supabase}
+                        onClick={() => {
+                          setIsLoadingCirculars(true);
+                          setReloadKey(key => key + 1);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-lg border border-rose-200 px-3 py-2 font-semibold hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        {language === 'ur' ? 'دوبارہ کوشش کریں' : 'Retry'}
                       </button>
                     </div>
-                  ))}
+                  ) : circulars.length === 0 ? (
+                    <p className="text-sm text-slate-500">
+                      {language === 'ur' ? 'فی الحال کوئی امتحانی سرکلر شائع نہیں ہوا۔' : 'No examination circulars have been published yet.'}
+                    </p>
+                  ) : circulars.map((circular) => {
+                    const fileUrl = supabase.storage
+                      .from(CIRCULARS_BUCKET)
+                      .getPublicUrl(circular.storage_path).data.publicUrl;
+                    const publishedDate = new Date(`${circular.publish_date}T00:00:00`)
+                      .toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-PK', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      });
+
+                    return (
+                      <div key={circular.id} className="bg-white p-3 rounded-lg border border-slate-100 flex justify-between items-start gap-3 group shadow-sm hover:shadow transition-shadow">
+                        <div className="min-w-0">
+                          <span className="font-bold text-xs sm:text-sm text-slate-800 block leading-tight break-words">{circular.title}</span>
+                          <span className="text-[10px] text-slate-400 block mt-1">
+                            {language === 'ur' ? 'تاریخ اشاعت:' : 'Published:'} {publishedDate}
+                          </span>
+                        </div>
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`${language === 'ur' ? 'سرکلر کھولیں' : 'Open circular'}: ${circular.title}`}
+                          className="bg-teal-50 group-hover:bg-teal-650 group-hover:text-white p-2 rounded-lg text-teal-700 transition-colors shrink-0"
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

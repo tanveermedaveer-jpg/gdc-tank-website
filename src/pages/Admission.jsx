@@ -135,7 +135,7 @@ export default function Admission() {
                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm sm:text-base">
                   {isUrdu 
                     ? 'گورنمنٹ کیپٹن اشفاق شہید ڈگری کالج، ٹانک میں داخلے خالصتاً میرٹ کی بنیاد پر ہائر ایجوکیشن ڈیپارٹمنٹ (HED)، حکومتِ خیبر پختونخوا کی جاری کردہ پالیسی کے مطابق ہوتے ہیں۔'
-                    : 'Admissions to Captain. Ashfaq Shaheed Degree College, Tank are strictly based on merit, conforming to the policy rules issued by the Higher Education Department (HED), Government of Khyber Pakhtunkhwa.'}
+                    : 'Admissions to Captain Ashfaq Shaheed Degree College, Tank are strictly based on merit, conforming to the policy rules issued by the Higher Education Department (HED), Government of Khyber Pakhtunkhwa.'}
                 </p>
               </div>
 

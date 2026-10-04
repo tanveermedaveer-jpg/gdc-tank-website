@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Lock, ArrowLeft, Eye, EyeOff, X } from 'lucide-react';
 import campusImg from '../assets/campus.png';
+import { isAdminUser, isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -11,43 +12,58 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Redirect automatically if user is already logged in
   useEffect(() => {
-    const isLoggedIn = (localStorage.getItem('casdct_is_logged_in') || '').trim() === 'true';
-    if (isLoggedIn) {
-      const targetPath = location.state?.from?.pathname || '/admin';
-      navigate(targetPath, { replace: true });
-    }
-  }, [navigate, location]);
+    localStorage.removeItem('casdct_is_logged_in');
+    localStorage.removeItem('casdct_admin_name');
+    localStorage.removeItem('casdct_admin_pass');
+    if (!supabase) return;
 
-  // Set default admin credentials on mount if not present
-  useEffect(() => {
-    const storedAdminName = localStorage.getItem('casdct_admin_name');
-    const storedAdminPass = localStorage.getItem('casdct_admin_pass');
-    if (!storedAdminName || !storedAdminName.trim()) {
-      localStorage.setItem('casdct_admin_name', 'Shabir Ahmad');
-    }
-    if (!storedAdminPass || !storedAdminPass.trim()) {
-      localStorage.setItem('casdct_admin_pass', '122011577');
-    }
-  }, []);
+    let isMounted = true;
+    supabase.auth.getSession()
+      .then(({ data, error: sessionError }) => {
+        if (sessionError) throw sessionError;
+        if (isMounted && isAdminUser(data.session?.user)) {
+          const targetPath = location.state?.from?.pathname || '/admin';
+          navigate(targetPath, { replace: true });
+        }
+      })
+      .catch((sessionError) => {
+        if (isMounted) setError(`Unable to check your session: ${sessionError.message}`);
+      });
 
-  const handleLogin = (e) => {
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate, location.state]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    
-    // Read current credentials from localStorage (fallback to defaults)
-    const storedAdminName = (localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad').trim();
-    const storedAdminPass = (localStorage.getItem('casdct_admin_pass') || '122011577').trim();
+    if (!supabase) {
+      setError('Admin login is not configured yet. Please contact the site administrator.');
+      return;
+    }
 
-    if (username.trim() === storedAdminName && password.trim() === storedAdminPass) {
+    try {
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+        email: username.trim(),
+        password
+      });
+      if (loginError) throw loginError;
+      if (!isAdminUser(data.user)) {
+        await supabase.auth.signOut();
+        setError('This account is not authorized to access the admin dashboard.');
+        setPassword('');
+        return;
+      }
+
       setError('');
       setUsername('');
       setPassword('');
-      localStorage.setItem('casdct_is_logged_in', 'true');
       const targetPath = location.state?.from?.pathname || '/admin';
       navigate(targetPath, { replace: true });
-    } else {
-      setError('Invalid Username or Password');
+    } catch (loginError) {
+      console.error('Admin sign-in failed:', loginError);
+      setError(loginError.message || 'Unable to sign in. Please try again.');
       setPassword('');
     }
   };
@@ -89,9 +105,15 @@ export default function Login() {
             </div>
             <h1 className="text-2xl font-bold text-blue-950 font-serif">Login to your account</h1>
             <p className="text-slate-500 text-xs sm:text-sm mt-2 leading-relaxed">
-              Login with your Username & Password
+              Login with your admin email and password
             </p>
           </div>
+
+          {!isSupabaseConfigured && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold p-3.5 rounded-xl mb-5 text-center">
+              Admin sign-in is not configured. Add the Supabase project URL and public key to the deployment environment.
+            </div>
+          )}
 
           {error && (
             <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold p-3.5 rounded-xl mb-5 text-center">
@@ -99,17 +121,18 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
+          <form onSubmit={handleLogin} className="space-y-5" autoComplete="on">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">NAME *</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ADMIN EMAIL *</label>
               <input 
-                type="text" 
+                type="email"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                autoComplete="new-username"
+                autoComplete="username"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-800 font-medium"
-                placeholder="Enter Your Name"
+                placeholder="Enter admin email"
+                disabled={!isSupabaseConfigured}
               />
             </div>
 
@@ -121,9 +144,10 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-800 font-medium"
                   placeholder="Enter Password"
+                  disabled={!isSupabaseConfigured}
                 />
                 <button 
                   type="button" 
@@ -137,6 +161,7 @@ export default function Login() {
 
             <button 
               type="submit"
+              disabled={!isSupabaseConfigured}
               className="bg-teal-700 hover:bg-teal-800 text-white w-full py-2.5 rounded-md font-bold transition-colors text-sm uppercase tracking-wider shadow-md"
             >
               LOGIN

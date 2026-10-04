@@ -14,3 +14,24 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the Oxlint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+
+## Admin authentication and examination circulars
+
+Admin sign-in and shared examination circular publishing use Supabase. Public visitors can read published circulars; uploading and deleting circulars requires a Supabase Auth account with the `admin` application-metadata role.
+
+1. Create a Supabase project and run [`supabase/setup.sql`](./supabase/setup.sql) in its SQL Editor.
+2. Create the initial admin account in **Authentication → Users**. Disable public sign-ups in the Supabase Auth settings.
+3. In the SQL Editor, assign the admin role to that account, replacing the email:
+
+   ```sql
+   update auth.users
+   set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb)
+     || '{"role":"admin"}'::jsonb
+   where email = 'admin@example.edu';
+   ```
+
+   Sign in again after changing the role so Supabase issues a fresh token.
+4. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the project's URL and public anon/publishable key. Never put a Supabase service-role key in the client or repository.
+5. Set the same two variables in the production hosting environment (for example, Vercel project settings), then redeploy the site.
+
+The SQL setup creates the circular metadata table, public read policies, admin-only write/delete policies, and the public `examination-circulars` storage bucket. PDF uploads are limited to 10 MB. The Settings page updates the signed-in admin's Supabase email and password; leave the new-password field empty to keep the existing password. Email changes may require confirmation through the link Supabase sends.

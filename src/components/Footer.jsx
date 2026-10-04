@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, ChevronRight, GraduationCap, X } from 'lucide-react';
-import { FaFacebookF, FaXTwitter, FaInstagram, FaUserShield } from 'react-icons/fa6';
+import { FaFacebookF, FaXTwitter, FaInstagram } from 'react-icons/fa6';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -50,7 +50,7 @@ export default function Footer() {
           <div className="flex items-center space-x-3">
             <img src={logoImg} alt="College Logo" className="h-12 w-12 rounded-full border border-teal-500 object-cover" />
             <div>
-              <h4 className="text-white font-bold leading-tight font-serif">{t('home') === 'ہوم' ? 'کیپٹن اشفاق شہید' : 'Capt. Ashfaq Shaheed'}</h4>
+              <h4 className="text-white font-bold leading-tight font-serif">{t('home') === 'ہوم' ? 'کیپٹن اشفاق شہید' : 'Captain Ashfaq Shaheed'}</h4>
               <p className="text-teal-500 text-xs font-semibold uppercase tracking-wider">{t('home') === 'ہوم' ? 'ڈگری کالج، ٹانک' : 'Degree College, Tank'}</p>
             </div>
           </div>
@@ -58,7 +58,7 @@ export default function Footer() {
             {t('home') === 'ہوم' ? (
               'ٹانک کے تاریخی خطے میں معیاری تعلیم کی فراہمی کے لیے قائم کیا گیا۔ نسلوں کو تعلیمی فضیلت، ڈسپلن اور حب الوطنی کی ترغیب دینے کے لیے کیپٹن اشفاق شہید (ملٹری میڈل/شہید) کی یاد میں نامزد کیا گیا۔'
             ) : (
-              'Established to provide quality education in the historic region of Tank. Named in memory of Captain Captain Ashfaq Shaheed (Military Medal/Martyr) to inspire generations toward academic excellence, discipline, and patriotism.'
+              'Established to provide quality education in the historic region of Tank. Named in memory of Captain Ashfaq Shaheed (Military Medal/Martyr) to inspire generations toward academic excellence, discipline, and patriotism.'
             )}
           </p>
           <div className="flex space-x-4 pt-2">
@@ -244,7 +244,7 @@ export default function Footer() {
       {/* Bottom Copyright bar */}
       <div className="bg-slate-980 py-6 border-t border-slate-900 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
-          <span>&copy; {currentYear} Captain. Ashfaq Shaheed Degree College, Tank. {t('allRightsReserved')}</span>
+          <span>&copy; {currentYear} Captain Ashfaq Shaheed Degree College, Tank. {t('allRightsReserved')}</span>
           <span className="flex items-center space-x-4 flex-wrap justify-center">
             <button 
               onClick={() => setIsPrivacyOpen(true)} 
@@ -261,17 +261,6 @@ export default function Footer() {
             </button>
             <span>|</span>
 
-            {/* Admin Portal Link */}
-            <Link 
-              to="/login" 
-              title="Admin Login" 
-              aria-label="Admin Login" 
-              className="text-slate-500 hover:text-white hover:scale-110 transition-all duration-200 flex items-center justify-center"
-            >
-              <FaUserShield className="w-4.5 h-4.5" />
-            </Link>
-            <span>|</span>
-            
             {/* Language Selector Dropdown */}
             <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-400 hover:text-white transition-colors duration-200">
               <span className="text-[14px]">🌐</span>
@@ -300,7 +289,7 @@ export default function Footer() {
             </button>
             <div className="pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
               <h3 className="text-lg font-bold font-serif text-blue-950 dark:text-white">{t('privacyPolicy')}</h3>
-              <p className="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider mt-0.5">{t('gdcTank') === 'جی ڈی سی ٹانک' ? 'کالـج کیپٹن اشفاق شہید، ٹانک' : 'Capt. Ashfaq Shaheed Degree College, Tank'}</p>
+              <p className="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider mt-0.5">{t('gdcTank') === 'جی ڈی سی ٹانک' ? 'کالـج کیپٹن اشفاق شہید، ٹانک' : 'Captain Ashfaq Shaheed Degree College, Tank'}</p>
             </div>
             <div className="space-y-4 text-xs sm:text-sm leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
               <div>

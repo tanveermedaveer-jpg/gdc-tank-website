@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, LogIn, Sun, Moon } from 'lucide-react';
+import { Menu, X, ChevronDown, Sun, Moon } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -67,7 +67,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
                 />
                 <div className="flex flex-col justify-center">
                   <span className="text-blue-950 dark:text-slate-100 font-bold leading-none tracking-tight text-sm sm:text-base md:text-lg font-serif">
-                    {t('home') === 'ہوم' ? 'کیپٹن اشفاق شہید' : 'Capt. Ashfaq Shaheed'}
+                    {t('home') === 'ہوم' ? 'کیپٹن اشفاق شہید' : 'Captain Ashfaq Shaheed'}
                   </span>
                   <span className="text-teal-700 dark:text-teal-400 text-[10px] sm:text-[11px] font-semibold tracking-wide uppercase mt-1">
                     {t('home') === 'ہوم' ? 'ڈگری کالج، ٹانک' : 'Degree College, Tank'}

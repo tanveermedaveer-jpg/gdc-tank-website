@@ -88,7 +88,7 @@ export default function History() {
                     Captain Ashfaq Shaheed was a brave military officer of the Pakistan Army who demonstrated exemplary courage, leadership, and dedication during his service. He hailed from the region and was known for his steadfast character.
                   </p>
                   <p>
-                    He laid down his life in the line of duty, defending the sovereignty of the state. In recognition of his valor, patriotism, and supreme sacrifice, the Government of Khyber Pakhtunkhwa renamed the premier government educational institute of Tank District as the <strong>Captain. Ashfaq Shaheed Degree College, Tank</strong>.
+                    He laid down his life in the line of duty, defending the sovereignty of the state. In recognition of his valor, patriotism, and supreme sacrifice, the Government of Khyber Pakhtunkhwa renamed the premier government educational institute of Tank District as                     the <strong>Captain Ashfaq Shaheed Degree College, Tank</strong>.
                   </p>
                   <h3 className="text-xl font-bold text-slate-800 font-serif pt-4">Legacy in Education</h3>
                   <p>

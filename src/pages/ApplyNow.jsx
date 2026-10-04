@@ -1,14 +1,13 @@
 import { useState, useMemo } from 'react';
 import { 
   ShieldCheck, CheckCircle2, ChevronRight, FileText, User, 
-  GraduationCap, Clipboard, CreditCard, Upload, AlertCircle, FileCheck
+  GraduationCap, Clipboard, CreditCard, Upload, AlertCircle, FileCheck, Layers
 } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function ApplyNow() {
   const { t } = useLanguage();
-  const isUrdu = t('home') === 'ہوم';
 
   const [formData, setFormData] = useState({
     studentName: '',
@@ -51,7 +50,7 @@ export default function ApplyNow() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Fee Slip File Upload
+  // Handle Fee Slip Upload
   const handleFeeSlipUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -73,7 +72,10 @@ export default function ApplyNow() {
       const randomNum = Math.floor(10200 + Math.random() * 800);
       const generatedId = `STU-${randomNum}`;
       const meritValue = calculatedMerit ? parseFloat(calculatedMerit) : 0;
-      const marksText = `${formData.interObtainedMarks}/${formData.interTotalMarks}`;
+
+      const marksText = formData.interObtainedMarks && formData.interTotalMarks 
+        ? `${formData.interObtainedMarks}/${formData.interTotalMarks}` 
+        : 'N/A';
 
       const newRecord = {
         regId: generatedId,
@@ -94,8 +96,6 @@ export default function ApplyNow() {
         interPassingYear: formData.interPassingYear,
         interObtainedMarks: formData.interObtainedMarks,
         interTotalMarks: formData.interTotalMarks,
-        matricMarks: Number(formData.interObtainedMarks || 0),
-        matricTotal: Number(formData.interTotalMarks || 1100),
         marksText: marksText,
         meritPct: meritValue,
         paymentMethod: formData.paymentMethod,
@@ -219,7 +219,7 @@ export default function ApplyNow() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* Left Side: Admission Registration Form */}
+              {/* Left Side: Admission Form */}
               <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg">
                 
                 {/* Form Header */}
@@ -252,20 +252,21 @@ export default function ApplyNow() {
                         name="program" value={formData.program} onChange={handleChange}
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white cursor-pointer shadow-sm"
                       >
-                        <optgroup label="BS Undergraduate Degree Programs (4-Year)">
-                          <option value="BS Computer Science">BS Computer Science (4-Year)</option>
-                          <option value="BS Physics">BS Physics (4-Year)</option>
-                          <option value="BS Chemistry">BS Chemistry (4-Year)</option>
-                          <option value="BS English">BS English (4-Year)</option>
-                          <option value="BS Mathematics">BS Mathematics (4-Year)</option>
-                        </optgroup>
-                        <optgroup label="Intermediate Programs (HSSC)">
-                          <option value="FSC Pre-Medical">FSC Pre-Medical (HSSC)</option>
-                          <option value="FSC Pre-Engineering">FSC Pre-Engineering (HSSC)</option>
-                          <option value="ICS (Computer Science)">ICS Computer Science (HSSC)</option>
-                          <option value="FA (Arts & Humanities)">FA Arts & Humanities (HSSC)</option>
-                        </optgroup>
+                        <option value="BS Computer Science">BS Computer Science (4-Year)</option>
+                        <option value="BS Physics">BS Physics (4-Year)</option>
+                        <option value="BS Chemistry">BS Chemistry (4-Year)</option>
+                        <option value="BS English">BS English (4-Year)</option>
+                        <option value="BS Mathematics">BS Mathematics (4-Year)</option>
+                        <option value="FSC Pre-Medical">FSC Pre-Medical (HSSC)</option>
+                        <option value="FSC Pre-Engineering">FSC Pre-Engineering (HSSC)</option>
+                        <option value="ICS (Computer Science)">ICS Computer Science (HSSC)</option>
+                        <option value="FA (Arts & Humanities)">FA Arts & Humanities (HSSC)</option>
                       </select>
+                      
+                      <div className="mt-2 text-[11px] text-teal-700 dark:text-teal-400 font-semibold flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Showing Intermediate to BS program offerings for Government Degree College Tank.</span>
+                      </div>
                     </div>
                   </div>
 
@@ -380,12 +381,14 @@ export default function ApplyNow() {
                     </div>
                   </div>
 
-                  {/* STEP 3: INTERMEDIATE (F.Sc / HSSC) ACADEMIC DETAILS SECTION (PRIMARY ACADEMIC SECTION) */}
-                  <div className="space-y-5">
+                  {/* STEP 3: INTERMEDIATE (F.Sc / HSSC) ACADEMIC DETAILS SECTION */}
+                  <div className="space-y-6">
+                    
+                    {/* Header with Calculated Merit Indicator */}
                     <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                       <h3 className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center">
                         <GraduationCap className="w-4 h-4 mr-2" />
-                        Step 3: Intermediate (F.Sc / HSSC) Academic Details & Merit Score
+                        Step 3: Intermediate Academic Details & Merit Score
                       </h3>
                       {calculatedMerit && (
                         <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
@@ -396,6 +399,16 @@ export default function ApplyNow() {
                     </div>
 
                     <div className="space-y-4 bg-teal-50/50 dark:bg-slate-800/60 p-5 rounded-2xl border border-teal-200/60 dark:border-slate-700">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-teal-800 dark:text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                          Intermediate (F.Sc / HSSC) Academic Details
+                        </h4>
+                        <span className="text-[10px] font-bold bg-teal-600 text-white px-2.5 py-0.5 rounded-md uppercase">
+                          Mandatory Academic Record
+                        </span>
+                      </div>
+
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                         <div>
                           <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
@@ -452,6 +465,7 @@ export default function ApplyNow() {
                         </div>
                       </div>
                     </div>
+
                   </div>
 
                   {/* STEP 4: PAYMENT DETAILS SECTION */}
@@ -553,11 +567,11 @@ export default function ApplyNow() {
                   <ul className="space-y-4 text-right text-xs sm:text-sm text-slate-200 leading-relaxed" dir="rtl">
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
-                      <span>آن لائن ایڈمیشن فارم میں تمام معلوماتی خانے درست اور انٹرمیڈیٹ سند کے مطابق پر کریں۔</span>
+                      <span>آن لائن ایڈمیشن فارم میں تمام معلوماتی خانے درست اور تعلیمی اسناد کے مطابق پر کریں۔</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
-                      <span>بی ایس اور انٹرمیڈیٹ پروگرامز کے لیے انٹر نمبرات کا درست اندراج لازمی ہے۔</span>
+                      <span>بی ایس اور انٹرمیڈیٹ پروگرامز کے لیے انٹرمیڈیٹ تعلیمی ریکارڈ اور حاصل کردہ نمبرات درج کرنا لازمی ہے۔</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>

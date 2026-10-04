@@ -38,6 +38,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   // Active Sidebar Tab: 'admissions' | 'dashboard' | 'fee_records' | 'media_gallery' | 'settings' | 'help'
   const [activeTab, setActiveTab] = useState('admissions');
 
+  // Interactive Sidebar Badge State (Click-to-clear)
+  const [clearedBadges, setClearedBadges] = useState({
+    admissions: false,
+    media_gallery: false
+  });
+
   // Search & Filter State for Table
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('All');
@@ -49,6 +55,25 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const showToast = (msg, type = 'success') => {
     setToastMessage({ text: msg, type });
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Handle Tab Click with Badge Reset
+  const handleTabSelect = (tabKey) => {
+    setActiveTab(tabKey);
+    if (tabKey === 'admissions' || tabKey === 'dashboard') {
+      setClearedBadges(prev => ({ ...prev, admissions: true }));
+    }
+    if (tabKey === 'media_gallery') {
+      setClearedBadges(prev => ({ ...prev, media_gallery: true }));
+    }
+  };
+
+  // Handle Search Input Change (Works from both top navbar and dashboard table search bars)
+  const handleSearchChange = (value) => {
+    setSearchQuery(value);
+    if (value.trim() && activeTab !== 'admissions' && activeTab !== 'dashboard') {
+      setActiveTab('admissions');
+    }
   };
 
   // 1. Admissions List State (Defaults to 7 rows from mockup)
@@ -226,7 +251,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     const sName = localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad';
     const sPass = localStorage.getItem('casdct_admin_pass') || '122011577';
     const sPName = localStorage.getItem('casdct_principal_name') || 'Prof. Shabir Ahmad';
-    const sPMessage = localStorage.getItem('casdct_principal_message') || 'It is a matter of great pride and privilege to welcome you to Captain. Ashfaq Shaheed Degree College, Tank.';
+    const sPMessage = localStorage.getItem('casdct_principal_message') || 'It is a matter of great pride and privilege to welcome you to Government Degree College, Tank.';
     const sPImg = localStorage.getItem('casdct_principal_image') || principalImg;
     const sPhone = localStorage.getItem('casdct_college_phone') || '+92 (0963) 510111';
     const sEmail = localStorage.getItem('casdct_college_email') || 'info@casdct.edu.pk';
@@ -429,7 +454,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               </div>
               <div className="flex flex-col">
                 <span className="text-white font-bold tracking-tight text-lg font-sans">College Admin</span>
-                <span className="text-[10px] text-teal-300/80 font-medium tracking-wider uppercase">CASD College Tank</span>
+                <span className="text-[10px] text-teal-300/80 font-medium tracking-wider uppercase">GDC COLLEGE TANK</span>
               </div>
             </div>
           </div>
@@ -437,7 +462,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
           {/* Navigation Items */}
           <nav className="px-3 py-6 space-y-1.5 font-medium text-sm">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => handleTabSelect('dashboard')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'dashboard' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
             >
               <LayoutGrid className="w-5 h-5 text-teal-400" />
@@ -445,20 +470,22 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </button>
 
             <button
-              onClick={() => setActiveTab('admissions')}
+              onClick={() => handleTabSelect('admissions')}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'admissions' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
             >
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-cyan-400" />
                 <span>Admissions & Merit List</span>
               </div>
-              <span className="bg-cyan-500/30 text-cyan-200 text-xs font-bold px-2 py-0.5 rounded-full border border-cyan-400/40">
-                {pendingAdmissionsCount}
-              </span>
+              {!clearedBadges.admissions && pendingAdmissionsCount > 0 && (
+                <span className="bg-cyan-500/30 text-cyan-200 text-xs font-bold px-2 py-0.5 rounded-full border border-cyan-400/40">
+                  {pendingAdmissionsCount}
+                </span>
+              )}
             </button>
 
             <button
-              onClick={() => setActiveTab('fee_records')}
+              onClick={() => handleTabSelect('fee_records')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'fee_records' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
             >
               <CreditCard className="w-5 h-5 text-emerald-400" />
@@ -466,20 +493,22 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </button>
 
             <button
-              onClick={() => setActiveTab('media_gallery')}
+              onClick={() => handleTabSelect('media_gallery')}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'media_gallery' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
             >
               <div className="flex items-center gap-3">
                 <ImageIcon className="w-5 h-5 text-amber-400" />
                 <span>Media Gallery Moderation</span>
               </div>
-              <span className="bg-amber-500 text-slate-950 text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
-                {pendingMediaCount}
-              </span>
+              {!clearedBadges.media_gallery && pendingMediaCount > 0 && (
+                <span className="bg-amber-500 text-slate-950 text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                  {pendingMediaCount}
+                </span>
+              )}
             </button>
 
             <button
-              onClick={() => setActiveTab('settings')}
+              onClick={() => handleTabSelect('settings')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'settings' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
             >
               <Settings className="w-5 h-5 text-slate-400" />
@@ -491,7 +520,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         {/* Sidebar Footer / Support & Logout */}
         <div className="p-4 border-t border-[#0d3e52] space-y-1.5 text-sm font-medium">
           <button
-            onClick={() => setActiveTab('help')}
+            onClick={() => handleTabSelect('help')}
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-left ${activeTab === 'help' ? 'bg-[#13485b] text-white font-semibold' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
           >
             <HelpCircle className="w-5 h-5 text-sky-400" />
@@ -541,13 +570,13 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
           {/* Header Controls: Search input, Notification Bell, User Avatar */}
           <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
             
-            {/* Global Search Bar */}
+            {/* Global Top Navbar Search Bar */}
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder="Search Student by Name or ID..."
                 className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl w-48 sm:w-64 focus:outline-none focus:ring-2 focus:ring-teal-500 border border-slate-200 dark:border-slate-700 transition-all"
               />
@@ -662,13 +691,13 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 
                 {/* Left Side Filters */}
                 <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
-                  {/* Table Search */}
+                  {/* Table Search Input */}
                   <div className="relative w-full sm:w-64">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input 
                       type="text" 
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => handleSearchChange(e.target.value)}
                       placeholder="Search Student by Name or ID..."
                       className="w-full bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
                     />
@@ -740,8 +769,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium text-slate-700 dark:text-slate-200">
                       {filteredAdmissions.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="py-8 text-center text-slate-400">
-                            No student admission records found matching your search.
+                          <td colSpan={7} className="py-8 text-center text-slate-400 font-semibold">
+                            No student admission records found matching "{searchQuery}".
                           </td>
                         </tr>
                       ) : (

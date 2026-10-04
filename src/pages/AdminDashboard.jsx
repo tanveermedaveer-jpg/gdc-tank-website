@@ -325,13 +325,22 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   // Action: Approve Media
-  const handleApproveMedia = (mediaId) => {
+  const handleApproveMedia = (mediaId, assignedCategory) => {
     const updated = mediaUploads.map(m => 
-      m.id === mediaId ? { ...m, status: 'approved', isApproved: true } : m
+      m.id === mediaId ? { ...m, status: 'approved', isApproved: true, category: assignedCategory || m.category || 'facilities' } : m
     );
     updateMediaState(updated);
     const item = mediaUploads.find(m => m.id === mediaId);
     showToast(`Approved media item "${item ? item.title : mediaId}"`, 'success');
+  };
+
+  // Action: Change Media Category
+  const handleMediaCategoryChange = (mediaId, newCategory) => {
+    const updated = mediaUploads.map(m =>
+      m.id === mediaId ? { ...m, category: newCategory } : m
+    );
+    updateMediaState(updated);
+    showToast(`Category updated to "${newCategory === 'sports' ? 'Sports' : 'Facilities'}"`, 'success');
   };
 
   // Action: Reject Media
@@ -1115,6 +1124,19 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                           <h4 className="font-bold text-slate-900 dark:text-white text-sm">{media.title}</h4>
                           <p className="text-xs text-slate-500 mt-1">{media.uploadedBy} • {media.size || 'Media'} • {media.uploadedTime || 'Recent'}</p>
                           {media.desc && <p className="text-xs text-slate-400 italic mt-1 line-clamp-2">"{media.desc}"</p>}
+                          
+                          {/* Admin Category Selection Dropdown */}
+                          <div className="mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Assigned Category</label>
+                            <select
+                              value={media.category && (media.category === 'sports' || media.category === 'facilities') ? media.category : 'facilities'}
+                              onChange={(e) => handleMediaCategoryChange(media.id, e.target.value)}
+                              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                            >
+                              <option value="facilities">Facilities</option>
+                              <option value="sports">Sports</option>
+                            </select>
+                          </div>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
@@ -1132,13 +1154,13 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                               <span className="text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/60 px-3 py-1 rounded-full flex items-center gap-1">
                                 <XCircle className="w-3.5 h-3.5" /> Rejected
                               </span>
-                              <button onClick={() => handleApproveMedia(media.id)} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 underline cursor-pointer">
+                              <button onClick={() => handleApproveMedia(media.id, media.category)} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 underline cursor-pointer">
                                 Approve
                               </button>
                             </div>
                           ) : (
                             <>
-                              <button onClick={() => handleApproveMedia(media.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1 cursor-pointer transition-colors">
+                              <button onClick={() => handleApproveMedia(media.id, media.category)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1 cursor-pointer transition-colors">
                                 <Check className="w-3.5 h-3.5" /> Approve
                               </button>
                               <button onClick={() => handleRejectMedia(media.id)} className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1 cursor-pointer transition-colors">

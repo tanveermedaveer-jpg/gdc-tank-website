@@ -14,7 +14,7 @@ export default function Gallery() {
   // Upload Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadTitle, setUploadTitle] = useState('');
-  const [uploadCategory, setUploadCategory] = useState('campus');
+  const [uploadCategory, setUploadCategory] = useState('facilities');
   const [uploadMediaType, setUploadMediaType] = useState('image');
   const [uploadMediaUrl, setUploadMediaUrl] = useState('');
   const [uploadDesc, setUploadDesc] = useState('');
@@ -128,7 +128,6 @@ export default function Gallery() {
 
   const tabLabels = {
     all: t('showAll'),
-    campus: t('campus'),
     facilities: isUrdu ? 'سہولیات' : 'Facilities',
     sports: t('sports')
   };
@@ -171,7 +170,7 @@ export default function Gallery() {
 
             {/* Tabs */}
             <div className="flex flex-wrap gap-2 bg-slate-200/70 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-300/60 dark:border-slate-800">
-              {['all', 'campus', 'facilities', 'sports'].map((tab) => (
+              {['all', 'facilities', 'sports'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -321,7 +320,6 @@ export default function Gallery() {
                       onChange={(e) => setUploadCategory(e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold"
                     >
-                      <option value="campus">Campus</option>
                       <option value="facilities">Facilities</option>
                       <option value="sports">Sports</option>
                     </select>

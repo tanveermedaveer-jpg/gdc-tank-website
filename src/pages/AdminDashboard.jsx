@@ -207,25 +207,30 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [collegeEmail, setCollegeEmail] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
 
+  // Helper: Sort list by merit percentage descending (highest score first)
+  const sortMeritDescending = (list) => {
+    return [...list].sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0));
+  };
+
   // Load from localStorage on mount
   useEffect(() => {
-    // Load Admissions
+    // Load Admissions & sort by merit score descending
     const storedAdmissions = localStorage.getItem('casdct_admissions');
     if (storedAdmissions) {
       try {
         const parsed = JSON.parse(storedAdmissions);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setAdmissions(parsed);
+          setAdmissions(sortMeritDescending(parsed));
         } else {
-          setAdmissions(defaultAdmissions);
-          localStorage.setItem('casdct_admissions', JSON.stringify(defaultAdmissions));
+          setAdmissions(sortMeritDescending(defaultAdmissions));
+          localStorage.setItem('casdct_admissions', JSON.stringify(sortMeritDescending(defaultAdmissions)));
         }
       } catch (err) {
-        setAdmissions(defaultAdmissions);
+        setAdmissions(sortMeritDescending(defaultAdmissions));
       }
     } else {
-      setAdmissions(defaultAdmissions);
-      localStorage.setItem('casdct_admissions', JSON.stringify(defaultAdmissions));
+      setAdmissions(sortMeritDescending(defaultAdmissions));
+      localStorage.setItem('casdct_admissions', JSON.stringify(sortMeritDescending(defaultAdmissions)));
     }
 
     // Load Media Moderation
@@ -271,7 +276,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         try {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            setAdmissions(parsed);
+            setAdmissions(sortMeritDescending(parsed));
           }
         } catch (e) {}
       }
@@ -280,10 +285,11 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     return () => window.removeEventListener('casdct_admission_submitted', handleAdmissionSync);
   }, []);
 
-  // Sync Admissions to localStorage on change
+  // Sync Admissions to localStorage on change (Maintains descending merit order)
   const updateAdmissionsState = (updatedList) => {
-    setAdmissions(updatedList);
-    localStorage.setItem('casdct_admissions', JSON.stringify(updatedList));
+    const sorted = sortMeritDescending(updatedList);
+    setAdmissions(sorted);
+    localStorage.setItem('casdct_admissions', JSON.stringify(sorted));
   };
 
   // Sync Media to localStorage on change

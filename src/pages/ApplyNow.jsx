@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { ShieldCheck, CheckCircle2, ChevronRight, FileText, User, GraduationCap, Clipboard } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { 
+  ShieldCheck, CheckCircle2, ChevronRight, FileText, User, 
+  GraduationCap, Clipboard, CreditCard, Upload, Check, AlertCircle, FileCheck
+} from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function ApplyNow() {
   const { t } = useLanguage();
-  const isUrdu = t('home') === '\u06c1\u0648\u0645';
+  const isUrdu = t('home') === 'ہوم';
 
   const [formData, setFormData] = useState({
     studentName: '',
@@ -17,45 +20,122 @@ export default function ApplyNow() {
     mobile: '',
     email: '',
     address: '',
-    program: 'pre-medical',
+    program: 'BS Computer Science',
     matricBoard: '',
     matricRollNo: '',
     matricPassingYear: '',
     matricObtainedMarks: '',
-    matricTotalMarks: ''
+    matricTotalMarks: '1050',
+    paymentMethod: 'EasyPaisa',
+    trxId: ''
   });
 
+  const [feeSlipFile, setFeeSlipFile] = useState(null);
+  const [feeSlipName, setFeeSlipName] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [regId, setRegId] = useState('');
+  const [submittedStudent, setSubmittedStudent] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setTimeout(() => {
-      const randomNum = Math.floor(1000 + Math.random() * 9000);
-      const generatedId = `CASDCT-2026-${randomNum}`;
-      
-      const storedAdmissions = localStorage.getItem('casdct_admissions');
-      const currentAdmissions = storedAdmissions ? JSON.parse(storedAdmissions) : [];
-      const updatedAdmissions = [
-        ...currentAdmissions,
-        { ...formData, regId: generatedId }
-      ];
-      localStorage.setItem('casdct_admissions', JSON.stringify(updatedAdmissions));
-
-      setRegId(generatedId);
-      setSubmitted(true);
-      
-      setFormData({
-        studentName: '', fatherName: '', dob: '', gender: 'male', cnic: '',
-        domicile: '', mobile: '', email: '', address: '', program: 'pre-medical',
-        matricBoard: '', matricRollNo: '', matricPassingYear: '',
-        matricObtainedMarks: '', matricTotalMarks: ''
-      });
-    }, 800);
-  };
+  // Dynamic Merit Percentage Calculation
+  const calculatedMerit = useMemo(() => {
+    const obt = parseFloat(formData.matricObtainedMarks);
+    const tot = parseFloat(formData.matricTotalMarks);
+    if (obt > 0 && tot > 0 && obt <= tot) {
+      return ((obt / tot) * 100).toFixed(1);
+    }
+    return null;
+  }, [formData.matricObtainedMarks, formData.matricTotalMarks]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Handle Fee Slip File Upload (Convert to Base64 preview)
+  const handleFeeSlipUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFeeSlipName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFeeSlipFile(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    setTimeout(() => {
+      // Auto-generate Unique Student ID in STU-10255 format
+      const randomNum = Math.floor(10200 + Math.random() * 800);
+      const generatedId = `STU-${randomNum}`;
+      const meritValue = calculatedMerit ? parseFloat(calculatedMerit) : 0;
+
+      const newRecord = {
+        regId: generatedId,
+        fullName: formData.studentName,
+        studentName: formData.studentName,
+        fatherName: formData.fatherName,
+        dob: formData.dob,
+        gender: formData.gender,
+        cnic: formData.cnic,
+        domicile: formData.domicile,
+        phone: formData.mobile,
+        mobile: formData.mobile,
+        email: formData.email,
+        address: formData.address,
+        program: formData.program,
+        matricBoard: formData.matricBoard,
+        matricRollNo: formData.matricRollNo,
+        matricPassingYear: formData.matricPassingYear,
+        matricMarks: Number(formData.matricObtainedMarks || 0),
+        matricTotal: Number(formData.matricTotalMarks || 1050),
+        marksText: `${formData.matricObtainedMarks}/${formData.matricTotalMarks}`,
+        meritPct: meritValue,
+        paymentMethod: formData.paymentMethod,
+        trxId: formData.trxId,
+        paymentStatus: formData.trxId ? `Paid - ${formData.paymentMethod} TRX: ${formData.trxId}` : 'Pending Slip',
+        isPaid: Boolean(formData.trxId),
+        feeSlipName: feeSlipName,
+        feeSlipData: feeSlipFile,
+        status: 'pending', // Pending admin verification
+        appliedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      };
+
+      // Save to localStorage admissions collection
+      const storedAdmissions = localStorage.getItem('casdct_admissions');
+      let admissionsArray = [];
+      if (storedAdmissions) {
+        try {
+          admissionsArray = JSON.parse(storedAdmissions);
+        } catch (err) {
+          admissionsArray = [];
+        }
+      }
+      
+      const updatedAdmissions = [newRecord, ...admissionsArray];
+      localStorage.setItem('casdct_admissions', JSON.stringify(updatedAdmissions));
+
+      // Trigger custom window event for real-time Sync with Admin Dashboard
+      window.dispatchEvent(new Event('casdct_admission_submitted'));
+
+      setSubmittedStudent(newRecord);
+      setSubmitted(true);
+      setIsSubmitting(false);
+
+      // Reset form
+      setFormData({
+        studentName: '', fatherName: '', dob: '', gender: 'male', cnic: '',
+        domicile: '', mobile: '', email: '', address: '', program: 'BS Computer Science',
+        matricBoard: '', matricRollNo: '', matricPassingYear: '',
+        matricObtainedMarks: '', matricTotalMarks: '1050',
+        paymentMethod: 'EasyPaisa', trxId: ''
+      });
+      setFeeSlipFile(null);
+      setFeeSlipName('');
+    }, 600);
   };
 
   return (
@@ -64,41 +144,69 @@ export default function ApplyNow() {
       <section className="bg-slate-900 text-white py-16 relative">
         <div className="absolute inset-0 z-0">
           <img src={campusImg} alt="Campus" className="w-full h-full object-cover opacity-20" />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-950 to-teal-955 opacity-90"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-950 to-teal-950 opacity-90"></div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif mb-4">{t('onlineAdmissionReg')}</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif mb-4">
+            {t('onlineAdmissionReg')}
+          </h1>
           <p className="text-teal-300 text-sm sm:text-base font-semibold max-w-xl mx-auto uppercase tracking-wider">
-            {t('academicSession')}
+            {t('academicSession')} • Fall 2026
           </p>
         </div>
       </section>
 
       {/* Main Section */}
-      <section className="bg-white dark:bg-slate-950 py-16">
+      <section className="bg-slate-50 dark:bg-slate-950 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {submitted ? (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-8 sm:p-12 text-center space-y-6 max-w-2xl mx-auto">
-              <div className="w-16 h-16 bg-teal-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-teal-650 mx-auto">
-                <CheckCircle2 className="w-10 h-10" />
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 dark:text-white font-serif">{t('registrationSuccessful')}</h2>
-              
-              <div className="bg-slate-50 dark:bg-slate-805 border border-slate-200 dark:border-slate-700 rounded-xl p-6 text-slate-700 dark:text-slate-300">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">{t('yourAdmissionId')}</span>
-                <span className="text-xl sm:text-2xl font-extrabold text-teal-805 dark:text-teal-400 tracking-wider block mt-1">{regId}</span>
+          {submitted && submittedStudent ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-8 sm:p-12 text-center space-y-6 max-w-2xl mx-auto">
+              <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 className="w-12 h-12" />
               </div>
               
-              <div className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed max-w-md mx-auto space-y-2.5">
-                <p>{t('regDetailsSaved')}</p>
-                <p>{t('bringDocuments')}</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white font-serif">
+                {t('registrationSuccessful')}
+              </h2>
+              
+              <div className="bg-teal-50/70 dark:bg-slate-800/80 border border-teal-200/80 dark:border-slate-700 rounded-2xl p-6 text-slate-700 dark:text-slate-200 space-y-3">
+                <div>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block">
+                    {t('yourAdmissionId')} (Student ID)
+                  </span>
+                  <span className="text-2xl sm:text-3xl font-extrabold text-teal-800 dark:text-teal-400 tracking-wider block mt-1">
+                    {submittedStudent.regId}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t border-teal-200/50 dark:border-slate-700 text-xs sm:text-sm font-semibold">
+                  <div>
+                    <span className="text-slate-400 block text-[11px] uppercase">Program</span>
+                    <span className="text-slate-900 dark:text-white font-bold">{submittedStudent.program}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[11px] uppercase">Merit %</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{submittedStudent.meritPct}%</span>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <span className="inline-flex items-center gap-1.5 bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold text-xs px-3.5 py-1.5 rounded-full border border-amber-300 dark:border-amber-800">
+                    <AlertCircle className="w-4 h-4" /> Verification Status: Pending Admin Approval
+                  </span>
+                </div>
+              </div>
+              
+              <div className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed max-w-md mx-auto space-y-2">
+                <p>Your application has been registered successfully and transmitted to the <strong>GDC Tank Admission Desk</strong>.</p>
+                <p className="text-slate-500">Please bring your original Matric Certificate, CNIC/Form-B, and fee deposit receipt to the college office during merit list display.</p>
               </div>
 
-              <div className="pt-6">
+              <div className="pt-4">
                 <button 
                   onClick={() => setSubmitted(false)}
-                  className="bg-gradient-to-r from-blue-900 to-teal-700 hover:from-blue-955 hover:to-teal-800 text-white font-bold px-8 py-3.5 rounded-xl shadow-md transition-colors"
+                  className="bg-teal-700 hover:bg-teal-800 text-white font-bold px-8 py-3.5 rounded-xl shadow-md transition-colors text-sm"
                 >
                   {t('submitAnotherForm')}
                 </button>
@@ -107,157 +215,200 @@ export default function ApplyNow() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* Left Side: Online Admission Form */}
-              <div className="lg:col-span-2 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 sm:p-10 shadow-md">
-                <div className="flex items-center space-x-3 pb-6 border-b border-slate-200 dark:border-slate-800 mb-8">
-                  <FileText className="w-6 h-6 text-teal-700" />
-                  <h2 className="text-xl sm:text-2xl font-bold text-blue-955 dark:text-slate-100 font-serif">{t('admissionForm')}</h2>
+              {/* Left Side: Online Admission Registration Form */}
+              <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg">
+                <div className="flex items-center space-x-3 pb-6 border-b border-slate-100 dark:border-slate-800 mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-slate-800 text-teal-700 dark:text-teal-400 flex items-center justify-center font-bold">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white font-serif">
+                      {t('admissionForm')}
+                    </h2>
+                    <p className="text-xs text-slate-500">Government Degree College Tank Admission Desk</p>
+                  </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                   
                   {/* PART 1: PERSONAL INFORMATION */}
                   <div className="space-y-5">
-                    <h3 className="text-sm font-bold text-teal-800 dark:text-teal-400 uppercase tracking-wider flex items-center border-b border-slate-200 dark:border-slate-800 pb-2">
-                      <User className="w-4 h-4 mr-1.5" />
+                    <h3 className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <User className="w-4 h-4 mr-2" />
                       {t('personalDetails')}
                     </h3>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('studentName')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('studentName')} *
+                        </label>
                         <input 
                           type="text" name="studentName" value={formData.studentName} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                           placeholder={t('enterFullName')}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('fatherName')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('fatherName')} *
+                        </label>
                         <input 
                           type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                           placeholder={t('enterFatherName')}
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('dateOfBirth')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('dateOfBirth')} *
+                        </label>
                         <input 
                           type="date" name="dob" value={formData.dob} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-650 dark:text-slate-350"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('gender')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('gender')} *
+                        </label>
                         <select 
                           name="gender" value={formData.gender} onChange={handleChange}
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-650 dark:text-slate-350"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium cursor-pointer"
                         >
                           <option value="male">{t('male')}</option>
                           <option value="female">{t('female')}</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('domicileDistrict')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('domicileDistrict')} *
+                        </label>
                         <input 
                           type="text" name="domicile" value={formData.domicile} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                           placeholder={t('enterDomicile')}
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('cnicFormB')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('cnicFormB')} *
+                        </label>
                         <input 
                           type="text" name="cnic" value={formData.cnic} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                          placeholder={t('enterCnic')}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+                          placeholder="e.g. 12201-1234567-1"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('activeMobile')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('activeMobile')} *
+                        </label>
                         <input 
                           type="tel" name="mobile" value={formData.mobile} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                          placeholder={t('enterMobile')}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+                          placeholder="e.g. 0300-1234567"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('emailAddress')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('emailAddress')}
+                        </label>
                         <input 
                           type="email" name="email" value={formData.email} onChange={handleChange}
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                           placeholder={t('enterEmail')}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('residentialAddress')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('residentialAddress')} *
+                        </label>
                         <input 
                           type="text" name="address" value={formData.address} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                           placeholder={t('enterAddress')}
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* PART 2: ACADEMIC BACKGROUND */}
+                  {/* PART 2: ACADEMIC BACKGROUND & MERIT CALCULATION */}
                   <div className="space-y-5">
-                    <h3 className="text-sm font-bold text-teal-800 dark:text-teal-400 uppercase tracking-wider flex items-center border-b border-slate-200 dark:border-slate-800 pb-2">
-                      <GraduationCap className="w-4 h-4 mr-1.5" />
-                      {t('matricDetails')}
-                    </h3>
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <h3 className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center">
+                        <GraduationCap className="w-4 h-4 mr-2" />
+                        {t('matricDetails')} & Merit Score
+                      </h3>
+                      {calculatedMerit && (
+                        <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                          <span>Calculated Merit:</span>
+                          <span className="text-sm font-extrabold">{calculatedMerit}%</span>
+                        </div>
+                      )}
+                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('matricBoard')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('matricBoard')} *
+                        </label>
                         <input 
                           type="text" name="matricBoard" value={formData.matricBoard} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                          placeholder={t('enterBoardName')}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+                          placeholder="BISE Bannu / D.I. Khan"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('matricRollNo')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('matricRollNo')} *
+                        </label>
                         <input 
                           type="text" name="matricRollNo" value={formData.matricRollNo} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
                           placeholder={t('enterRollNo')}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('passingYear')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          {t('passingYear')} *
+                        </label>
                         <input 
                           type="text" name="matricPassingYear" value={formData.matricPassingYear} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
-                          placeholder={t('enterPassYear')}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+                          placeholder="e.g. 2025"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('obtainedMarks')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          Matric Obtained Marks *
+                        </label>
                         <input 
                           type="number" name="matricObtainedMarks" value={formData.matricObtainedMarks} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
-                          placeholder={t('enterObtainedMarks')}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
+                          placeholder="e.g. 850"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('totalMarks')}</label>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          Matric Total Marks *
+                        </label>
                         <input 
                           type="number" name="matricTotalMarks" value={formData.matricTotalMarks} onChange={handleChange} required
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
-                          placeholder={t('enterTotalMarks')}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white"
+                          placeholder="1050 / 1100"
                         />
                       </div>
                     </div>
@@ -265,33 +416,101 @@ export default function ApplyNow() {
 
                   {/* PART 3: PROGRAM OF CHOICE */}
                   <div className="space-y-5">
-                    <h3 className="text-sm font-bold text-teal-800 dark:text-teal-400 uppercase tracking-wider flex items-center border-b border-slate-200 dark:border-slate-800 pb-2">
-                      <Clipboard className="w-4 h-4 mr-1.5" />
+                    <h3 className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <Clipboard className="w-4 h-4 mr-2" />
                       {t('programSelection')}
                     </h3>
                     
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('selectProgram')}</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        {t('selectProgram')} *
+                      </label>
                       <select 
                         name="program" value={formData.program} onChange={handleChange}
-                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-650 dark:text-slate-350"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-900 dark:text-white cursor-pointer"
                       >
-                        <option value="pre-medical">{t('fscPreMedical')}</option>
-                        <option value="pre-engineering">{t('fscPreEngineering')}</option>
-                        <option value="ics">{t('icsComputerScience')}</option>
-                        <option value="fa">{isUrdu ? '\u0627\u06cc\u0641 \u0627\u06d2 (\u0622\u0631\u0679\u0633 / \u06c1\u06cc\u0648\u0645\u06cc\u0646\u06cc\u0679\u06cc\u0632)' : 'FA (Arts / Humanities)'}</option>
-                        <option value="bs-computer-science">{isUrdu ? '\u0628\u06cc \u0627\u06cc \u0633 \u06a9\u0645\u067e\u06cc\u0648\u0679\u0631 \u0633\u0627\u0626\u0646\u0633 (4 \u0633\u0627\u0644)' : 'BS Computer Science (4-Year)'}</option>
-                        <option value="bs-english">{isUrdu ? '\u0628\u06cc \u0627\u06cc \u0633 \u0627\u0646\u06af\u0631\u06cc\u0632\u06cc (4 \u0633\u0627\u0644)' : 'BS English (4-Year)'}</option>
-                        <option value="bs-chemistry">{isUrdu ? '\u0628\u06cc \u0627\u06cc \u0633 \u06a9\u06cc\u0645\u0633\u0679\u0631\u06cc (4 \u0633\u0627\u0644)' : 'BS Chemistry (4-Year)'}</option>
-                        <option value="bs-physics">{isUrdu ? '\u0628\u06cc \u0627\u06cc \u0633 \u0641\u0632\u06a9\u0633 (4 \u0633\u0627\u0644)' : 'BS Physics (4-Year)'}</option>
-                        <option value="bs-zoology">{isUrdu ? '\u0628\u06cc \u0627\u06cc \u0633 \u0632\u0648\u0644\u0648\u062c\u06cc (4 \u0633\u0627\u0644)' : 'BS Zoology (4-Year)'}</option>
-                        <option value="bs-botany">{isUrdu ? '\u0628\u06cc \u0627\u06cc \u0633 \u0628\u0627\u0679\u0646\u06cc (4 \u0633\u0627\u0644)' : 'BS Botany (4-Year)'}</option>
+                        <option value="BS Computer Science">BS Computer Science (4-Year)</option>
+                        <option value="BS Physics">BS Physics (4-Year)</option>
+                        <option value="BS Chemistry">BS Chemistry (4-Year)</option>
+                        <option value="BS English">BS English (4-Year)</option>
+                        <option value="BS Mathematics">BS Mathematics (4-Year)</option>
+                        <option value="FSC Pre-Medical">FSC Pre-Medical (HSSC)</option>
+                        <option value="FSC Pre-Engineering">FSC Pre-Engineering (HSSC)</option>
+                        <option value="ICS (Computer Science)">ICS Computer Science (HSSC)</option>
+                        <option value="FA (Arts & Humanities)">FA Arts & Humanities (HSSC)</option>
+                        <option value="Matric">Matric Science / SSC</option>
                       </select>
                     </div>
                   </div>
 
-                  <div className="bg-teal-50 dark:bg-slate-800 border border-teal-150 dark:border-slate-700 p-4 rounded-xl text-teal-900 dark:text-teal-200 text-xs sm:text-sm flex items-start">
-                    <ShieldCheck className="w-5 h-5 text-teal-700 dark:text-teal-450 mr-2.5 flex-shrink-0 mt-0.5" />
+                  {/* PART 4: PAYMENT DETAILS SECTION */}
+                  <div className="space-y-5">
+                    <h3 className="text-xs font-bold text-teal-700 dark:text-teal-400 uppercase tracking-wider flex items-center border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Fee Payment & Proof Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      {/* Payment Method */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          Payment Method *
+                        </label>
+                        <select 
+                          name="paymentMethod" value={formData.paymentMethod} onChange={handleChange}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold text-slate-900 dark:text-white cursor-pointer"
+                        >
+                          <option value="EasyPaisa">EasyPaisa Mobile Account</option>
+                          <option value="JazzCash">JazzCash Mobile Account</option>
+                          <option value="Bank Transfer">Bank Transfer (NBP / Bank of KP)</option>
+                        </select>
+                      </div>
+
+                      {/* Transaction ID */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          Transaction ID (TRX ID) / Receipt No *
+                        </label>
+                        <input 
+                          type="text" name="trxId" value={formData.trxId} onChange={handleChange} required
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold"
+                          placeholder="e.g. 98273641 or Bank Slip No"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Fee Slip File Upload */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Fee Slip / Payment Proof Upload
+                      </label>
+                      <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-teal-500 dark:hover:border-teal-500 rounded-2xl p-4 transition-colors text-center bg-slate-50/50 dark:bg-slate-850">
+                        <input 
+                          type="file" 
+                          accept="image/*,.pdf" 
+                          onChange={handleFeeSlipUpload}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-teal-50 dark:bg-slate-800 text-teal-600 flex items-center justify-center">
+                            {feeSlipName ? <FileCheck className="w-5 h-5 text-emerald-600" /> : <Upload className="w-5 h-5" />}
+                          </div>
+                          <div className="text-left">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                              {feeSlipName || 'Click or drag fee slip image / receipt'}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block">
+                              {feeSlipName ? 'Proof attached successfully' : 'Supports JPG, PNG, PDF (Max 5MB)'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Declaration & Submission */}
+                  <div className="bg-teal-50/60 dark:bg-slate-800/60 border border-teal-200/60 dark:border-slate-700 p-4.5 rounded-2xl text-teal-900 dark:text-teal-200 text-xs sm:text-sm flex items-start">
+                    <ShieldCheck className="w-5 h-5 text-teal-700 dark:text-teal-400 mr-3 flex-shrink-0 mt-0.5" />
                     <div>
                       <span className="font-bold block text-teal-950 dark:text-teal-300">{t('declaration')}</span>
                       {t('declarationText')}
@@ -301,38 +520,50 @@ export default function ApplyNow() {
                   <div className="text-right">
                     <button 
                       type="submit"
-                      className="w-full sm:w-auto bg-gradient-to-r from-blue-900 to-teal-700 hover:from-blue-955 hover:to-teal-800 text-white font-bold px-10 py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center text-sm"
+                      disabled={isSubmitting}
+                      className="w-full sm:w-auto bg-teal-700 hover:bg-teal-800 text-white font-bold px-10 py-4 rounded-xl shadow-lg transition-all flex items-center justify-center text-sm uppercase tracking-wider"
                     >
-                      {t('submitApplication')}
-                      <ChevronRight className="w-4 h-4 ml-1" />
+                      {isSubmitting ? 'Registering Application...' : t('submitApplication')}
+                      <ChevronRight className="w-4 h-4 ml-1.5" />
                     </button>
                   </div>
 
                 </form>
               </div>
 
-              {/* Right Side: Important Instructions */}
+              {/* Right Side: Instructions Card */}
               <div className="lg:col-span-1">
-                <div className="bg-gradient-to-br from-blue-950 to-teal-900 border border-teal-850 rounded-2xl p-6 sm:p-8 text-white shadow-md sticky top-24" dir="rtl">
-                  <h3 className="text-xl font-bold text-center mb-4 text-emerald-400">ضروری ہدایات</h3>
-                  <ul className="space-y-3 text-right text-sm text-slate-100" dir="rtl">
-                    <li className="flex items-start gap-2">
-                      <span>•</span>
-                      <span>آن لائن ایڈمیشن فارم مکمل اور درست معلومات کے ساتھ پر کریں۔</span>
+                <div className="bg-[#052836] border border-[#0d3b4e] rounded-3xl p-6 sm:p-8 text-white shadow-xl sticky top-24 space-y-6">
+                  <div className="text-center pb-4 border-b border-[#0d3e52]">
+                    <h3 className="text-lg font-bold text-emerald-400 font-serif">ضروری ہدایات برائے داخلہ</h3>
+                    <p className="text-xs text-slate-300 mt-1">Government Degree College Tank Guidelines</p>
+                  </div>
+
+                  <ul className="space-y-4 text-right text-xs sm:text-sm text-slate-200 leading-relaxed" dir="rtl">
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
+                      <span>آن لائن ایڈمیشن فارم میں تمام معلوماتی خانے درست اور میٹرک سند کے مطابق پر کریں۔</span>
                     </li>
-                    <li className="flex items-start gap-2">
-                      <span>•</span>
-                      <span>تمام معلومات (نام، والد کا نام) میٹرک سند کے مطابق انگریزی کے بڑے حروف میں لکھیں۔</span>
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
+                      <span>ایزی پیسہ، جاز کیش یا بینک چالان کے ذریعے فیس جمع کروا کر ٹرانزیکشن (TRX ID) درج کریں۔</span>
                     </li>
-                    <li className="flex items-start gap-2">
-                      <span>•</span>
-                      <span>آن لائن فارم جمع کرنے کے بعد اس کا پرنٹ لے کر ضروری دستاویزات کے ساتھ کالج جمع کروائیں۔</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span>•</span>
-                      <span>غلط یا نامکمل معلومات کی صورت میں درخواست رد کر دی جائے گی۔</span>
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">✓</span>
+                      <span>فارم جمع کروانے کے بعد جاری کردہ اسٹوڈنٹ آئی ڈی (STU ID) محفوظ رکھیں۔</span>
                     </li>
                   </ul>
+
+                  <div className="pt-4 border-t border-[#0d3e52] text-xs text-slate-400 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Help Desk:</span>
+                      <span className="font-semibold text-teal-300">+92 (0963) 510111</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Email:</span>
+                      <span className="font-semibold text-teal-300">admissions@casdct.edu.pk</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

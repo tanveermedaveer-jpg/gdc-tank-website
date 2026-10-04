@@ -263,6 +263,21 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     setPrincipalImage(sPImg);
     setCollegePhone(sPhone);
     setCollegeEmail(sEmail);
+
+    // Real-time listener for new admission submissions from ApplyNow form
+    const handleAdmissionSync = () => {
+      const stored = localStorage.getItem('casdct_admissions');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setAdmissions(parsed);
+          }
+        } catch (e) {}
+      }
+    };
+    window.addEventListener('casdct_admission_submitted', handleAdmissionSync);
+    return () => window.removeEventListener('casdct_admission_submitted', handleAdmissionSync);
   }, []);
 
   // Sync Admissions to localStorage on change

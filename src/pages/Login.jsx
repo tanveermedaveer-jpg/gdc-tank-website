@@ -31,7 +31,8 @@ export default function Login() {
       setError('');
       setUsername('');
       setPassword('');
-      navigate('/admin/dashboard');
+      localStorage.setItem('casdct_is_logged_in', 'true');
+      navigate('/admin');
     } else {
       setError('Invalid Name or Password');
       alert('Invalid Name or Password');

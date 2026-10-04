@@ -6,6 +6,8 @@ import ScrollToTop from './components/ScrollToTop';
 import { LanguageProvider } from './context/LanguageContext';
 import NewsTicker from './components/NewsTicker';
 
+import ProtectedRoute from './components/ProtectedRoute';
+
 // Page Imports
 import Home from './pages/Home';
 import History from './pages/About/History';
@@ -65,7 +67,8 @@ function AppContent() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/apply" element={<ApplyNow />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} />} />
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
           
           {/* Fallback routing */}
           <Route path="*" element={<Home />} />

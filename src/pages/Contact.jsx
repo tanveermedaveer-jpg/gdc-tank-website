@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Phone, Mail, MapPin, Send, CheckCircle } from 'lucide-react';
+import { Phone, MapPin, Send, CheckCircle } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
+import {
+  COLLEGE_ADDRESS,
+  COLLEGE_ADDRESS_URDU,
+  COLLEGE_PHONE,
+  resolveCollegeAddress,
+  resolveCollegePhone
+} from '../lib/contactDetails';
 
 export default function Contact() {
   const { t } = useLanguage();
@@ -16,17 +23,14 @@ export default function Contact() {
   });
   const [submitted, setSubmitted] = useState(false);
 
-  const [collegePhone, setCollegePhone] = useState('+92 (0963) 510111');
-  const [collegeEmail, setCollegeEmail] = useState('info@casdct.edu.pk');
-  const [collegeAddress, setCollegeAddress] = useState('Near City Canal, Tank City, Khyber Pakhtunkhwa (KP), Pakistan.');
+  const [collegePhone, setCollegePhone] = useState(COLLEGE_PHONE);
+  const [collegeAddress, setCollegeAddress] = useState(COLLEGE_ADDRESS);
 
   useEffect(() => {
     const storedPhone = localStorage.getItem('casdct_college_phone');
-    const storedEmail = localStorage.getItem('casdct_college_email');
     const storedAddress = localStorage.getItem('casdct_college_address');
-    if (storedPhone) setCollegePhone(storedPhone);
-    if (storedEmail) setCollegeEmail(storedEmail);
-    if (storedAddress) setCollegeAddress(storedAddress);
+    setCollegePhone(resolveCollegePhone(storedPhone));
+    setCollegeAddress(resolveCollegeAddress(storedAddress));
   }, []);
 
   const handleSubmit = (e) => {
@@ -212,17 +216,11 @@ export default function Contact() {
                 <ul className="space-y-4 text-slate-650 text-sm">
                   <li className="flex items-start">
                     <MapPin className="w-5 h-5 text-teal-655 mr-3 mt-0.5 flex-shrink-0" />
-                    <span>{isUrdu ? 'سٹی کینال کے قریب، ٹانک، خیبر پختونخوا، پاکستان' : collegeAddress}</span>
+                    <span>{isUrdu ? COLLEGE_ADDRESS_URDU : collegeAddress}</span>
                   </li>
                   <li className="flex items-center">
                     <Phone className="w-5 h-5 text-teal-655 mr-3 flex-shrink-0" />
                     <span>{collegePhone}</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Mail className="w-5 h-5 text-teal-655 mr-3 flex-shrink-0" />
-                    <a href={`mailto:${collegeEmail}`} className="hover:text-teal-700 transition-colors">
-                      {collegeEmail}
-                    </a>
                   </li>
                 </ul>
               </div>

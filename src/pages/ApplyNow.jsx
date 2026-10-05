@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
+import { COLLEGE_PHONE } from '../lib/contactDetails';
 
 export default function ApplyNow() {
   const { t } = useLanguage();
@@ -686,7 +687,7 @@ export default function ApplyNow() {
                   <div className="pt-4 border-t border-[#0d3e52] text-xs text-slate-400 space-y-1">
                     <div className="flex justify-between">
                       <span>Help Desk:</span>
-                      <span className="font-semibold text-teal-300">+92 (0963) 510111</span>
+                      <span className="font-semibold text-teal-300">{COLLEGE_PHONE}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Email:</span>

@@ -6,6 +6,7 @@ import principalImg from '../assets/principal.jpg';
 import ScrollReveal from '../components/ScrollReveal';
 import { useLanguage } from '../context/LanguageContext';
 import AnimatedCounter from '../components/AnimatedCounter';
+import { COLLEGE_PHONE, resolveCollegePhone } from '../lib/contactDetails';
 
 export default function Home() {
   const { t } = useLanguage();
@@ -13,7 +14,7 @@ export default function Home() {
   const [principalName, setPrincipalName] = useState('Prof. Shabir Ahmad');
   const [principalImage, setPrincipalImage] = useState('');
   const [principalMessage, setPrincipalMessage] = useState('');
-  const [admissionPhone, setAdmissionPhone] = useState('+92 (0963) 510111');
+  const [admissionPhone, setAdmissionPhone] = useState(COLLEGE_PHONE);
   const [admissionEmail, setAdmissionEmail] = useState('admissions@casdct.edu.pk');
   const [heroTitle, setHeroTitle] = useState('Government Captain Ashfaq Shaheed Degree College Tank');
   const [heroDesc, setHeroDesc] = useState('A premier educational institution in Khyber Pakhtunkhwa, dedicated to academic excellence, character building, and career guidance.');
@@ -55,7 +56,7 @@ export default function Home() {
     // 3. Admission Desk Info
     const storedPhone = localStorage.getItem('casdct_admission_phone');
     const storedEmail = localStorage.getItem('casdct_admission_email');
-    setAdmissionPhone(storedPhone || '+92 (0963) 510111');
+    setAdmissionPhone(resolveCollegePhone(storedPhone));
     setAdmissionEmail(storedEmail || 'admissions@casdct.edu.pk');
 
     // 4. Stats Info

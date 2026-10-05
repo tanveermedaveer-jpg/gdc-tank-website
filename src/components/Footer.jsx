@@ -4,6 +4,13 @@ import { Phone, Mail, MapPin, ChevronRight, GraduationCap, X } from 'lucide-reac
 import { FaFacebookF, FaXTwitter, FaInstagram } from 'react-icons/fa6';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
+import {
+  COLLEGE_ADDRESS,
+  COLLEGE_ADDRESS_URDU,
+  COLLEGE_PHONE,
+  resolveCollegeAddress,
+  resolveCollegePhone
+} from '../lib/contactDetails';
 
 export default function Footer() {
   const { language, setLanguage, t } = useLanguage();
@@ -11,17 +18,17 @@ export default function Footer() {
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
-  const [collegePhone, setCollegePhone] = useState('+92 (0963) 510111');
+  const [collegePhone, setCollegePhone] = useState(COLLEGE_PHONE);
   const [collegeEmail, setCollegeEmail] = useState('info@casdct.edu.pk');
-  const [collegeAddress, setCollegeAddress] = useState('Near City Canal, Tank, Khyber Pakhtunkhwa (KP), Pakistan');
+  const [collegeAddress, setCollegeAddress] = useState(COLLEGE_ADDRESS);
 
   useEffect(() => {
     const storedPhone = localStorage.getItem('casdct_college_phone');
     const storedEmail = localStorage.getItem('casdct_college_email');
     const storedAddress = localStorage.getItem('casdct_college_address');
-    if (storedPhone) setCollegePhone(storedPhone);
+    setCollegePhone(resolveCollegePhone(storedPhone));
     if (storedEmail) setCollegeEmail(storedEmail);
-    if (storedAddress) setCollegeAddress(storedAddress);
+    setCollegeAddress(resolveCollegeAddress(storedAddress));
   }, []);
 
   return (
@@ -217,7 +224,7 @@ export default function Footer() {
           <ul className="space-y-4 text-sm text-slate-400">
             <li className="flex items-start">
               <MapPin className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0 mt-0.5" />
-              <span>{t('home') === 'ہوم' ? 'سٹی کینال کے قریب، ٹانک، خیبر پختونخوا، پاکستان' : collegeAddress}</span>
+              <span>{t('home') === 'ہوم' ? COLLEGE_ADDRESS_URDU : collegeAddress}</span>
             </li>
             <li className="flex items-center">
               <Phone className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" />

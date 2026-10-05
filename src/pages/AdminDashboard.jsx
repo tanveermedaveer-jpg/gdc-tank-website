@@ -16,6 +16,7 @@ import {
   supabase
 } from '../lib/supabase';
 import { deleteMediaAsset, getMediaAsset, saveMediaAsset } from '../lib/mediaAssets';
+import { resolveCollegePhone } from '../lib/contactDetails';
 
 const isVideoMediaFile = (file) =>
   file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
@@ -230,7 +231,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     const sPName = localStorage.getItem('casdct_principal_name') || 'Prof. Shabir Ahmad';
     const sPMessage = localStorage.getItem('casdct_principal_message') || 'It is a matter of great pride and privilege to welcome you to Government Degree College, Tank.';
     const sPImg = localStorage.getItem('casdct_principal_image') || principalImg;
-    const sPhone = localStorage.getItem('casdct_college_phone') || '+92 (0963) 510111';
+    const sPhone = resolveCollegePhone(localStorage.getItem('casdct_college_phone'));
     const sEmail = localStorage.getItem('casdct_college_email') || 'info@casdct.edu.pk';
 
     setPrincipalName(sPName);

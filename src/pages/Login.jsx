@@ -5,12 +5,13 @@ import campusImg from '../assets/campus.png';
 import {
   clearAdminSession,
   verifyAdminSession,
+  getAdminLoginInfo,
   hasAdminSession,
   signInAdmin
 } from '../lib/adminApi';
 
 export default function Login() {
-  const username = 'Professor Saleem Khan';
+  const [username, setUsername] = useState('Shabir Ahmed');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -23,6 +24,8 @@ export default function Login() {
     let isMounted = true;
     const checkSession = async () => {
       try {
+        const loginInfo = await getAdminLoginInfo();
+        if (isMounted) setUsername(loginInfo.username);
         if (hasAdminSession() && await verifyAdminSession()) {
           const targetPath = location.state?.from?.pathname || '/admin';
           navigate(targetPath, { replace: true });
@@ -112,9 +115,11 @@ export default function Login() {
               <input
                 type="text"
                 value={username}
-                readOnly
+                onChange={(event) => setUsername(event.target.value)}
+                required
+                autoCapitalize="none"
                 autoComplete="username"
-                className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
 

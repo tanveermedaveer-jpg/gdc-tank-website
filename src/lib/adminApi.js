@@ -6,7 +6,6 @@ const DATABASE_VERSION = 1;
 const STORE_NAME = 'records';
 const SESSION_MARKER_KEY = 'casdct_admin_session_active';
 const SESSION_USERNAME_KEY = 'casdct_local_admin_username';
-const ADMIN_USERNAME = 'Professor Saleem Khan';
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 const MAX_RECEIPT_SIZE = 5 * 1024 * 1024;
 const MAX_CIRCULAR_SIZE = 10 * 1024 * 1024;
@@ -180,7 +179,7 @@ const getHomeContent = () => getOrCreateValue('homeContent', async () => {
 
 const isLocalSessionValid = () => {
   const username = sessionStorage.getItem(SESSION_USERNAME_KEY);
-  return Boolean(hasAdminSession() && username === ADMIN_USERNAME);
+  return Boolean(hasAdminSession() && username);
 };
 
 export const hasAdminSession = () => Boolean(sessionStorage.getItem(SESSION_MARKER_KEY));
@@ -216,8 +215,26 @@ const authenticateAdmin = async (action, values) => {
 
 export const signInAdmin = async (username, password) => {
   const result = await authenticateAdmin('login', { username, password });
-  if (result.username !== ADMIN_USERNAME) {
+  if (typeof result.username !== 'string' || !result.username) {
     throw new Error('The authentication service returned an invalid session.');
+  }
+  sessionStorage.setItem(SESSION_MARKER_KEY, '1');
+  sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
+  return { username: result.username };
+};
+
+export const getAdminLoginInfo = async () => {
+  const result = await authenticateAdmin('loginInfo', {});
+  if (typeof result.username !== 'string' || !result.username) {
+    throw new Error('The authentication service returned invalid login information.');
+  }
+  return result;
+};
+
+export const updateAdminCredentials = async (username, password) => {
+  const result = await authenticateAdmin('updateCredentials', { username, password });
+  if (typeof result.username !== 'string' || !result.username) {
+    throw new Error('The authentication service returned an invalid credential update.');
   }
   sessionStorage.setItem(SESSION_MARKER_KEY, '1');
   sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
@@ -661,6 +678,9 @@ const request = async (action, payload = {}, file = null) => {
   if (action.startsWith('public.')) return await handlePublicAction(action, payload, file);
   if (action === 'auth.login') return await signInAdmin(payload.username, payload.password);
   if (action === 'auth.logout') return await signOutAdmin();
+  if (action === 'auth.credentials.update') {
+    return await updateAdminCredentials(payload.username, payload.password);
+  }
   return await handleAdminAction(action, payload, file);
 };
 

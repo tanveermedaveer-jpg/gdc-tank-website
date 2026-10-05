@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye, 
+  Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye, EyeOff,
   Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
   GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ClipboardList, FileUp,
   Moon, Sun, UserCheck, RefreshCw, Edit3,
@@ -142,6 +142,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Settings state
   const [adminName, setAdminName] = useState(getAdminSessionUsername);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [confirmAdminPassword, setConfirmAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [circulars, setCirculars] = useState([]);
   const [circularTitle, setCircularTitle] = useState('');
   const [circularPublishDate, setCircularPublishDate] = useState(getTodayDateValue);
@@ -630,7 +633,27 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     e.preventDefault();
     setSettingsSaved(false);
     try {
-      const result = await adminRequest('admin.settings.save', {
+      const savedAdminName = adminName.trim();
+      if (savedAdminName.length < 3 || savedAdminName.length > 80) {
+        throw new Error('Admin username must be between 3 and 80 characters.');
+      }
+      if (adminPassword && adminPassword !== confirmAdminPassword) {
+        throw new Error('The new admin password confirmation does not match.');
+      }
+      if (adminPassword && (adminPassword.length < 16 || adminPassword.length > 256)) {
+        throw new Error('New admin passwords must be between 16 and 256 characters.');
+      }
+
+      if (savedAdminName !== getAdminSessionUsername() || adminPassword) {
+        await adminRequest('auth.credentials.update', {
+          username: savedAdminName,
+          password: adminPassword
+        });
+        setAdminName(savedAdminName);
+        setAdminPassword('');
+        setConfirmAdminPassword('');
+      }
+      await adminRequest('admin.settings.save', {
         settings: {
           principal_name: principalName,
           principal_message: principalMessage,
@@ -641,11 +664,10 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         }
       });
 
-      setAdminName(result.username || adminName);
       setSettingsSaved(true);
       window.dispatchEvent(new Event('casdct_public_settings_updated'));
       window.dispatchEvent(new Event('casdct_merit_status_changed'));
-      showToast('Admin & Institutional Settings saved successfully!', 'success');
+      showToast('Admin and institutional settings saved successfully!', 'success');
       setTimeout(() => setSettingsSaved(false), 3000);
     } catch (error) {
       console.error('Unable to save admin settings:', error);
@@ -2046,7 +2068,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Access & College Settings</h2>
-                <p className="text-xs text-slate-500">Manage institutional information and the principal desk message. Admin credentials are managed securely in Vercel environment settings.</p>
+                <p className="text-xs text-slate-500">Manage admin credentials securely in the server database, along with institutional information and the principal desk message.</p>
               </div>
 
               {settingsSaved && (
@@ -2082,8 +2104,62 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 </div>
 
                 <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950 dark:border-teal-900 dark:bg-teal-950/30 dark:text-teal-100">
-                  <p className="font-semibold">Admin username: {adminName || 'Professor Saleem Khan'}</p>
-                  <p className="mt-1 text-xs leading-relaxed">To rotate the admin password and revoke existing sessions, update both ADMIN_PASSWORD and ADMIN_SESSION_SECRET in Vercel and redeploy. Passwords are not saved in this browser.</p>
+                  <p className="font-semibold">Update Admin Credentials</p>
+                  <p className="mt-1 text-xs leading-relaxed">Credential changes are saved to the secure server-side database. Updating either credential signs out other active sessions. Passwords must be at least 16 characters and are never stored in browser storage.</p>
+                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Admin Username</label>
+                      <input
+                        type="text"
+                        required
+                        minLength={3}
+                        maxLength={80}
+                        autoComplete="username"
+                        value={adminName}
+                        onChange={(event) => setAdminName(event.target.value)}
+                        className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">New Admin Password</label>
+                      <div className="relative">
+                        <input
+                          type={showAdminPassword ? 'text' : 'password'}
+                          minLength={16}
+                          maxLength={256}
+                          autoComplete="new-password"
+                          value={adminPassword}
+                          onChange={(event) => setAdminPassword(event.target.value)}
+                          placeholder="Leave blank to keep current password"
+                          className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 pr-12 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAdminPassword((visible) => !visible)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-slate-400 dark:hover:text-white"
+                          aria-label={showAdminPassword ? 'Hide new admin password' : 'Show new admin password'}
+                          aria-pressed={showAdminPassword}
+                        >
+                          {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {adminPassword && (
+                    <div className="mt-4">
+                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Confirm New Admin Password</label>
+                      <input
+                        type={showAdminPassword ? 'text' : 'password'}
+                        required
+                        minLength={16}
+                        maxLength={256}
+                        autoComplete="new-password"
+                        value={confirmAdminPassword}
+                        onChange={(event) => setConfirmAdminPassword(event.target.value)}
+                        className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>

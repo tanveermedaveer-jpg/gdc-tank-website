@@ -4,40 +4,36 @@ import { Lock, ArrowLeft, Eye, EyeOff, X } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import {
   clearAdminSession,
-  getAdminSetupStatus,
-  getAdminSessionToken,
-  initializeLocalAdmin,
+  verifyAdminSession,
+  hasAdminSession,
   signInAdmin
 } from '../lib/adminApi';
 
 export default function Login() {
-  const [username, setUsername] = useState('Professor Saleem Khan');
+  const username = 'Professor Saleem Khan';
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isFirstRun, setIsFirstRun] = useState(false);
-  const [isCheckingSetup, setIsCheckingSetup] = useState(true);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     let isMounted = true;
-    const checkSetup = async () => {
+    const checkSession = async () => {
       try {
-        setIsFirstRun(!(await getAdminSetupStatus()));
-        if (getAdminSessionToken()) {
+        if (hasAdminSession() && await verifyAdminSession()) {
           const targetPath = location.state?.from?.pathname || '/admin';
           navigate(targetPath, { replace: true });
         }
-      } catch (setupError) {
-        if (isMounted) setError(setupError.message || 'Unable to open local admin storage.');
+      } catch (sessionError) {
+        if (isMounted) setError(sessionError.message || 'Unable to verify the admin session.');
       } finally {
-        if (isMounted) setIsCheckingSetup(false);
+        if (isMounted) setIsCheckingSession(false);
       }
     };
-    checkSetup();
+    checkSession();
     return () => { isMounted = false; };
   }, [navigate, location.state]);
 
@@ -46,12 +42,7 @@ export default function Login() {
     setIsSubmitting(true);
     setError('');
     try {
-      if (isFirstRun) {
-        if (password !== confirmPassword) throw new Error('The password confirmation does not match.');
-        await initializeLocalAdmin(password);
-      } else {
-        await signInAdmin(username, password);
-      }
+      await signInAdmin(username, password);
       const targetPath = location.state?.from?.pathname || '/admin';
       navigate(targetPath, { replace: true });
     } catch (loginError) {
@@ -99,15 +90,11 @@ export default function Login() {
               <Lock className="w-6 h-6" />
             </div>
             <h1 className="text-2xl font-bold text-blue-950 font-serif">Login to your account</h1>
-            <p className="text-slate-500 text-xs sm:text-sm mt-2 leading-relaxed">
-              {isFirstRun
-                ? 'Create a local admin password for this browser to finish first-time setup.'
-                : 'Login with your admin username and password'}
-            </p>
+            <p className="text-slate-500 text-xs sm:text-sm mt-2 leading-relaxed">Sign in with the college admin account.</p>
           </div>
 
           <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
-            This portal stores data only in this browser. It does not sync to other devices, and local login is not server-secure.
+            Admin credentials are verified securely by the college server. Portal records and uploaded files remain local to this browser and do not sync to other devices.
           </div>
 
           {error && (
@@ -116,41 +103,30 @@ export default function Login() {
             </div>
           )}
 
-          {isCheckingSetup ? (
-            <p role="status" className="text-center text-sm text-slate-500">Checking local admin setup…</p>
+          {isCheckingSession ? (
+            <p role="status" className="text-center text-sm text-slate-500">Verifying admin session…</p>
           ) : (
           <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
-            {!isFirstRun && (
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ADMIN USERNAME *</label>
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoComplete="username"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-800 font-medium"
-                />
-              </div>
-            )}
-            {isFirstRun && (
-              <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                Admin username: Professor Saleem Khan
-              </p>
-            )}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ADMIN USERNAME</label>
+              <input
+                type="text"
+                value={username}
+                readOnly
+                autoComplete="username"
+                className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium"
+              />
+            </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                {isFirstRun ? 'CREATE ADMIN PASSWORD *' : 'PASSWORD *'}
-              </label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ADMIN PASSWORD *</label>
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"} 
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  minLength={10}
-                  autoComplete={isFirstRun ? 'new-password' : 'current-password'}
+                  autoComplete="current-password"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-800 font-medium"
                   placeholder="Enter Password"
                 />
@@ -165,27 +141,12 @@ export default function Login() {
               </div>
             </div>
 
-            {isFirstRun && (
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">CONFIRM PASSWORD *</label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={10}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  autoComplete="new-password"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800"
-                />
-              </div>
-            )}
-
             <button 
               type="submit"
               disabled={isSubmitting}
               className="bg-teal-700 hover:bg-teal-800 text-white w-full py-2.5 rounded-md font-bold transition-colors text-sm uppercase tracking-wider shadow-md"
             >
-              {isSubmitting ? 'PLEASE WAIT...' : isFirstRun ? 'CREATE LOCAL ADMIN' : 'LOGIN'}
+              {isSubmitting ? 'PLEASE WAIT...' : 'LOGIN'}
             </button>
           </form>
           )}

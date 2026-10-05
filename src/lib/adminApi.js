@@ -4,10 +4,9 @@ import { DEFAULT_HOME_CONTENT } from './siteContentDefaults';
 const DATABASE_NAME = 'casdct-local-portal';
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'records';
-const SESSION_TOKEN_KEY = 'casdct_local_admin_session';
+const SESSION_MARKER_KEY = 'casdct_admin_session_active';
 const SESSION_USERNAME_KEY = 'casdct_local_admin_username';
-const INITIAL_ADMIN_USERNAME = 'Professor Saleem Khan';
-const PASSWORD_ITERATIONS = 310_000;
+const ADMIN_USERNAME = 'Professor Saleem Khan';
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 const MAX_RECEIPT_SIZE = 5 * 1024 * 1024;
 const MAX_CIRCULAR_SIZE = 10 * 1024 * 1024;
@@ -105,24 +104,6 @@ const updateValue = async (key, updater, initialValue) => {
   });
 };
 
-const addValue = async (key, value) => {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, 'readwrite');
-    transaction.objectStore(STORE_NAME).add({ key, value });
-    transaction.oncomplete = () => {
-      notifyLocalDataChanged(key);
-      resolve(value);
-    };
-    transaction.onerror = () => reject(
-      transaction.error?.name === 'ConstraintError'
-        ? new Error('Local admin setup was already completed in another tab. Please sign in.')
-        : transaction.error || new Error('Unable to finish local admin setup.')
-    );
-    transaction.onabort = () => reject(transaction.error || new Error('Local admin setup was interrupted.'));
-  });
-};
-
 const deleteValue = async (key) => {
   const database = await openDatabase();
   return new Promise((resolve, reject) => {
@@ -198,80 +179,72 @@ const getHomeContent = () => getOrCreateValue('homeContent', async () => {
 });
 
 const isLocalSessionValid = () => {
-  const token = sessionStorage.getItem(SESSION_TOKEN_KEY);
   const username = sessionStorage.getItem(SESSION_USERNAME_KEY);
-  return Boolean(token && username);
+  return Boolean(hasAdminSession() && username === ADMIN_USERNAME);
 };
 
-export const getAdminSessionToken = () => sessionStorage.getItem(SESSION_TOKEN_KEY);
+export const hasAdminSession = () => Boolean(sessionStorage.getItem(SESSION_MARKER_KEY));
 export const getAdminSessionUsername = () => sessionStorage.getItem(SESSION_USERNAME_KEY) || '';
 
 export const clearAdminSession = () => {
-  sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  sessionStorage.removeItem(SESSION_MARKER_KEY);
   sessionStorage.removeItem(SESSION_USERNAME_KEY);
 };
 
-export const getAdminSetupStatus = async () => Boolean(await readValue('adminCredentials'));
 export { MAX_CIRCULAR_SIZE as MAX_CIRCULAR_SIZE_BYTES };
 
-const hashPassword = async (password, salt) => {
-  if (!globalThis.crypto?.subtle) {
-    throw new Error('Secure browser cryptography is unavailable. Open the site over HTTPS to create a local password.');
-  }
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(password),
-    'PBKDF2',
-    false,
-    ['deriveBits']
-  );
-  return new Uint8Array(await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PASSWORD_ITERATIONS },
-    key,
-    256
-  ));
-};
-
-const bytesToHex = (bytes) => [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-const hexToBytes = (value) => Uint8Array.from(value.match(/.{2}/g) || [], (part) => Number.parseInt(part, 16));
-
-export const initializeLocalAdmin = async (password) => {
-  if (typeof password !== 'string' || password.length < 10 || password.length > 256) {
-    throw new Error('Choose an admin password between 10 and 256 characters.');
-  }
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const passwordHash = await hashPassword(password, salt);
-  await addValue('adminCredentials', {
-    username: INITIAL_ADMIN_USERNAME,
-    iterations: PASSWORD_ITERATIONS,
-    salt: bytesToHex(salt),
-    hash: bytesToHex(passwordHash)
+const authenticateAdmin = async (action, values) => {
+  const response = await fetch('/api/admin-auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    cache: 'no-store',
+    body: JSON.stringify({ action, ...values })
   });
-  establishLocalSession(INITIAL_ADMIN_USERNAME);
-  return { username: INITIAL_ADMIN_USERNAME };
-};
-
-const establishLocalSession = (username) => {
-  sessionStorage.setItem(SESSION_TOKEN_KEY, crypto.randomUUID());
-  sessionStorage.setItem(SESSION_USERNAME_KEY, username);
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error('The authentication service returned an invalid response.');
+  }
+  if (!response.ok) {
+    if (response.status === 401) clearAdminSession();
+    throw new Error(result.error || 'Admin authentication failed.');
+  }
+  return result;
 };
 
 export const signInAdmin = async (username, password) => {
-  const credentials = await readValue('adminCredentials');
-  if (!credentials) throw new Error('Complete the first-run local admin setup before signing in.');
-  const normalizedUsername = typeof username === 'string' ? username.trim() : '';
-  if (normalizedUsername.toLocaleLowerCase() !== credentials.username.toLocaleLowerCase() ||
-      typeof password !== 'string' || !password) {
-    throw new Error('Invalid admin username or password.');
+  const result = await authenticateAdmin('login', { username, password });
+  if (result.username !== ADMIN_USERNAME) {
+    throw new Error('The authentication service returned an invalid session.');
   }
-  const actualHash = await hashPassword(password, hexToBytes(credentials.salt));
-  const expectedHash = hexToBytes(credentials.hash);
-  if (actualHash.length !== expectedHash.length ||
-      actualHash.some((byte, index) => byte !== expectedHash[index])) {
-    throw new Error('Invalid admin username or password.');
+  sessionStorage.setItem(SESSION_MARKER_KEY, '1');
+  sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
+  return { username: result.username };
+};
+
+export const verifyAdminSession = async () => {
+  if (!hasAdminSession()) return false;
+  try {
+    const result = await authenticateAdmin('verify', {});
+    if (result.username !== getAdminSessionUsername()) {
+      clearAdminSession();
+      return false;
+    }
+    return true;
+  } catch (error) {
+    if (error.message === 'Admin session is invalid or has expired.') return false;
+    throw error;
   }
-  establishLocalSession(credentials.username);
-  return { username: credentials.username };
+};
+
+export const signOutAdmin = async () => {
+  try {
+    await authenticateAdmin('logout', {});
+  } finally {
+    clearAdminSession();
+  }
 };
 
 const createFileUrl = (path, blob) => {
@@ -338,10 +311,9 @@ const mapCircularRecord = async (circular) => ({
 
 const validateSession = async () => {
   if (!isLocalSessionValid()) throw new Error('Admin session expired. Please sign in again.');
-  const credentials = await readValue('adminCredentials');
-  if (!credentials || credentials.username !== getAdminSessionUsername()) {
+  if (!await verifyAdminSession()) {
     clearAdminSession();
-    throw new Error('Local admin session is no longer valid. Please sign in again.');
+    throw new Error('Admin session is invalid or has expired. Please sign in again.');
   }
 };
 
@@ -512,24 +484,9 @@ const updateAdmissionRecord = async (payload) => {
 };
 
 const saveSettings = async (payload) => {
-  const current = await getSettings();
-  const settings = { ...current, ...(payload.settings || {}) };
-  const username = typeof payload.username === 'string' ? payload.username.trim() : '';
-  if (!username) throw new Error('Admin username cannot be empty.');
-  const credentials = await readValue('adminCredentials');
-  if (!credentials) throw new Error('Local admin setup is not complete.');
-  const newPassword = payload.newPassword || '';
-  if (newPassword && newPassword.length < 10) throw new Error('New admin passwords must be at least 10 characters long.');
-  if (newPassword) {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    credentials.salt = bytesToHex(salt);
-    credentials.hash = bytesToHex(await hashPassword(newPassword, salt));
-    credentials.iterations = PASSWORD_ITERATIONS;
-  }
-  credentials.username = username;
-  await writeValues([['adminCredentials', credentials], ['settings', settings]]);
-  establishLocalSession(username);
-  return { username, settings, credentialsChanged: true };
+  const settings = { ...await getSettings(), ...(payload.settings || {}) };
+  await writeValue('settings', settings);
+  return { username: getAdminSessionUsername(), settings };
 };
 
 const saveCircular = async (payload, file) => {
@@ -703,6 +660,7 @@ const handleAdminAction = async (action, payload, file) => {
 const request = async (action, payload = {}, file = null) => {
   if (action.startsWith('public.')) return await handlePublicAction(action, payload, file);
   if (action === 'auth.login') return await signInAdmin(payload.username, payload.password);
+  if (action === 'auth.logout') return await signOutAdmin();
   return await handleAdminAction(action, payload, file);
 };
 

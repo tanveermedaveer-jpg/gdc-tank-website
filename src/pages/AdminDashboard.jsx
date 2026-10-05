@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye, 
-  EyeOff, Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
+  Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
   GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ClipboardList, FileUp,
   Moon, Sun, UserCheck, RefreshCw, Edit3,
   Upload, Trophy
@@ -12,8 +12,8 @@ import {
   MAX_CIRCULAR_SIZE_BYTES,
   adminFileRequest,
   adminRequest,
-  clearAdminSession,
   getAdminSessionUsername,
+  signOutAdmin,
   subscribeLocalChanges,
   subscribeHomeContent
 } from '../lib/adminApi';
@@ -142,8 +142,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Settings state
   const [adminName, setAdminName] = useState(getAdminSessionUsername);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [circulars, setCirculars] = useState([]);
   const [circularTitle, setCircularTitle] = useState('');
   const [circularPublishDate, setCircularPublishDate] = useState(getTodayDateValue);
@@ -601,9 +599,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   // Handle Logout
-  const handleLogout = () => {
-    clearAdminSession();
-    navigate('/login', { replace: true });
+  const handleLogout = async () => {
+    try {
+      await signOutAdmin();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Unable to end the admin session:', error);
+      showToast(error.message || 'Unable to end the admin session.', 'error');
+    }
   };
 
   // Handle Toggle Live Merit List Publishing Status
@@ -625,21 +628,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   // Handle Save Settings
   const handleSaveSettings = async (e) => {
     e.preventDefault();
-    const savedAdminName = adminName.trim();
-    if (!savedAdminName) {
-      showToast('Admin username cannot be empty.', 'error');
-      return;
-    }
-    if (adminPassword && adminPassword.length < 10) {
-      showToast('New admin passwords must be at least 10 characters long.', 'error');
-      return;
-    }
-
     setSettingsSaved(false);
     try {
       const result = await adminRequest('admin.settings.save', {
-        username: savedAdminName,
-        newPassword: adminPassword,
         settings: {
           principal_name: principalName,
           principal_message: principalMessage,
@@ -650,8 +641,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         }
       });
 
-      setAdminName(result.username);
-      setAdminPassword('');
+      setAdminName(result.username || adminName);
       setSettingsSaved(true);
       window.dispatchEvent(new Event('casdct_public_settings_updated'));
       window.dispatchEvent(new Event('casdct_merit_status_changed'));
@@ -1036,7 +1026,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             <p role="status" className="text-sm text-slate-500">Loading local dashboard records…</p>
           )}
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
-            Local-only mode: admissions, media, circulars, faculty, and settings are stored only in this browser profile. They do not sync across devices, and this admin login is not server-secure.
+            Authentication is verified server-side, but admissions, media, circulars, faculty, and settings remain in this browser only. They do not sync across devices and are not protected by server-side authorization.
           </div>
 
           {/* Dashboard overview and admissions management */}
@@ -2055,8 +2045,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             <>
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Credentials & College Settings</h2>
-                <p className="text-xs text-slate-500">Update your admin username, password, institutional information, and principal desk message.</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Access & College Settings</h2>
+                <p className="text-xs text-slate-500">Manage institutional information and the principal desk message. Admin credentials are managed securely in Vercel environment settings.</p>
               </div>
 
               {settingsSaved && (
@@ -2091,40 +2081,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Username</label>
-                    <input 
-                      type="text"
-                      required
-                      autoComplete="username"
-                      value={adminName} 
-                      onChange={(e) => setAdminName(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Password</label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                        autoComplete="new-password"
-                        placeholder="Leave blank to keep the current password"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 pr-12 py-2.5 text-sm font-semibold"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(value => !value)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-slate-400 dark:hover:text-white"
-                        aria-label={showPassword ? 'Hide admin password' : 'Show admin password'}
-                        aria-pressed={showPassword}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
+                <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950 dark:border-teal-900 dark:bg-teal-950/30 dark:text-teal-100">
+                  <p className="font-semibold">Admin username: {adminName || 'Professor Saleem Khan'}</p>
+                  <p className="mt-1 text-xs leading-relaxed">To rotate the admin password and revoke existing sessions, update both ADMIN_PASSWORD and ADMIN_SESSION_SECRET in Vercel and redeploy. Passwords are not saved in this browser.</p>
                 </div>
 
                 <div>

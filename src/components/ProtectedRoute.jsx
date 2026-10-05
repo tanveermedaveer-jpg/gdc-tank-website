@@ -1,8 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import { getAdminSessionToken } from '../lib/adminApi';
 
 export default function ProtectedRoute({ children }) {
   const location = useLocation();
-  const isLoggedIn = localStorage.getItem('casdct_is_logged_in') === 'true';
+  const isLoggedIn = Boolean(getAdminSessionToken());
 
   if (!isLoggedIn) {
     return <Navigate to="/login" state={{ from: location }} replace />;

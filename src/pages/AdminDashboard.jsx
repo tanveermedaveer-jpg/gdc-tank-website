@@ -3,58 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye, 
   EyeOff, Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
-  GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ChevronDown, ClipboardList, FileUp,
-  Moon, Sun, Shield, UserCheck, RefreshCw, Edit3, Lock, Mail, Phone,
-  Upload, FileCheck, Info, Maximize2, Trophy
+  GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ClipboardList, FileUp,
+  Moon, Sun, UserCheck, RefreshCw, Edit3,
+  Upload, Trophy
 } from 'lucide-react';
-import logoImg from '../assets/logo.jpg';
 import principalImg from '../assets/principal.jpg';
 import {
   CIRCULARS_BUCKET,
-  isAdminUser,
   MAX_CIRCULAR_SIZE_BYTES,
   supabase
 } from '../lib/supabase';
-import { deleteMediaAsset, getMediaAsset, saveMediaAsset } from '../lib/mediaAssets';
-import { resolveCollegePhone } from '../lib/contactDetails';
+import { adminFileRequest, adminRequest, clearAdminSession, getAdminSessionUsername } from '../lib/adminApi';
+import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
 
 const isVideoMediaFile = (file) =>
   file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
 
 const isSupportedMediaFile = (file) =>
-  file.type.startsWith('image/') || file.type.startsWith('video/') ||
-  /\.(jpe?g|png|gif|webp|bmp|svg|mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
+  [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
+    'video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v',
+    'video/ogg', 'video/x-msvideo'
+  ].includes(file.type);
 
 const getTodayDateValue = () => {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-};
-
-const legacyDemoAdmissions = new Map([
-  ['STU-10214', 'Ayesha Khan'],
-  ['STU-10227', 'Bilal Ahmed'],
-  ['STU-10235', 'Zainab Fatima'],
-  ['STU-10241', 'Usman Ali'],
-  ['STU-10249', 'Fatima Noor'],
-  ['STU-10253', 'Hassan Raza'],
-  ['STU-10260', 'Maryam Saeed']
-]);
-
-const readStoredAdmissions = () => {
-  const stored = localStorage.getItem('casdct_admissions');
-  if (!stored) return [];
-
-  const parsed = JSON.parse(stored);
-  if (!Array.isArray(parsed)) {
-    throw new TypeError('Stored admissions data must be an array.');
-  }
-  const admissions = parsed.filter(admission =>
-    legacyDemoAdmissions.get(admission.regId) !== admission.fullName
-  );
-  if (admissions.length !== parsed.length) {
-    localStorage.setItem('casdct_admissions', JSON.stringify(admissions));
-  }
-  return admissions;
 };
 
 const formatRecordedFeeAmount = (admission) => {
@@ -135,6 +109,16 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   const [admissions, setAdmissions] = useState([]);
+  const [facultyMembers, setFacultyMembers] = useState([]);
+  const [isLoadingAdminData, setIsLoadingAdminData] = useState(true);
+  const [adminDataError, setAdminDataError] = useState('');
+  const [feeEditDrafts, setFeeEditDrafts] = useState({});
+  const [isFacultyModalOpen, setIsFacultyModalOpen] = useState(false);
+  const [facultyDraft, setFacultyDraft] = useState({});
+  const [facultyPhotoFile, setFacultyPhotoFile] = useState(null);
+  const [facultyPhotoName, setFacultyPhotoName] = useState('');
+  const [facultyFormError, setFacultyFormError] = useState('');
+  const [isSavingFaculty, setIsSavingFaculty] = useState(false);
 
   // 2. Media Moderation List State (starts completely empty — no demo data)
   const [mediaUploads, setMediaUploads] = useState([]);
@@ -150,12 +134,11 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [isUploadingAdminMedia, setIsUploadingAdminMedia] = useState(false);
   const [adminUploadDesc, setAdminUploadDesc] = useState('');
   const [adminUploadSuccess, setAdminUploadSuccess] = useState(false);
-  const [mediaAssetUrls, setMediaAssetUrls] = useState({});
   const adminUploadCloseTimer = useRef(null);
 
   // Settings state
-  const [adminName, setAdminName] = useState(() => localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad');
-  const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('casdct_admin_pass') || '122011577');
+  const [adminName, setAdminName] = useState(getAdminSessionUsername);
+  const [adminPassword, setAdminPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [circulars, setCirculars] = useState([]);
   const [circularTitle, setCircularTitle] = useState('');
@@ -170,7 +153,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [principalMessage, setPrincipalMessage] = useState('');
   const [principalImage, setPrincipalImage] = useState('');
   const [collegePhone, setCollegePhone] = useState('');
-  const [collegeEmail, setCollegeEmail] = useState('');
+  const [collegeAddress, setCollegeAddress] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [isMeritListLive, setIsMeritListLive] = useState(false);
 
@@ -183,219 +166,244 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     return [...list].sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0));
   };
 
-  // Load local dashboard data on mount
+  // Load shared dashboard data and refresh it periodically for new applications.
   useEffect(() => {
-    // One-time migration: purge any old demo media items (campus_tour.mp4, building_view.jpg)
-    const storedMediaRaw = localStorage.getItem('casdct_media_moderation');
-    if (storedMediaRaw) {
+    let isMounted = true;
+    const loadSharedData = async (showFailure = false) => {
       try {
-        const parsedRaw = JSON.parse(storedMediaRaw);
-        const DEMO_IDS = new Set([1, 2]);
-        const DEMO_TITLES = new Set(['campus_tour.mp4', 'building_view.jpg']);
-        if (Array.isArray(parsedRaw)) {
-          const cleaned = parsedRaw.filter(m => !DEMO_IDS.has(m.id) && !DEMO_TITLES.has(m.title));
-          if (cleaned.length !== parsedRaw.length) {
-            localStorage.setItem('casdct_media_moderation', JSON.stringify(cleaned));
-          }
-        }
-      } catch (_) {}
-    }
-
-    // Load Merit List Live status
-    const storedMeritStatus = localStorage.getItem('casdct_merit_list_live');
-    setIsMeritListLive(storedMeritStatus === 'true');
-
-    // Load Admissions & sort by merit score descending
-    try {
-      setAdmissions(sortMeritDescending(readStoredAdmissions()));
-    } catch (error) {
-      console.error('Unable to load stored admissions:', error);
-      setAdmissions([]);
-      showToast('Unable to read saved admission records.', 'error');
-    }
-
-    // Load Media Moderation (no fallback to demo data — always start from storage or empty)
-    const storedMedia = localStorage.getItem('casdct_media_moderation');
-    if (storedMedia) {
-      try {
-        const parsedMedia = JSON.parse(storedMedia);
-        setMediaUploads(Array.isArray(parsedMedia) ? parsedMedia : []);
-      } catch (err) {
-        setMediaUploads([]);
-      }
-    } else {
-      setMediaUploads([]);
-    }
-
-    // Load Credentials and Settings
-    const sPName = localStorage.getItem('casdct_principal_name') || 'Prof. Shabir Ahmad';
-    const sPMessage = localStorage.getItem('casdct_principal_message') || 'It is a matter of great pride and privilege to welcome you to Government Degree College, Tank.';
-    const sPImg = localStorage.getItem('casdct_principal_image') || principalImg;
-    const sPhone = resolveCollegePhone(localStorage.getItem('casdct_college_phone'));
-    const sEmail = localStorage.getItem('casdct_college_email') || 'info@casdct.edu.pk';
-
-    setPrincipalName(sPName);
-    setPrincipalMessage(sPMessage);
-    setPrincipalImage(sPImg);
-    setCollegePhone(sPhone);
-    setCollegeEmail(sEmail);
-
-    // Real-time listener for new admission submissions from ApplyNow form
-    const handleAdmissionSync = () => {
-      try {
-        setAdmissions(sortMeritDescending(readStoredAdmissions()));
+        const data = await adminRequest('admin.bootstrap');
+        if (!isMounted) return;
+        setAdmissions(sortMeritDescending(data.admissions || []));
+        setMediaUploads(data.gallery || []);
+        setFacultyMembers(data.faculty || []);
+        setCirculars(data.circulars || []);
+        setAdminName(data.username || getAdminSessionUsername());
+        setPrincipalName(data.settings.principal_name || '');
+        setPrincipalMessage(data.settings.principal_message || '');
+        setPrincipalImage(data.settings.principal_image_url || principalImg);
+        setCollegePhone(data.settings.phone || COLLEGE_PHONE);
+        setCollegeAddress(data.settings.address || COLLEGE_ADDRESS);
+        setIsMeritListLive(data.settings.merit_list_live === true);
+        setAdminDataError('');
       } catch (error) {
-        console.error('Unable to sync stored admissions:', error);
-        showToast('Unable to refresh saved admission records.', 'error');
+        if (!isMounted) return;
+        console.error('Unable to load shared admin records:', error);
+        setAdminDataError(error.message || 'Shared admin data is unavailable.');
+        if (showFailure) showToast('Shared dashboard data could not be loaded.', 'error');
+      } finally {
+        if (isMounted) setIsLoadingAdminData(false);
       }
     };
+    loadSharedData(true);
+    const refreshInterval = window.setInterval(() => loadSharedData(false), 30000);
+    const handleAdmissionSync = () => loadSharedData(false);
     window.addEventListener('casdct_admission_submitted', handleAdmissionSync);
-    const handleAdmissionsStorage = (event) => {
-      if (event.key === 'casdct_admissions') handleAdmissionSync();
-    };
-    window.addEventListener('storage', handleAdmissionsStorage);
     return () => {
+      isMounted = false;
+      window.clearInterval(refreshInterval);
       window.removeEventListener('casdct_admission_submitted', handleAdmissionSync);
-      window.removeEventListener('storage', handleAdmissionsStorage);
     };
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    const objectUrls = [];
-
-    Promise.all(mediaUploads.filter(media => media.storageKey).map(async (media) => {
-      const file = await getMediaAsset(media.storageKey);
-      if (!file) {
-        throw new Error(`The saved media file for "${media.title}" could not be found.`);
-      }
-      const url = URL.createObjectURL(file);
-      objectUrls.push(url);
-      return [media.id, url];
-    })).then((entries) => {
-      if (isMounted) setMediaAssetUrls(Object.fromEntries(entries));
-    }).catch((error) => {
-      if (!isMounted) return;
-      console.error('Unable to load saved admin media files:', error);
-      showToast('Some saved media files could not be loaded.', 'error');
-    });
-
-    return () => {
-      isMounted = false;
-      objectUrls.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [mediaUploads]);
-
-  useEffect(() => {
     if (activeTab !== 'examination_circulars') return undefined;
-    if (!supabase) {
-      setCircularsError('Supabase is not configured for examination circulars.');
-      setCircularsLoading(false);
-      return undefined;
-    }
 
     let isMounted = true;
-    const fetchCirculars = async () => {
-      setCircularsLoading(true);
-      setCircularsError('');
-      const { data, error } = await supabase
-        .from('examination_circulars')
-        .select('id, title, publish_date, storage_path, file_name, created_at')
-        .order('publish_date', { ascending: false })
-        .order('created_at', { ascending: false });
+    setCircularsLoading(true);
+    setCircularsError('');
+    adminRequest('admin.bootstrap')
+      .then((data) => {
+        if (isMounted) setCirculars(data.circulars || []);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        console.error('Unable to load shared examination circulars:', error);
+        setCircularsError(error.message || 'Unable to load examination circulars.');
+      })
+      .finally(() => {
+        if (isMounted) setCircularsLoading(false);
+      });
 
-      if (!isMounted) return;
-      if (error) {
-        console.error('Unable to load examination circulars in admin:', error);
-        setCircularsError(error.message);
-      } else {
-        setCirculars(data || []);
-      }
-      setCircularsLoading(false);
-    };
-
-    fetchCirculars().catch((error) => {
-      if (!isMounted) return;
-      console.error('Unable to load examination circulars in admin:', error);
-      setCircularsError(error.message || 'Unable to load examination circulars.');
-      setCircularsLoading(false);
-    });
-
-    const channel = supabase
-      .channel('admin-examination-circulars')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'examination_circulars'
-      }, fetchCirculars)
-      .subscribe();
-
-    return () => {
-      isMounted = false;
-      supabase.removeChannel(channel);
-    };
+    return () => { isMounted = false; };
   }, [activeTab, circularRefreshKey]);
 
-  // Sync Admissions to localStorage on change (Maintains descending merit order)
-  const updateAdmissionsState = (updatedList) => {
-    const sorted = sortMeritDescending(updatedList);
-    setAdmissions(sorted);
-    localStorage.setItem('casdct_admissions', JSON.stringify(sorted));
+  const updateAdmission = async (regId, changes) => {
+    try {
+      const updatedRecord = await adminRequest('admin.admission.update', { regId, ...changes });
+      setAdmissions(current => sortMeritDescending(current.map(admission =>
+        admission.regId === regId ? { ...admission, ...updatedRecord } : admission
+      )));
+      setFeeEditDrafts(current => {
+        const next = { ...current };
+        delete next[regId];
+        return next;
+      });
+      return updatedRecord;
+    } catch (error) {
+      console.error('Unable to update shared admission record:', error);
+      showToast(error.message || 'Unable to save admission changes.', 'error');
+      return null;
+    }
   };
 
-  // Sync Media to localStorage on change
+  // Sync shared gallery items to the current dashboard and open public pages.
   const updateMediaState = (updatedList) => {
-    localStorage.setItem('casdct_media_moderation', JSON.stringify(updatedList));
     setMediaUploads(updatedList);
     window.dispatchEvent(new Event('casdct_media_updated'));
   };
 
+  const openFacultyForm = (profile = null) => {
+    setFacultyDraft(profile ? { ...profile } : {
+      name: '',
+      designation: '',
+      department: '',
+      qualification: '',
+      contact: '',
+      photo_url: '',
+      is_hod: false
+    });
+    setFacultyPhotoFile(null);
+    setFacultyPhotoName('');
+    setFacultyFormError('');
+    setIsFacultyModalOpen(true);
+  };
+
+  const handleSaveFaculty = async (event) => {
+    event.preventDefault();
+    setIsSavingFaculty(true);
+    setFacultyFormError('');
+    try {
+      const payload = { faculty: facultyDraft };
+      const savedProfile = facultyPhotoFile
+        ? await adminFileRequest('admin.faculty.save', payload, facultyPhotoFile, 'photo_file')
+        : await adminRequest('admin.faculty.save', payload);
+      setFacultyMembers(current => {
+        const updated = current.filter(member => member.id !== savedProfile.id);
+        return [...updated, savedProfile].sort((a, b) =>
+          a.sort_order - b.sort_order || a.name.localeCompare(b.name)
+        );
+      });
+      setIsFacultyModalOpen(false);
+      window.dispatchEvent(new Event('casdct_faculty_updated'));
+      showToast(`Saved faculty profile for ${savedProfile.name}.`, 'success');
+    } catch (error) {
+      console.error('Unable to save shared faculty profile:', error);
+      setFacultyFormError(error.message || 'Unable to save this faculty profile.');
+    } finally {
+      setIsSavingFaculty(false);
+    }
+  };
+
+  const handleDeleteFaculty = async (profile) => {
+    if (!window.confirm(`Delete ${profile.name}'s faculty profile?`)) return;
+    try {
+      await adminRequest('admin.faculty.delete', { id: profile.id });
+      setFacultyMembers(current => current.filter(member => member.id !== profile.id));
+      window.dispatchEvent(new Event('casdct_faculty_updated'));
+      showToast(`Deleted faculty profile for ${profile.name}.`, 'success');
+    } catch (error) {
+      console.error('Unable to delete shared faculty profile:', error);
+      showToast(error.message || 'Unable to delete this faculty profile.', 'error');
+    }
+  };
+
+  const updateFeeDraft = (regId, field, value) => {
+    const currentAdmission = admissions.find(admission => admission.regId === regId);
+    setFeeEditDrafts(current => ({
+      ...current,
+      [regId]: {
+        trxId: current[regId]?.trxId ?? currentAdmission?.trxId ?? '',
+        paymentMethod: current[regId]?.paymentMethod ?? currentAdmission?.paymentMethod ?? '',
+        feeAmount: current[regId]?.feeAmount ?? currentAdmission?.feeAmount ?? '',
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveFeeDetails = async (admission) => {
+    const draft = feeEditDrafts[admission.regId];
+    if (!draft) {
+      showToast('There are no unsaved payment details.', 'error');
+      return;
+    }
+    const updated = await updateAdmission(admission.regId, {
+      trxId: draft.trxId,
+      paymentMethod: draft.paymentMethod,
+      feeAmount: draft.feeAmount
+    });
+    if (updated) showToast(`Saved payment details for ${admission.fullName}.`, 'success');
+  };
+
+  const handleToggleFeeVerification = async (admission) => {
+    const verified = await updateAdmission(admission.regId, {
+      feeVerified: admission.feeVerified !== true
+    });
+    if (verified) {
+      showToast(
+        admission.feeVerified === true ? 'Payment marked as pending verification.' : 'Payment verified successfully.',
+        'success'
+      );
+    }
+  };
+
   // Action: Approve Admission
-  const handleApproveAdmission = (regId) => {
-    const updated = admissions.map(st => 
-      st.regId === regId ? { ...st, status: 'approved' } : st
-    );
-    updateAdmissionsState(updated);
+  const handleApproveAdmission = async (regId) => {
+    const updated = await updateAdmission(regId, { status: 'approved' });
+    if (!updated) return;
     const item = admissions.find(a => a.regId === regId);
     showToast(`Approved admission for ${item ? item.fullName : regId}`, 'success');
   };
 
   // Action: Reject Admission
-  const handleRejectAdmission = (regId) => {
-    const updated = admissions.map(st => 
-      st.regId === regId ? { ...st, status: 'rejected' } : st
-    );
-    updateAdmissionsState(updated);
+  const handleRejectAdmission = async (regId) => {
+    const updated = await updateAdmission(regId, { status: 'rejected' });
+    if (!updated) return;
     const item = admissions.find(a => a.regId === regId);
     showToast(`Rejected admission for ${item ? item.fullName : regId}`, 'error');
   };
 
   // Action: Approve Media
-  const handleApproveMedia = (mediaId, assignedCategory) => {
-    const updated = mediaUploads.map(m => 
-      m.id === mediaId ? { ...m, status: 'approved', isApproved: true, category: assignedCategory || m.category || 'facilities' } : m
-    );
-    updateMediaState(updated);
-    const item = mediaUploads.find(m => m.id === mediaId);
-    showToast(`Approved media item "${item ? item.title : mediaId}"`, 'success');
+  const handleApproveMedia = async (mediaId, assignedCategory) => {
+    const item = mediaUploads.find(media => media.id === mediaId);
+    if (!item) return;
+    try {
+      const updatedMedia = await adminRequest('admin.gallery.moderate', {
+        id: mediaId,
+        status: 'approved',
+        category: assignedCategory || item.category || 'facilities'
+      });
+      updateMediaState(mediaUploads.map(media => media.id === mediaId ? updatedMedia : media));
+      showToast(`Approved media item "${item.title}"`, 'success');
+    } catch (error) {
+      console.error('Unable to approve shared gallery media:', error);
+      showToast(error.message || 'Unable to approve this gallery item.', 'error');
+    }
   };
 
   // Action: Change Media Category
-  const handleMediaCategoryChange = (mediaId, newCategory) => {
-    const updated = mediaUploads.map(m =>
-      m.id === mediaId ? { ...m, category: newCategory } : m
-    );
-    updateMediaState(updated);
-    showToast(`Category updated to "${newCategory === 'sports' ? 'Sports' : 'Facilities'}"`, 'success');
+  const handleMediaCategoryChange = async (mediaId, newCategory) => {
+    const item = mediaUploads.find(media => media.id === mediaId);
+    if (!item) return;
+    try {
+      const updatedMedia = await adminRequest('admin.gallery.moderate', {
+        id: mediaId,
+        status: item.status,
+        category: newCategory
+      });
+      updateMediaState(mediaUploads.map(media => media.id === mediaId ? updatedMedia : media));
+      showToast(`Category updated to "${newCategory === 'sports' ? 'Sports' : 'Facilities'}"`, 'success');
+    } catch (error) {
+      console.error('Unable to update gallery category:', error);
+      showToast(error.message || 'Unable to update the gallery category.', 'error');
+    }
   };
 
   // Action: Reject / Delete Media — permanently removes the item from the list
   const handleRejectMedia = async (mediaId) => {
     const item = mediaUploads.find(m => m.id === mediaId);
-    const updated = mediaUploads.filter(m => m.id !== mediaId);
     try {
-      if (item?.storageKey) await deleteMediaAsset(item.storageKey);
-      updateMediaState(updated);
+      await adminRequest('admin.gallery.delete', { id: mediaId });
+      updateMediaState(mediaUploads.filter(media => media.id !== mediaId));
     } catch (error) {
       console.error('Unable to delete media item:', error);
       showToast('Unable to delete this media item. Please try again.', 'error');
@@ -409,6 +417,11 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     if (!file) return;
     if (!isSupportedMediaFile(file)) {
       setAdminUploadError('Choose an image or video file.');
+      setAdminUploadFile(null);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setAdminUploadError('Image and video files must be 10 MB or smaller.');
       setAdminUploadFile(null);
       return;
     }
@@ -439,31 +452,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
     setIsUploadingAdminMedia(true);
     setAdminUploadError('');
-    const id = Date.now();
-    const storageKey = `admin-${id}`;
-    let assetSaved = false;
     try {
-      await saveMediaAsset(storageKey, adminUploadFile);
-      assetSaved = true;
-      const newMedia = {
-        id,
-        storageKey,
-        fileName: adminUploadFile.name,
-        mimeType: adminUploadFile.type || (isVideoMediaFile(adminUploadFile) ? 'video/*' : 'image/*'),
+      const newMedia = await adminFileRequest('admin.gallery.upload', {
         title: adminUploadTitle.trim(),
-        type: isVideoMediaFile(adminUploadFile) ? 'video' : 'image',
         category: adminUploadCategory,
-        size: adminUploadFile.size > 1024 * 1024
-          ? `${(adminUploadFile.size / (1024 * 1024)).toFixed(1)} MB`
-          : `${Math.max(1, Math.round(adminUploadFile.size / 1024))} KB`,
-        uploadedBy: 'Admin',
-        uploadedTime: 'Just now',
-        thumbnail: null,
-        videoUrl: null,
-        desc: adminUploadDesc.trim() || 'Uploaded by Admin',
-        status: 'approved',
-        isApproved: true
-      };
+        description: adminUploadDesc.trim()
+      }, adminUploadFile, 'media_file');
       updateMediaState([newMedia, ...mediaUploads]);
       setAdminUploadSuccess(true);
       showToast(`Media "${newMedia.title}" uploaded and published!`, 'success');
@@ -474,13 +468,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       }, 2000);
     } catch (error) {
       console.error('Unable to upload admin media:', error);
-      if (assetSaved) {
-        try {
-          await deleteMediaAsset(storageKey);
-        } catch (cleanupError) {
-          console.error('Unable to clean up failed media upload:', cleanupError);
-        }
-      }
       setAdminUploadError(error.message || 'Unable to upload media. Please try again.');
     } finally {
       setIsUploadingAdminMedia(false);
@@ -493,10 +480,24 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   }, [admissions]);
 
   const verifiedPaymentsCount = useMemo(() => {
-    return admissions.filter(admission => admission.isPaid === true).length;
+    return admissions.filter(admission => admission.feeVerified === true).length;
   }, [admissions]);
 
-  const pendingPaymentsCount = admissions.length - verifiedPaymentsCount;
+  const pendingPaymentsCount = admissions.filter(admission =>
+    admission.feeVerified !== true && Boolean(admission.trxId || admission.feeSlipPath || admission.feeSlipName)
+  ).length;
+
+  const feeCollectedTotal = useMemo(() => admissions.reduce((total, admission) => {
+    const amount = Number(admission.feeAmount ?? admission.paymentAmount ?? admission.amount);
+    return admission.feeVerified === true && Number.isFinite(amount) && amount > 0
+      ? total + amount
+      : total;
+  }, 0), [admissions]);
+
+  const feeAmountRecordsCount = useMemo(() => admissions.filter((admission) => {
+    const amount = Number(admission.feeAmount ?? admission.paymentAmount ?? admission.amount);
+    return admission.feeVerified === true && Number.isFinite(amount) && amount > 0;
+  }).length, [admissions]);
 
   const pendingMediaCount = useMemo(() => {
     return mediaUploads.filter(m => m.status === 'pending').length;
@@ -572,55 +573,65 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Handle Logout
   const handleLogout = () => {
-    localStorage.removeItem('casdct_is_logged_in');
+    clearAdminSession();
     navigate('/login', { replace: true });
   };
 
   // Handle Toggle Live Merit List Publishing Status
-  const handleToggleMeritListLive = (newStatus) => {
-    setIsMeritListLive(newStatus);
-    localStorage.setItem('casdct_merit_list_live', newStatus ? 'true' : 'false');
-    window.dispatchEvent(new Event('casdct_merit_status_changed'));
-    showToast(
-      newStatus ? 'Merit List is now LIVE and published for the public!' : 'Merit List is now UNPUBLISHED and hidden from the public.',
-      newStatus ? 'success' : 'error'
-    );
+  const handleToggleMeritListLive = async (newStatus) => {
+    try {
+      await adminRequest('admin.merit.set', { published: newStatus });
+      setIsMeritListLive(newStatus);
+      window.dispatchEvent(new Event('casdct_merit_status_changed'));
+      showToast(
+        newStatus ? 'Merit List is now LIVE and published for the public!' : 'Merit List is now UNPUBLISHED and hidden from the public.',
+        newStatus ? 'success' : 'error'
+      );
+    } catch (error) {
+      console.error('Unable to update merit-list visibility:', error);
+      showToast(error.message || 'Unable to update merit-list visibility.', 'error');
+    }
   };
 
   // Handle Save Settings
-  const handleSaveSettings = (e) => {
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
     const savedAdminName = adminName.trim();
-    const savedAdminPassword = adminPassword.trim();
     if (!savedAdminName) {
       showToast('Admin username cannot be empty.', 'error');
       return;
     }
-    if (!savedAdminPassword) {
-      showToast('Admin password cannot be empty.', 'error');
+    if (adminPassword && adminPassword.length < 10) {
+      showToast('New admin passwords must be at least 10 characters long.', 'error');
       return;
     }
 
+    setSettingsSaved(false);
     try {
-      localStorage.setItem('casdct_admin_name', savedAdminName);
-      localStorage.setItem('casdct_admin_pass', savedAdminPassword);
-      localStorage.setItem('casdct_principal_name', principalName);
-      localStorage.setItem('casdct_principal_message', principalMessage);
-      localStorage.setItem('casdct_principal_image', principalImage);
-      localStorage.setItem('casdct_college_phone', collegePhone);
-      localStorage.setItem('casdct_college_email', collegeEmail);
-      localStorage.setItem('casdct_merit_list_live', isMeritListLive ? 'true' : 'false');
-      window.dispatchEvent(new Event('casdct_merit_status_changed'));
+      const result = await adminRequest('admin.settings.save', {
+        username: savedAdminName,
+        newPassword: adminPassword,
+        settings: {
+          principal_name: principalName,
+          principal_message: principalMessage,
+          principal_image_url: principalImage === principalImg ? '' : principalImage,
+          phone: collegePhone,
+          address: collegeAddress,
+          merit_list_live: isMeritListLive
+        }
+      });
 
-      setAdminName(savedAdminName);
-      setAdminPassword(savedAdminPassword);
+      setAdminName(result.username);
+      setAdminPassword('');
       setSettingsSaved(true);
+      window.dispatchEvent(new Event('casdct_public_settings_updated'));
+      window.dispatchEvent(new Event('casdct_merit_status_changed'));
       showToast('Admin & Institutional Settings saved successfully!', 'success');
       setTimeout(() => setSettingsSaved(false), 3000);
     } catch (error) {
       console.error('Unable to save admin settings:', error);
       setSettingsSaved(false);
-      showToast('Settings could not be saved. Please check browser storage and try again.', 'error');
+      showToast(error.message || 'Settings could not be saved.', 'error');
     }
   };
 
@@ -641,36 +652,11 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     }
 
     setIsUploadingCircular(true);
-    const storagePath = `${crypto.randomUUID()}.pdf`;
-    let uploadedPath = '';
     try {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError) throw authError;
-      if (!isAdminUser(authData.user)) {
-        throw new Error('Only an authenticated admin can publish circulars.');
-      }
-
-      const { error: uploadError } = await supabase.storage
-        .from(CIRCULARS_BUCKET)
-        .upload(storagePath, circularFile, {
-          contentType: 'application/pdf',
-          upsert: false
-        });
-      if (uploadError) throw uploadError;
-      uploadedPath = storagePath;
-
-      const { data, error } = await supabase
-        .from('examination_circulars')
-        .insert({
-          title: circularTitle.trim(),
-          publish_date: circularPublishDate,
-          storage_path: storagePath,
-          file_name: circularFile.name
-        })
-        .select('id, title, publish_date, storage_path, file_name, created_at')
-        .single();
-      if (error) throw error;
-
+      const data = await adminFileRequest('admin.circular.save', {
+        title: circularTitle.trim(),
+        publishDate: circularPublishDate
+      }, circularFile, 'circular_file');
       setCirculars((current) => [data, ...current.filter((item) => item.id !== data.id)].sort((a, b) =>
         b.publish_date.localeCompare(a.publish_date) || b.created_at.localeCompare(a.created_at)
       ));
@@ -681,16 +667,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       showToast('Examination circular published successfully.', 'success');
     } catch (error) {
       console.error('Unable to publish examination circular:', error);
-      if (uploadedPath) {
-        try {
-          const { error: cleanupError } = await supabase.storage
-            .from(CIRCULARS_BUCKET)
-            .remove([uploadedPath]);
-          if (cleanupError) console.error('Unable to clean up the uploaded PDF after publishing failed:', cleanupError);
-        } catch (cleanupError) {
-          console.error('Unable to clean up the uploaded PDF after publishing failed:', cleanupError);
-        }
-      }
       showToast(error.message || 'Unable to publish the examination circular.', 'error');
     } finally {
       setIsUploadingCircular(false);
@@ -702,23 +678,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
     setDeletingCircularId(circular.id);
     try {
-      const { error } = await supabase
-        .from('examination_circulars')
-        .delete()
-        .eq('id', circular.id);
-      if (error) throw error;
-
+      await adminRequest('admin.circular.delete', { id: circular.id });
       setCirculars((current) => current.filter((item) => item.id !== circular.id));
-      try {
-        const { error: storageError } = await supabase.storage
-          .from(CIRCULARS_BUCKET)
-          .remove([circular.storage_path]);
-        if (storageError) throw storageError;
-      } catch (storageError) {
-        console.error('Circular was unpublished but its PDF could not be deleted:', storageError);
-        showToast('Circular removed from public view, but its stored PDF could not be deleted.', 'error');
-        return;
-      }
       showToast('Examination circular removed.', 'success');
     } catch (error) {
       console.error('Unable to remove examination circular:', error);
@@ -754,9 +715,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             
             <div className="rounded-xl overflow-hidden bg-black flex items-center justify-center max-h-96 mb-6">
               {previewMedia.type === 'video' ? (
-                <video src={mediaAssetUrls[previewMedia.id] || previewMedia.videoUrl || previewMedia.thumbnail} controls autoPlay className="max-h-96 w-full object-contain" />
+                <video src={previewMedia.publicUrl} controls autoPlay className="max-h-96 w-full object-contain" />
               ) : (
-                <img src={mediaAssetUrls[previewMedia.id] || previewMedia.thumbnail} alt={previewMedia.title} className="max-h-96 w-full object-contain" />
+                <img src={previewMedia.publicUrl} alt={previewMedia.title} className="max-h-96 w-full object-contain" />
               )}
             </div>
 
@@ -845,6 +806,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </button>
 
             <button
+              onClick={() => handleTabSelect('faculty')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'faculty' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
+            >
+              <UserCheck className="w-5 h-5 text-indigo-400" />
+              <span>Faculty Management</span>
+            </button>
+
+            <button
               onClick={() => handleTabSelect('fee_records')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'fee_records' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
             >
@@ -925,6 +894,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400 flex items-center justify-center border border-teal-200/60 dark:border-teal-800">
               {activeTab === 'admissions' && <FileText className="w-6 h-6" />}
               {activeTab === 'dashboard' && <LayoutGrid className="w-6 h-6" />}
+              {activeTab === 'faculty' && <UserCheck className="w-6 h-6" />}
               {activeTab === 'fee_records' && <CreditCard className="w-6 h-6" />}
               {activeTab === 'media_gallery' && <ImageIcon className="w-6 h-6" />}
               {activeTab === 'examination_circulars' && <ClipboardList className="w-6 h-6" />}
@@ -935,6 +905,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white font-sans tracking-tight">
                 {activeTab === 'admissions' && 'Admissions & Merit List'}
                 {activeTab === 'dashboard' && 'Dashboard Overview'}
+                {activeTab === 'faculty' && 'Faculty Management'}
                 {activeTab === 'fee_records' && 'Fee Records & Receipts'}
                 {activeTab === 'media_gallery' && 'Media Gallery Moderation'}
                 {activeTab === 'examination_circulars' && 'Examination / Circulars Management'}
@@ -999,6 +970,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
         {/* Content Body based on activeTab */}
         <div key={activeTab} className="admin-content-enter p-6 space-y-6">
+          {adminDataError && (
+            <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+              Shared dashboard data is unavailable: {adminDataError}
+            </div>
+          )}
+          {isLoadingAdminData && (
+            <p role="status" className="text-sm text-slate-500">Loading shared dashboard records…</p>
+          )}
 
           {/* Dashboard overview and admissions management */}
           {(activeTab === 'admissions' || activeTab === 'dashboard') && (
@@ -1006,7 +985,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               {activeTab === 'dashboard' && (
                 <div>
                   <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Dashboard</h1>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Live summary of saved admission and payment records.</p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Live summary of shared admission and payment records.</p>
                 </div>
               )}
 
@@ -1059,13 +1038,13 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
                         <Wallet className="w-5 h-5" />
                       </div>
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Verified Payments</span>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fee Collected</span>
                     </div>
                     <div className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1">
-                      {verifiedPaymentsCount.toLocaleString()}
+                      {feeAmountRecordsCount > 0 ? `Rs ${feeCollectedTotal.toLocaleString()}` : 'Not recorded'}
                     </div>
                     <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-2">
-                      <span>Paid admission records</span>
+                      <span>{verifiedPaymentsCount.toLocaleString()} verified payments</span>
                     </div>
                   </div>
                   <Wallet className="w-24 h-24 text-emerald-500/5 dark:text-emerald-500/10 absolute -right-4 -bottom-4 pointer-events-none" />
@@ -1217,10 +1196,15 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
                             {/* Payment Status */}
                             <td className="py-4 px-6 whitespace-nowrap">
-                              {st.isPaid ? (
+                              {st.feeVerified === true ? (
                                 <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                                   <div className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">✓</div>
-                                  <span>{st.paymentStatus}</span>
+                                  <span>Payment verified{st.paymentMethod ? ` · ${st.paymentMethod}` : ''}</span>
+                                </div>
+                              ) : st.trxId || st.feeSlipPath || st.feeSlipName ? (
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                  <div className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center text-[10px]">⏱</div>
+                                  <span>Payment submitted · pending verification</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
@@ -1290,42 +1274,30 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     >
                       {/* Media Thumbnail Container */}
                       <div className="relative w-full sm:w-44 h-28 rounded-xl overflow-hidden bg-slate-900 flex-shrink-0 group">
-                        <img 
-                          src={media.thumbnail} 
-                          alt={media.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90"
-                        />
+                        {media.type === 'video' ? (
+                          <video src={media.publicUrl} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+                        ) : (
+                          <img src={media.publicUrl} alt={media.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90" />
+                        )}
                         {/* Overlay Icon / Badges */}
                         {media.type === 'video' ? (
                           <>
-                            {!mediaAssetUrls[media.id] && (
-                              <img
-                                src={media.thumbnail || principalImg}
-                                alt=""
-                                className="absolute inset-0 h-full w-full object-cover opacity-80"
-                              />
-                            )}
                             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                               <div className="w-9 h-9 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow-lg">
                                 <Play className="w-4 h-4 fill-slate-900 ml-0.5" />
                               </div>
                             </div>
                             <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                              {media.duration || '04:21'}
+                              VIDEO
                             </span>
                           </>
                         ) : (
                           <>
-                            <img
-                              src={mediaAssetUrls[media.id] || media.thumbnail || principalImg}
-                              alt={media.title}
-                              className="absolute inset-0 h-full w-full object-cover"
-                            />
                             <div className="absolute bottom-2 left-2 bg-black/60 text-white p-1 rounded">
                               <ImageIcon className="w-3.5 h-3.5" />
                             </div>
                             <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
-                              {media.badge || 'JPG'}
+                              {media.fileName?.split('.').pop()?.toUpperCase() || 'IMAGE'}
                             </span>
                           </>
                         )}
@@ -1374,6 +1346,144 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </>
           )}
 
+          {/* ---------------- FACULTY MANAGEMENT TAB ---------------- */}
+          {activeTab === 'faculty' && (
+            <div className="space-y-6">
+              <section className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Faculty Management</h1>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage shared faculty and HOD profiles shown on the public Faculty page.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openFacultyForm()}
+                  className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-teal-800"
+                >
+                  <Plus className="h-4 w-4" /> Add Faculty Profile
+                </button>
+              </section>
+
+              {facultyMembers.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  No faculty profiles are available. Add a profile to publish it on the public website.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                  {facultyMembers.map((member) => (
+                    <article key={member.id} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row">
+                      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-full bg-teal-50 dark:bg-slate-800">
+                        {member.photo_url ? (
+                          <img src={member.photo_url} alt={member.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-teal-600 dark:text-teal-300">
+                            <Users className="h-9 w-9" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h2 className="font-bold text-slate-900 dark:text-white">{member.name}</h2>
+                            <p className="mt-1 text-xs font-semibold text-teal-700 dark:text-teal-300">{member.designation}</p>
+                          </div>
+                          {member.is_hod && <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-bold uppercase text-teal-700 dark:bg-teal-950/50 dark:text-teal-300">HOD</span>}
+                        </div>
+                        <p className="mt-3 text-xs text-slate-600 dark:text-slate-300">{member.department}</p>
+                        <p className="mt-1 text-xs text-slate-500">{member.qualification}</p>
+                        {member.contact && <p className="mt-1 break-all text-xs text-slate-500">{member.contact}</p>}
+                        <div className="mt-4 flex gap-2">
+                          <button type="button" onClick={() => openFacultyForm(member)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                            <Edit3 className="mr-1 inline h-3.5 w-3.5" /> Edit
+                          </button>
+                          <button type="button" onClick={() => handleDeleteFaculty(member)} className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/40">
+                            <Trash2 className="mr-1 inline h-3.5 w-3.5" /> Delete
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+
+              {isFacultyModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
+                  <form onSubmit={handleSaveFaculty} className="relative my-auto max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+                    <button type="button" onClick={() => setIsFacultyModalOpen(false)} className="absolute right-4 top-4 rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Close faculty form">
+                      <X className="h-5 w-5" />
+                    </button>
+                    <div>
+                      <h2 className="pr-10 text-lg font-bold text-slate-900 dark:text-white">{facultyDraft.id ? 'Edit Faculty Profile' : 'Add Faculty Profile'}</h2>
+                      <p className="mt-1 text-xs text-slate-500">Profiles are saved centrally and become visible on the public Faculty page.</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {[
+                        ['name', 'Name', true],
+                        ['designation', 'Designation', true],
+                        ['department', 'Department', true],
+                        ['qualification', 'Qualification', true],
+                        ['contact', 'Email / Contact', false]
+                      ].map(([field, label, required]) => (
+                        <label key={field} className={`block text-xs font-bold text-slate-600 dark:text-slate-300 ${field === 'qualification' || field === 'contact' ? 'sm:col-span-2' : ''}`}>
+                          <span className="mb-1 block uppercase">{label}</span>
+                          <input
+                            type="text"
+                            required={required}
+                            maxLength={500}
+                            value={facultyDraft[field] || ''}
+                            onChange={(event) => setFacultyDraft(current => ({ ...current, [field]: event.target.value }))}
+                            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={facultyDraft.is_hod === true}
+                        onChange={(event) => setFacultyDraft(current => ({ ...current, is_hod: event.target.checked }))}
+                        className="h-4 w-4 accent-teal-700"
+                      />
+                      Mark as Head of Department (HOD)
+                    </label>
+                    <div>
+                      <label htmlFor="faculty-photo" className="mb-1 block text-xs font-bold uppercase text-slate-500">Profile Photo (JPEG, PNG, WebP or GIF; max 5 MB)</label>
+                      <input
+                        id="faculty-photo"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={async (event) => {
+                          const file = event.currentTarget.files?.[0];
+                          if (!file) return;
+                          if (file.size > 5 * 1024 * 1024 || !/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+                            setFacultyFormError('Choose a JPEG, PNG, WebP, or GIF image no larger than 5 MB.');
+                            event.currentTarget.value = '';
+                            return;
+                          }
+                          try {
+                            setFacultyPhotoFile(file);
+                            setFacultyPhotoName(file.name);
+                            setFacultyFormError('');
+                          } catch (error) {
+                            setFacultyFormError(error.message);
+                          }
+                        }}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                      />
+                      <p className="mt-1 text-xs text-slate-500">{facultyPhotoName || (facultyDraft.photo_url ? 'Current profile photo will be kept unless replaced.' : 'No photo selected.')}</p>
+                    </div>
+                    {facultyFormError && <p role="alert" className="text-sm font-semibold text-rose-600">{facultyFormError}</p>}
+                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                      <button type="button" onClick={() => setIsFacultyModalOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 dark:border-slate-700 dark:text-slate-300">Cancel</button>
+                      <button type="submit" disabled={isSavingFaculty} className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-60">
+                        {isSavingFaculty ? 'Saving…' : 'Save Profile'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ---------------- FEE RECORDS TAB ---------------- */}
           {activeTab === 'fee_records' && (
             <div className="space-y-6">
@@ -1385,7 +1495,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
                   <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-4 rounded-xl">
                     <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold uppercase">Verified Payments</span>
                     <div className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200 mt-1">{verifiedPaymentsCount.toLocaleString()}</div>
@@ -1397,6 +1507,10 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   <div className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 p-4 rounded-xl">
                     <span className="text-xs text-sky-700 dark:text-sky-400 font-bold uppercase">Admission Fee Records</span>
                     <div className="text-2xl font-extrabold text-sky-900 dark:text-sky-200 mt-1">{admissions.length.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800 p-4 rounded-xl">
+                    <span className="text-xs text-violet-700 dark:text-violet-400 font-bold uppercase">Verified Fee Amount</span>
+                    <div className="text-2xl font-extrabold text-violet-900 dark:text-violet-200 mt-1">{feeAmountRecordsCount > 0 ? `Rs ${feeCollectedTotal.toLocaleString()}` : 'Not recorded'}</div>
                   </div>
                 </div>
 
@@ -1410,28 +1524,82 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         <th className="p-3">Method</th>
                         <th className="p-3">Amount</th>
                         <th className="p-3">Status</th>
+                        <th className="p-3">Receipt / Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {admissions.map(st => (
+                      {admissions.map(st => {
+                        const draft = feeEditDrafts[st.regId] || {};
+                        const receiptUrl = typeof st.feeSlipUrl === 'string' &&
+                          /^https:\/\//i.test(st.feeSlipUrl)
+                          ? st.feeSlipUrl
+                          : '';
+                        return (
                         <tr key={st.regId} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                          <td className="p-3 font-semibold">{st.trxId || st.paymentStatus?.match(/TRX:\s*(\S+)/i)?.[1] || 'N/A'}</td>
+                          <td className="p-3 min-w-40">
+                            <input
+                              aria-label={`Transaction ID for ${st.fullName}`}
+                              value={draft.trxId ?? st.trxId ?? ''}
+                              onChange={(event) => updateFeeDraft(st.regId, 'trxId', event.target.value)}
+                              className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800"
+                            />
+                          </td>
                           <td className="p-3 font-semibold text-slate-900 dark:text-white">{st.fullName}</td>
                           <td className="p-3">{st.program}</td>
-                          <td className="p-3 font-medium text-teal-700 dark:text-teal-400">{st.paymentMethod || st.paymentStatus?.split(/\s+TRX:/i)[0]?.replace(/^Paid\s*-\s*/i, '') || 'N/A'}</td>
-                          <td className="p-3 font-bold">
-                            {formatRecordedFeeAmount(st)}
+                          <td className="p-3">
+                            <input
+                              aria-label={`Payment method for ${st.fullName}`}
+                              value={draft.paymentMethod ?? st.paymentMethod ?? ''}
+                              onChange={(event) => updateFeeDraft(st.regId, 'paymentMethod', event.target.value)}
+                              className="w-28 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800"
+                            />
                           </td>
                           <td className="p-3">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${st.isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                              {st.isPaid ? 'Verified' : 'Pending Slip'}
+                            <input
+                              aria-label={`Fee amount for ${st.fullName}`}
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={draft.feeAmount ?? st.feeAmount ?? ''}
+                              onChange={(event) => updateFeeDraft(st.regId, 'feeAmount', event.target.value)}
+                              placeholder="Not recorded"
+                              className="w-28 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-800"
+                            />
+                            <div className="mt-1 text-[10px] text-slate-500">{formatRecordedFeeAmount(st)}</div>
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${st.feeVerified === true ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                              {st.feeVerified === true ? 'Verified' : 'Pending'}
                             </span>
                           </td>
+                          <td className="p-3">
+                            <div className="flex min-w-40 flex-col items-start gap-2">
+                              {receiptUrl ? (
+                                <a href={receiptUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-teal-700 underline dark:text-teal-300">
+                                  View {st.feeSlipName || 'receipt'}
+                                </a>
+                              ) : <span className="text-xs text-slate-500">{st.feeSlipName || 'No receipt'}</span>}
+                              <button
+                                type="button"
+                                onClick={() => handleSaveFeeDetails(st)}
+                                className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
+                              >
+                                Save details
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleFeeVerification(st)}
+                                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold text-white ${st.feeVerified === true ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                              >
+                                {st.feeVerified === true ? 'Unverify payment' : 'Verify payment'}
+                              </button>
+                            </div>
+                          </td>
                         </tr>
-                      ))}
+                      );})}
                       {admissions.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="p-6 text-center text-slate-500">No admission fee records have been submitted.</td>
+                          <td colSpan={7} className="p-6 text-center text-slate-500">No admission fee records have been submitted.</td>
                         </tr>
                       )}
                     </tbody>
@@ -1543,7 +1711,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                               <span className="text-teal-600 dark:text-teal-400">Choose a file</span> or drag it here
                             </span>
-                            <span className="mt-1 text-xs text-slate-500">Image and video files</span>
+                            <span className="mt-1 text-xs text-slate-500">Supported images and videos, maximum 10 MB</span>
                           </>
                         )}
                       </label>
@@ -1614,7 +1782,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                           <div className="relative h-44 rounded-xl overflow-hidden bg-black mb-3">
                             {media.type === 'video' ? (
                               <video
-                                src={mediaAssetUrls[media.id] || media.videoUrl}
+                                src={media.publicUrl}
                                 muted
                                 playsInline
                                 preload="metadata"
@@ -1622,7 +1790,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                               />
                             ) : (
                               <img
-                                src={mediaAssetUrls[media.id] || media.thumbnail}
+                                src={media.publicUrl}
                                 alt={media.title}
                                 className="h-full w-full object-cover"
                               />
@@ -1884,7 +2052,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
                         autoComplete="new-password"
-                        required
+                        placeholder="Leave blank to keep the current password"
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 pr-12 py-2.5 text-sm font-semibold"
                       />
                       <button
@@ -1930,15 +2098,15 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">College Email Address</label>
-                    <input 
-                      type="text" 
-                      value={collegeEmail} 
-                      onChange={(e) => setCollegeEmail(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold"
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1 sm:col-span-2">
+                    Campus Address
+                    <textarea
+                      rows={2}
+                      value={collegeAddress}
+                      onChange={(e) => setCollegeAddress(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     />
-                  </div>
+                  </label>
                 </div>
 
                 <button type="submit" className="bg-teal-700 hover:bg-teal-800 text-white font-bold px-6 py-3 rounded-xl text-sm uppercase tracking-wider shadow-md">

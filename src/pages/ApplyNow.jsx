@@ -6,6 +6,7 @@ import {
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
 import { COLLEGE_PHONE } from '../lib/contactDetails';
+import { publicFileRequest, publicRequest } from '../lib/adminApi';
 
 export default function ApplyNow() {
   const { t } = useLanguage();
@@ -42,6 +43,7 @@ export default function ApplyNow() {
   const [submitted, setSubmitted] = useState(false);
   const [submittedStudent, setSubmittedStudent] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // Check if selected program is a BS Program
   const isBsProgram = useMemo(() => {
@@ -74,23 +76,26 @@ export default function ApplyNow() {
   const handleFeeSlipUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024 ||
+          !(file.type === 'application/pdf' || file.type.startsWith('image/'))) {
+        setSubmitError('Choose an image or PDF receipt no larger than 5 MB.');
+        e.target.value = '';
+        setFeeSlipName('');
+        setFeeSlipFile(null);
+        return;
+      }
+      setSubmitError('');
       setFeeSlipName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFeeSlipFile(reader.result);
-      };
-      reader.readAsDataURL(file);
+      setFeeSlipFile(file);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError('');
 
-    setTimeout(() => {
-      // Auto-generate Unique Student ID in STU-10255 format
-      const randomNum = Math.floor(10200 + Math.random() * 800);
-      const generatedId = `STU-${randomNum}`;
+    try {
       const meritValue = calculatedMerit ? parseFloat(calculatedMerit) : 0;
 
       const marksText = isBsProgram
@@ -98,7 +103,6 @@ export default function ApplyNow() {
         : (formData.matricObtainedMarks && formData.matricTotalMarks ? `${formData.matricObtainedMarks}/${formData.matricTotalMarks}` : 'N/A');
 
       const newRecord = {
-        regId: generatedId,
         fullName: formData.studentName,
         studentName: formData.studentName,
         fatherName: formData.fatherName,
@@ -125,34 +129,18 @@ export default function ApplyNow() {
         meritPct: meritValue,
         paymentMethod: formData.paymentMethod,
         trxId: formData.trxId,
-        paymentStatus: formData.trxId ? `Paid - ${formData.paymentMethod} TRX: ${formData.trxId}` : 'Pending Slip',
-        isPaid: Boolean(formData.trxId),
+        paymentStatus: formData.trxId ? `Submitted - ${formData.paymentMethod} TRX: ${formData.trxId}` : 'Pending Slip',
+        isPaid: false,
         feeSlipName: feeSlipName,
-        feeSlipData: feeSlipFile,
-        status: 'pending',
-        appliedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       };
 
-      // Save to localStorage admissions collection (Maintains descending merit ranking)
-      const storedAdmissions = localStorage.getItem('casdct_admissions');
-      let admissionsArray = [];
-      if (storedAdmissions) {
-        try {
-          admissionsArray = JSON.parse(storedAdmissions);
-        } catch (err) {
-          admissionsArray = [];
-        }
-      }
-      
-      const updatedAdmissions = [...admissionsArray, newRecord].sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0));
-      localStorage.setItem('casdct_admissions', JSON.stringify(updatedAdmissions));
-
-      // Trigger custom window event for real-time sync with Admin Dashboard & Public Merit List
+      const savedRecord = feeSlipFile
+        ? await publicFileRequest('public.submitAdmission', { record: newRecord }, feeSlipFile, 'receipt_file')
+        : await publicRequest('public.submitAdmission', { record: newRecord });
       window.dispatchEvent(new Event('casdct_admission_submitted'));
 
-      setSubmittedStudent(newRecord);
+      setSubmittedStudent(savedRecord);
       setSubmitted(true);
-      setIsSubmitting(false);
 
       // Reset form
       setFormData({
@@ -166,7 +154,12 @@ export default function ApplyNow() {
       });
       setFeeSlipFile(null);
       setFeeSlipName('');
-    }, 600);
+    } catch (error) {
+      console.error('Unable to submit the shared admission application:', error);
+      setSubmitError(error.message || 'Your application could not be submitted. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -263,6 +256,11 @@ export default function ApplyNow() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
+                  {submitError && (
+                    <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-700">
+                      {submitError}
+                    </p>
+                  )}
                   
                   {/* STEP 1: PROGRAM SELECTION */}
                   <div className="space-y-5 bg-teal-50/40 dark:bg-slate-850 p-6 rounded-2xl border border-teal-100/70 dark:border-slate-800">

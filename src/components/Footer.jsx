@@ -11,6 +11,7 @@ import {
   resolveCollegeAddress,
   resolveCollegePhone
 } from '../lib/contactDetails';
+import { publicRequest } from '../lib/adminApi';
 
 export default function Footer() {
   const { language, setLanguage, t } = useLanguage();
@@ -22,10 +23,24 @@ export default function Footer() {
   const [collegeAddress, setCollegeAddress] = useState(COLLEGE_ADDRESS);
 
   useEffect(() => {
-    const storedPhone = localStorage.getItem('casdct_college_phone');
-    const storedAddress = localStorage.getItem('casdct_college_address');
-    setCollegePhone(resolveCollegePhone(storedPhone));
-    setCollegeAddress(resolveCollegeAddress(storedAddress));
+    let isMounted = true;
+    const loadSettings = async () => {
+      try {
+        const settings = await publicRequest('public.settings');
+        if (!isMounted) return;
+        setCollegePhone(resolveCollegePhone(settings.phone));
+        setCollegeAddress(resolveCollegeAddress(settings.address));
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Unable to load shared college contact details:', error);
+      }
+    };
+    loadSettings();
+    window.addEventListener('casdct_public_settings_updated', loadSettings);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('casdct_public_settings_updated', loadSettings);
+    };
   }, []);
 
   return (

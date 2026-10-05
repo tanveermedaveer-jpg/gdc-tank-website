@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardList, ShieldCheck, CheckCircle2, DollarSign, FileText, Award, Search, Trophy } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
+import { publicRequest } from '../lib/adminApi';
 
 export default function Admission() {
   const { t } = useLanguage();
@@ -12,29 +13,36 @@ export default function Admission() {
   const [selectedProgram, setSelectedProgram] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMeritListLive, setIsMeritListLive] = useState(false);
+  const [isLoadingMerit, setIsLoadingMerit] = useState(true);
+  const [meritError, setMeritError] = useState('');
 
-  // Load admissions and merit list status from localStorage on mount and sync on changes
+  // Public merit data excludes applicant contact, identity, and receipt details.
   useEffect(() => {
-    const loadMeritList = () => {
-      const liveStatus = localStorage.getItem('casdct_merit_list_live');
-      setIsMeritListLive(liveStatus === 'true');
-
-      const stored = localStorage.getItem('casdct_admissions');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            // Sort by Merit % descending
-            const sorted = [...parsed].sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0));
-            setAdmissions(sorted);
-          }
-        } catch (e) {}
+    let isMounted = true;
+    const loadMeritList = async () => {
+      try {
+        const result = await publicRequest('public.merit');
+        if (!isMounted) return;
+        setIsMeritListLive(result.published === true);
+        setAdmissions((result.admissions || []).sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0)));
+        setMeritError('');
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Unable to load shared public merit list:', error);
+        setAdmissions([]);
+        setIsMeritListLive(false);
+        setMeritError('The merit list could not be loaded. Please try again later.');
+      } finally {
+        if (isMounted) setIsLoadingMerit(false);
       }
     };
     loadMeritList();
+    const refreshTimer = window.setInterval(loadMeritList, 30000);
     window.addEventListener('casdct_admission_submitted', loadMeritList);
     window.addEventListener('casdct_merit_status_changed', loadMeritList);
     return () => {
+      isMounted = false;
+      window.clearInterval(refreshTimer);
       window.removeEventListener('casdct_admission_submitted', loadMeritList);
       window.removeEventListener('casdct_merit_status_changed', loadMeritList);
     };
@@ -44,9 +52,9 @@ export default function Admission() {
   const publicMeritList = useMemo(() => {
     return admissions.filter(st => {
       const query = searchQuery.toLowerCase().trim();
-      const matchesQuery = st.fullName.toLowerCase().includes(query) || 
-                           st.regId.toLowerCase().includes(query) || 
-                           st.program.toLowerCase().includes(query);
+      const matchesQuery = String(st.fullName || '').toLowerCase().includes(query) ||
+                           String(st.regId || '').toLowerCase().includes(query) ||
+                           String(st.program || '').toLowerCase().includes(query);
       if (!matchesQuery) return false;
       if (selectedProgram === 'All') return true;
       return st.program.toLowerCase().includes(selectedProgram.toLowerCase());
@@ -237,7 +245,11 @@ export default function Admission() {
           </div>
 
           {/* PUBLIC LIVE MERIT RANKING LIST (Strictly Controlled by Admin Publish Status) */}
-          {isMeritListLive ? (
+          {meritError ? (
+            <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center text-sm font-semibold text-rose-700">{meritError}</p>
+          ) : isLoadingMerit ? (
+            <p role="status" className="p-4 text-center text-sm text-slate-500">Loading current merit-list status…</p>
+          ) : isMeritListLive ? (
             <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
                 <div className="flex items-center gap-3">

@@ -2,46 +2,41 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Lock, ArrowLeft, Eye, EyeOff, X } from 'lucide-react';
 import campusImg from '../assets/campus.png';
+import { clearAdminSession, getAdminSessionToken, signInAdmin } from '../lib/adminApi';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const storedAdminName = localStorage.getItem('casdct_admin_name');
-    const storedAdminPassword = localStorage.getItem('casdct_admin_pass');
-    if (!storedAdminName?.trim()) localStorage.setItem('casdct_admin_name', 'Shabir Ahmad');
-    if (!storedAdminPassword?.trim()) localStorage.setItem('casdct_admin_pass', '122011577');
+    localStorage.removeItem('casdct_admin_pass');
+    localStorage.removeItem('casdct_is_logged_in');
 
-    if (localStorage.getItem('casdct_is_logged_in') === 'true') {
+    if (getAdminSessionToken()) {
       const targetPath = location.state?.from?.pathname || '/admin';
       navigate(targetPath, { replace: true });
     }
   }, [navigate, location.state]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
     try {
-      const storedAdminName = (localStorage.getItem('casdct_admin_name') || 'Shabir Ahmad').trim();
-      const storedAdminPassword = (localStorage.getItem('casdct_admin_pass') || '122011577').trim();
-      if (username.trim() !== storedAdminName || password.trim() !== storedAdminPassword) {
-        setError('Invalid Username or Password');
-        setPassword('');
-        return;
-      }
-
-      localStorage.setItem('casdct_is_logged_in', 'true');
-      setError('');
+      await signInAdmin(username, password);
       const targetPath = location.state?.from?.pathname || '/admin';
       navigate(targetPath, { replace: true });
     } catch (loginError) {
-      console.error('Admin sign-in failed:', loginError);
-      setError('Unable to sign in. Please check browser storage and try again.');
+      clearAdminSession();
+      setError(loginError.message || 'Unable to sign in. Please try again.');
       setPassword('');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -130,9 +125,10 @@ export default function Login() {
 
             <button 
               type="submit"
+              disabled={isSubmitting}
               className="bg-teal-700 hover:bg-teal-800 text-white w-full py-2.5 rounded-md font-bold transition-colors text-sm uppercase tracking-wider shadow-md"
             >
-              LOGIN
+              {isSubmitting ? 'SIGNING IN...' : 'LOGIN'}
             </button>
           </form>
 

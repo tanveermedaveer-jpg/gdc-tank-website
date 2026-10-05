@@ -2,7 +2,13 @@ import { useState, useEffect } from 'react';
 import { Eye, Image as ImageIcon, X, Download, Plus, Upload, CheckCircle2, Video } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
-import { getMediaAsset } from '../lib/mediaAssets';
+import { publicFileRequest, publicRequest } from '../lib/adminApi';
+
+const GALLERY_FILE_TYPES = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v',
+  'video/ogg', 'video/x-msvideo'
+];
 
 export default function Gallery() {
   const { t } = useLanguage();
@@ -22,83 +28,35 @@ export default function Gallery() {
   const [uploaderName, setUploaderName] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [galleryError, setGalleryError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
-    let currentObjectUrls = [];
-    let loadSequence = 0;
-
     const loadApprovedGallery = async () => {
-      const sequence = ++loadSequence;
-      const storedMedia = localStorage.getItem('casdct_media_moderation');
-      if (!storedMedia) {
-        if (!isMounted || sequence !== loadSequence) return;
-        currentObjectUrls.forEach(url => URL.revokeObjectURL(url));
-        currentObjectUrls = [];
-        setGalleryItems([]);
-        return;
-      }
-
       try {
-        const parsed = JSON.parse(storedMedia);
-        if (!Array.isArray(parsed)) throw new TypeError('Saved gallery media must be an array.');
-        const createdObjectUrls = [];
-        const approved = parsed.filter(item => item.isApproved === true || item.status === 'approved');
-        const mapped = await Promise.all(approved.map(async (item) => {
-          let assetUrl;
-          if (item.storageKey) {
-            try {
-              const file = await getMediaAsset(item.storageKey);
-              if (file) {
-                assetUrl = URL.createObjectURL(file);
-                createdObjectUrls.push(assetUrl);
-              } else {
-                console.error(`Saved gallery media file is missing for "${item.title}".`);
-              }
-            } catch (error) {
-              console.error(`Unable to load saved gallery media file for "${item.title}":`, error);
-            }
-          }
-          const fallbackUrl = item.thumbnail || item.image || item.mediaUrl || campusImg;
-          const mediaUrl = assetUrl || item.videoUrl || item.mediaUrl || item.thumbnail || item.image || campusImg;
-          return {
-            id: item.id,
-            image: assetUrl || fallbackUrl,
-            mediaUrl,
-            fileName: item.fileName,
-            title: item.title,
-            category: item.category || 'campus',
-            desc: item.desc || item.uploadedTime || 'Campus media gallery contribution',
-            type: item.type || (item.videoUrl ? 'video' : 'image'),
-            uploadedBy: item.uploadedBy || 'Anonymous'
-          };
-        }));
-
-        if (!isMounted || sequence !== loadSequence) {
-          createdObjectUrls.forEach(url => URL.revokeObjectURL(url));
-          return;
-        }
-        currentObjectUrls.forEach(url => URL.revokeObjectURL(url));
-        currentObjectUrls = createdObjectUrls;
-        setGalleryItems(mapped);
+        const items = await publicRequest('public.gallery');
+        if (!isMounted) return;
+        setGalleryItems((items || []).map(item => ({
+          ...item,
+          image: item.publicUrl,
+          mediaUrl: item.publicUrl
+        })));
+        setGalleryError('');
       } catch (error) {
-        console.error('Unable to load approved gallery media:', error);
-        if (isMounted) setGalleryItems([]);
+        if (!isMounted) return;
+        console.error('Unable to load shared approved gallery media:', error);
+        setGalleryError('Gallery items could not be loaded. Please try again later.');
       }
-    };
-
-    const handleStorage = (event) => {
-      if (event.key === 'casdct_media_moderation') loadApprovedGallery();
     };
 
     loadApprovedGallery();
+    const refreshTimer = window.setInterval(loadApprovedGallery, 30000);
     window.addEventListener('casdct_media_updated', loadApprovedGallery);
-    window.addEventListener('storage', handleStorage);
     return () => {
       isMounted = false;
+      window.clearInterval(refreshTimer);
       window.removeEventListener('casdct_media_updated', loadApprovedGallery);
-      window.removeEventListener('storage', handleStorage);
-      currentObjectUrls.forEach(url => URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -106,53 +64,37 @@ export default function Gallery() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (!GALLERY_FILE_TYPES.includes(file.type) || file.size > 10 * 1024 * 1024) {
+      setUploadError('Choose a supported image or video file no larger than 10 MB.');
+      if (uploadFilePreview) URL.revokeObjectURL(uploadFilePreview);
+      setUploadFile(null);
+      setUploadFilePreview('');
+      e.target.value = '';
+      return;
+    }
+    setUploadError('');
     setUploadFile(file);
     // Revoke any previous object URL to avoid memory leaks
     if (uploadFilePreview) URL.revokeObjectURL(uploadFilePreview);
     setUploadFilePreview(URL.createObjectURL(file));
   };
 
-  // Handle Media Submission by User (file → base64 → localStorage)
-  const handleSubmitMedia = (e) => {
+  // Public submissions are stored centrally and remain pending until admin approval.
+  const handleSubmitMedia = async (e) => {
     e.preventDefault();
     if (!uploadTitle.trim() || !uploadFile) return;
 
     setIsSubmitting(true);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target.result;
-      const detectedType = uploadFile.type.startsWith('video/') ? 'video' : 'image';
-
-      const newMedia = {
-        id: Date.now(),
+    setUploadError('');
+    try {
+      await publicFileRequest('public.gallery.upload', {
         title: uploadTitle.trim(),
-        type: detectedType,
         category: uploadCategory,
-        size: uploadFile.size > 1024 * 1024
-          ? `${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB`
-          : `${Math.round(uploadFile.size / 1024)} KB`,
-        uploadedBy: uploaderName.trim() || 'Student / Visitor',
-        uploadedTime: 'Just now',
-        thumbnail: dataUrl,
-        videoUrl: detectedType === 'video' ? dataUrl : null,
-        desc: uploadDesc.trim() || 'Uploaded by user',
-        status: 'pending',
-        isApproved: false
-      };
-
-      const storedMedia = localStorage.getItem('casdct_media_moderation');
-      let mediaList = [];
-      if (storedMedia) {
-        try {
-          const parsed = JSON.parse(storedMedia);
-          if (Array.isArray(parsed)) mediaList = parsed;
-        } catch (err) {}
-      }
-      mediaList.unshift(newMedia);
-      localStorage.setItem('casdct_media_moderation', JSON.stringify(mediaList));
+        description: uploadDesc.trim(),
+        uploaderName: uploaderName.trim()
+      }, uploadFile, 'media_file');
       window.dispatchEvent(new Event('casdct_media_updated'));
 
-      setIsSubmitting(false);
       setUploadSuccess(true);
       setTimeout(() => {
         setUploadSuccess(false);
@@ -163,10 +105,17 @@ export default function Gallery() {
         setUploadDesc('');
         setUploaderName('');
       }, 2500);
-    };
-    reader.onerror = () => setIsSubmitting(false);
-    reader.readAsDataURL(uploadFile);
+    } catch (error) {
+      console.error('Unable to submit gallery media:', error);
+      setUploadError(error.message || 'Unable to submit this gallery media.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  useEffect(() => () => {
+    if (uploadFilePreview) URL.revokeObjectURL(uploadFilePreview);
+  }, [uploadFilePreview]);
 
   const filteredItems = activeTab === 'all'
     ? galleryItems
@@ -260,7 +209,11 @@ export default function Gallery() {
           </div>
 
           {/* Gallery Items Grid */}
-          {filteredItems.length === 0 ? (
+          {galleryError ? (
+            <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center text-sm font-semibold text-rose-700">
+              {galleryError}
+            </p>
+          ) : filteredItems.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center shadow-sm space-y-3 max-w-xl mx-auto my-8">
               <div className="w-16 h-16 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center mx-auto">
                 <ImageIcon className="w-8 h-8" />
@@ -377,6 +330,11 @@ export default function Gallery() {
               </div>
             ) : (
               <form onSubmit={handleSubmitMedia} className="space-y-4">
+                {uploadError && (
+                  <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">
+                    {uploadError}
+                  </p>
+                )}
 
                 {/* Title */}
                 <div>
@@ -384,6 +342,7 @@ export default function Gallery() {
                   <input
                     type="text"
                     required
+                    maxLength={180}
                     value={uploadTitle}
                     onChange={(e) => setUploadTitle(e.target.value)}
                     placeholder="Enter a descriptive title..."
@@ -437,13 +396,13 @@ export default function Gallery() {
                         <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                           <span className="text-teal-600 dark:text-teal-400 font-bold">Click to browse</span> or drag & drop
                         </p>
-                        <p className="text-[10px] text-slate-400">Supports JPG, PNG, GIF, MP4, MOV (max 20 MB)</p>
+                        <p className="text-[10px] text-slate-400">Supported images and videos (max 10 MB)</p>
                       </div>
                     )}
                     <input
                       id="gallery-file-upload"
                       type="file"
-                      accept="image/*,video/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/quicktime,video/webm,video/x-m4v,video/ogg,video/x-msvideo"
                       required
                       className="hidden"
                       onChange={handleFileChange}

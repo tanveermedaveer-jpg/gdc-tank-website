@@ -1,39 +1,49 @@
-# React + Vite
+# Government Captain Ashfaq Shaheed Degree College, Tank
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## Shared admin data and authentication
 
-Currently, two official plugins are available:
+Public admissions, faculty profiles, college contact/principal settings, fee verification, gallery media, and examination circular metadata are stored in Supabase. The admin dashboard keeps the username/password interface; authentication and all privileged writes run through the `admin-api` Edge Function. Passwords are salted PBKDF2 hashes in the database, and the browser receives only a short-lived signed session token. The Supabase service-role key must never be added to the Vite app or repository.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The Edge Function needs these secrets in the Supabase project:
 
-## React Compiler
+- `ADMIN_INITIAL_USERNAME`: the first admin username.
+- `ADMIN_INITIAL_PASSWORD`: the first admin password (at least 10 characters).
+- `ADMIN_SESSION_SECRET`: a random secret with at least 32 characters.
+- `ALLOWED_ORIGINS`: comma-separated production site origin(s), plus `http://localhost:5173` when local development is needed.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
-
-## Admin authentication and examination circulars
-
-The admin dashboard login uses the configured admin username and password stored in this browser's local storage (`casdct_admin_name` and `casdct_admin_pass`; defaults are `Shabir Ahmad` and `122011577`). This legacy client-side login is not server-secure and credentials do not sync between browsers.
-
-Public examination circulars are stored in Supabase. Public visitors can read published circulars; uploading and deleting circulars still requires a Supabase Auth session with the `admin` application-metadata role. The dashboard's local username/password login does not establish a Supabase session.
+Supabase provides `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to Edge Functions. Configure the public Vite app with `.env.local` (copy `.env.example`) and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Set the same public variables in the production hosting environment and redeploy.
 
 1. Create a Supabase project and run [`supabase/setup.sql`](./supabase/setup.sql) in its SQL Editor.
-2. Create the initial admin account in **Authentication → Users**. Disable public sign-ups in the Supabase Auth settings.
-3. In the SQL Editor, assign the admin role to that account, replacing the email:
+2. Install and authenticate the [Supabase CLI](https://supabase.com/docs/guides/cli), then link the project:
 
-   ```sql
-   update auth.users
-   set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb)
-     || '{"role":"admin"}'::jsonb
-   where email = 'admin@example.edu';
+   ```powershell
+   npx supabase login
+   npx supabase link --project-ref YOUR_PROJECT_REF
    ```
 
-   Sign in again after changing the role so Supabase issues a fresh token.
-4. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the project's URL and public anon/publishable key. Never put a Supabase service-role key in the client or repository.
-5. Set the same two variables in the production hosting environment (for example, Vercel project settings), then redeploy the site.
+3. Set the Edge Function secrets in Supabase **Project Settings → Edge Functions → Secrets** (or use `npx supabase secrets set`). Keep these values private; do not commit them.
+4. Deploy the function. The checked-in [`supabase/config.toml`](./supabase/config.toml) disables Supabase JWT verification at the gateway because this endpoint verifies its own signed admin session tokens:
 
-The SQL setup creates the circular metadata table, public read policies, admin-only write/delete policies, and the public `examination-circulars` storage bucket. PDF uploads are limited to 10 MB. The Settings page updates the signed-in admin's Supabase email and password; leave the new-password field empty to keep the existing password. Email changes may require confirmation through the link Supabase sends.
+   ```powershell
+   npx supabase functions deploy admin-api
+   ```
+
+5. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local` for local testing and in the production host settings before redeploying the site.
+
+The first successful sign-in using the configured initial credentials initializes the hashed admin credential row. Updating the username or password in the dashboard invalidates earlier admin sessions. Public visitors may read faculty, safe institutional settings, approved merit-list data, and circulars. Admissions and fee details have no public read policy; all administrative reads and writes require a valid signed admin session at the Edge Function.
+
+The SQL setup creates public circular, faculty-photo, and gallery-media buckets, a private receipt bucket, shared faculty/settings/admissions/gallery tables, and row-level security policies. The application submission endpoint stores applicant data centrally and keeps receipts private to the admin service. Public gallery uploads are moderated before publication and are rate-limited per network.
+
+## Development
+
+```powershell
+npm install
+npm run dev
+```
+
+Production build and lint:
+
+```powershell
+npm run build
+npm run lint
+```

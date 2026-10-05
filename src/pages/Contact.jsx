@@ -9,7 +9,7 @@ import {
   resolveCollegeAddress,
   resolveCollegePhone
 } from '../lib/contactDetails';
-import { publicRequest } from '../lib/adminApi';
+import { subscribeLocalData } from '../lib/adminApi';
 
 export default function Contact() {
   const { t } = useLanguage();
@@ -28,24 +28,10 @@ export default function Contact() {
   const [collegeAddress, setCollegeAddress] = useState(COLLEGE_ADDRESS);
 
   useEffect(() => {
-    let isMounted = true;
-    const loadSettings = async () => {
-      try {
-        const settings = await publicRequest('public.settings');
-        if (!isMounted) return;
-        setCollegePhone(resolveCollegePhone(settings.phone));
-        setCollegeAddress(resolveCollegeAddress(settings.address));
-      } catch (error) {
-        if (!isMounted) return;
-        console.error('Unable to load shared college contact details:', error);
-      }
-    };
-    loadSettings();
-    window.addEventListener('casdct_public_settings_updated', loadSettings);
-    return () => {
-      isMounted = false;
-      window.removeEventListener('casdct_public_settings_updated', loadSettings);
-    };
+    return subscribeLocalData('settings', (settings) => {
+      setCollegePhone(resolveCollegePhone(settings.phone));
+      setCollegeAddress(resolveCollegeAddress(settings.address));
+    }, (error) => console.error('Unable to load local college contact details:', error));
   }, []);
 
   const handleSubmit = (e) => {

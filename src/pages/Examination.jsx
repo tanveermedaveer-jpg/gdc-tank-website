@@ -1,61 +1,48 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Download, Landmark, FileText, CheckSquare, ShieldAlert, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import campusImg from '../assets/campus.png';
-import { CIRCULARS_BUCKET, supabase } from '../lib/supabase';
+import { getLocalFileUrl, subscribeLocalData } from '../lib/adminApi';
 
 export default function Examination() {
   const { t, language } = useLanguage();
   const [circulars, setCirculars] = useState([]);
-  const [isLoadingCirculars, setIsLoadingCirculars] = useState(Boolean(supabase));
-  const [circularsError, setCircularsError] = useState(
-    supabase ? '' : 'Circulars are temporarily unavailable because this service is not configured.'
-  );
+  const [isLoadingCirculars, setIsLoadingCirculars] = useState(true);
+  const [circularsError, setCircularsError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
-
-  const loadCirculars = useCallback(async (isActive = () => true) => {
-    if (!supabase) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('examination_circulars')
-        .select('id, title, publish_date, storage_path, file_name')
-        .order('publish_date', { ascending: false })
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      if (!isActive()) return;
-      setCirculars(data || []);
-      setCircularsError('');
-    } catch (error) {
-      if (!isActive()) return;
-      console.error('Unable to load examination circulars:', error);
-      setCircularsError('Circulars could not be loaded. Please try again.');
-    } finally {
-      if (isActive()) setIsLoadingCirculars(false);
-    }
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
-    if (!supabase) return undefined;
-
-    const channel = supabase
-      .channel('public-examination-circulars')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'examination_circulars'
-      }, () => loadCirculars(() => isMounted))
-      .subscribe();
-    Promise.resolve().then(() => {
-      if (isMounted) loadCirculars(() => isMounted);
+    setIsLoadingCirculars(true);
+    const unsubscribe = subscribeLocalData('circulars', async (items) => {
+      try {
+        const published = await Promise.all(items.map(async (circular) => ({
+          ...circular,
+          public_url: await getLocalFileUrl(circular.storage_path)
+        })));
+        if (!isMounted) return;
+        setCirculars(published.sort((a, b) =>
+          b.publish_date.localeCompare(a.publish_date) || b.created_at.localeCompare(a.created_at)
+        ));
+        setCircularsError('');
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Unable to load local examination circulars:', error);
+        setCircularsError('A saved circular file could not be loaded.');
+      } finally {
+        if (isMounted) setIsLoadingCirculars(false);
+      }
+    }, (error) => {
+      if (!isMounted) return;
+      console.error('Unable to subscribe to local examination circulars:', error);
+      setCircularsError('Circulars could not be loaded. Please try again.');
+      setIsLoadingCirculars(false);
     });
-
     return () => {
       isMounted = false;
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
-  }, [loadCirculars, reloadKey]);
+  }, [reloadKey]);
 
   return (
     <div className="flex-grow">
@@ -189,7 +176,6 @@ export default function Examination() {
                       <span>{circularsError}</span>
                       <button
                         type="button"
-                        disabled={!supabase}
                         onClick={() => {
                           setIsLoadingCirculars(true);
                           setReloadKey(key => key + 1);
@@ -205,9 +191,7 @@ export default function Examination() {
                       {language === 'ur' ? 'فی الحال کوئی امتحانی سرکلر شائع نہیں ہوا۔' : 'No examination circulars have been published yet.'}
                     </p>
                   ) : circulars.map((circular) => {
-                    const fileUrl = supabase.storage
-                      .from(CIRCULARS_BUCKET)
-                      .getPublicUrl(circular.storage_path).data.publicUrl;
+                    const fileUrl = circular.public_url;
                     const publishedDate = new Date(`${circular.publish_date}T00:00:00`)
                       .toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-PK', {
                         year: 'numeric',

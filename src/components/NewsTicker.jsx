@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { subscribeHomeContent } from '../lib/firebase';
+import { subscribeHomeContent } from '../lib/adminApi';
 
 export default function NewsTicker() {
   const { t } = useLanguage();

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardList, ShieldCheck, CheckCircle2, DollarSign, FileText, Award, Search, Trophy } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
-import { publicRequest } from '../lib/adminApi';
+import { subscribeMeritList } from '../lib/adminApi';
 
 export default function Admission() {
   const { t } = useLanguage();
@@ -18,34 +18,18 @@ export default function Admission() {
 
   // Public merit data excludes applicant contact, identity, and receipt details.
   useEffect(() => {
-    let isMounted = true;
-    const loadMeritList = async () => {
-      try {
-        const result = await publicRequest('public.merit');
-        if (!isMounted) return;
-        setIsMeritListLive(result.published === true);
-        setAdmissions((result.admissions || []).sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0)));
-        setMeritError('');
-      } catch (error) {
-        if (!isMounted) return;
-        console.error('Unable to load shared public merit list:', error);
-        setAdmissions([]);
-        setIsMeritListLive(false);
-        setMeritError('The merit list could not be loaded. Please try again later.');
-      } finally {
-        if (isMounted) setIsLoadingMerit(false);
-      }
-    };
-    loadMeritList();
-    const refreshTimer = window.setInterval(loadMeritList, 30000);
-    window.addEventListener('casdct_admission_submitted', loadMeritList);
-    window.addEventListener('casdct_merit_status_changed', loadMeritList);
-    return () => {
-      isMounted = false;
-      window.clearInterval(refreshTimer);
-      window.removeEventListener('casdct_admission_submitted', loadMeritList);
-      window.removeEventListener('casdct_merit_status_changed', loadMeritList);
-    };
+    return subscribeMeritList((result) => {
+      setIsMeritListLive(result.published);
+      setAdmissions(result.admissions.sort((a, b) => Number(b.meritPct || 0) - Number(a.meritPct || 0)));
+      setMeritError('');
+      setIsLoadingMerit(false);
+    }, (error) => {
+      console.error('Unable to load local public merit list:', error);
+      setAdmissions([]);
+      setIsMeritListLive(false);
+      setMeritError('The merit list could not be loaded. Please try again later.');
+      setIsLoadingMerit(false);
+    });
   }, []);
 
   // Filtered public merit list sorted descending by merit percentage

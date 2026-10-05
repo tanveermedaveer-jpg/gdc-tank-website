@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Eye, Image as ImageIcon, X, Download, Plus, Upload, CheckCircle2, Video } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
-import { publicFileRequest } from '../lib/adminApi';
-import { subscribeApprovedGallery } from '../lib/firebase';
+import { publicFileRequest, subscribeApprovedGallery } from '../lib/adminApi';
 
 const GALLERY_FILE_TYPES = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',

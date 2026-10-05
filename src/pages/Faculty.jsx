@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, GraduationCap, Mail, Shield } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
-import { publicRequest } from '../lib/adminApi';
+import { subscribeLocalData } from '../lib/adminApi';
 
 export default function Faculty() {
   const { t } = useLanguage();
@@ -10,12 +10,8 @@ export default function Faculty() {
   const [facultyError, setFacultyError] = useState('');
 
   useEffect(() => {
-    let isMounted = true;
-    const loadFaculty = async () => {
-      try {
-        const profiles = await publicRequest('public.faculty');
-        if (!isMounted) return;
-        setFaculty((profiles || []).map((profile) => ({
+    return subscribeLocalData('faculty', (profiles) => {
+      setFaculty(profiles.map((profile) => ({
           id: profile.id,
           name: profile.name,
           role: profile.designation,
@@ -25,21 +21,11 @@ export default function Faculty() {
           photoUrl: profile.photo_url,
           isHOD: profile.is_hod
         })));
-        setFacultyError('');
-      } catch (error) {
-        if (!isMounted) return;
-        console.error('Unable to load shared faculty profiles:', error);
-        setFacultyError('Faculty profiles could not be loaded. Please try again later.');
-      }
-    };
-    loadFaculty();
-    const refreshTimer = window.setInterval(loadFaculty, 30000);
-    window.addEventListener('casdct_faculty_updated', loadFaculty);
-    return () => {
-      isMounted = false;
-      window.clearInterval(refreshTimer);
-      window.removeEventListener('casdct_faculty_updated', loadFaculty);
-    };
+      setFacultyError('');
+    }, (error) => {
+      console.error('Unable to load local faculty profiles:', error);
+      setFacultyError('Faculty profiles could not be loaded. Please try again later.');
+    });
   }, []);
 
   const translateFacultyField = (text) => {

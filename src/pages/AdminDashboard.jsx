@@ -9,13 +9,15 @@ import {
 } from 'lucide-react';
 import principalImg from '../assets/principal.jpg';
 import {
-  CIRCULARS_BUCKET,
   MAX_CIRCULAR_SIZE_BYTES,
-  supabase
-} from '../lib/supabase';
-import { adminFileRequest, adminRequest, clearAdminSession, getAdminSessionUsername } from '../lib/adminApi';
+  adminFileRequest,
+  adminRequest,
+  clearAdminSession,
+  getAdminSessionUsername,
+  subscribeLocalChanges,
+  subscribeHomeContent
+} from '../lib/adminApi';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
-import { subscribeHomeContent } from '../lib/firebase';
 import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
 
 const isVideoMediaFile = (file) =>
@@ -215,20 +217,20 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       } catch (error) {
         if (!isMounted) return;
         console.error('Unable to load shared admin records:', error);
-        setAdminDataError(error.message || 'Shared admin data is unavailable.');
-        if (showFailure) showToast('Shared dashboard data could not be loaded.', 'error');
+        setAdminDataError(error.message || 'Local admin data is unavailable.');
+        if (showFailure) showToast('Local dashboard data could not be loaded.', 'error');
       } finally {
         if (isMounted) setIsLoadingAdminData(false);
       }
     };
     loadSharedData(true);
-    const refreshInterval = window.setInterval(() => loadSharedData(false), 30000);
-    const handleAdmissionSync = () => loadSharedData(false);
-    window.addEventListener('casdct_admission_submitted', handleAdmissionSync);
+    const unsubscribe = subscribeLocalChanges(
+      ['admissions', 'gallery', 'faculty', 'settings', 'circulars'],
+      () => loadSharedData(false)
+    );
     return () => {
       isMounted = false;
-      window.clearInterval(refreshInterval);
-      window.removeEventListener('casdct_admission_submitted', handleAdmissionSync);
+      unsubscribe();
     };
   }, []);
 
@@ -1027,12 +1029,15 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         <div key={activeTab} className="admin-content-enter p-6 space-y-6">
           {adminDataError && (
             <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
-              Shared dashboard data is unavailable: {adminDataError}
+              Local dashboard data is unavailable: {adminDataError}
             </div>
           )}
           {isLoadingAdminData && (
-            <p role="status" className="text-sm text-slate-500">Loading shared dashboard records…</p>
+            <p role="status" className="text-sm text-slate-500">Loading local dashboard records…</p>
           )}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+            Local-only mode: admissions, media, circulars, faculty, and settings are stored only in this browser profile. They do not sync across devices, and this admin login is not server-secure.
+          </div>
 
           {/* Dashboard overview and admissions management */}
           {(activeTab === 'admissions' || activeTab === 'dashboard') && (
@@ -1040,7 +1045,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               {activeTab === 'dashboard' && (
                 <div>
                   <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Dashboard</h1>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Live summary of shared admission and payment records.</p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Summary of admission and payment records saved in this browser.</p>
                 </div>
               )}
 
@@ -1407,7 +1412,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               <section className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Faculty Management</h1>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage shared faculty and HOD profiles shown on the public Faculty page.</p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage faculty and HOD profiles shown on this browser's public Faculty page.</p>
                 </div>
                 <button
                   type="button"
@@ -2006,9 +2011,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 ) : (
                   <div className="divide-y divide-slate-100 dark:divide-slate-800">
                     {circulars.map((circular) => {
-                      const fileUrl = supabase.storage
-                        .from(CIRCULARS_BUCKET)
-                        .getPublicUrl(circular.storage_path).data.publicUrl;
+                      const fileUrl = circular.public_url;
                       return (
                         <div key={circular.id} className="flex flex-wrap items-center justify-between gap-4 p-4 sm:px-6">
                           <div className="min-w-0">
@@ -2172,7 +2175,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </div>
             <form onSubmit={handleSaveHomeContent} className="max-w-4xl space-y-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Shared Homepage Content & Announcements</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Homepage Content & Announcements</h2>
                 <p className="mt-1 text-xs text-slate-500">Changes are saved to Firestore and appear on every device in real time. Announcement lines use YYYY-MM-DD|Title.</p>
               </div>
               {homeContentError && (
@@ -2266,7 +2269,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 disabled={isSavingHomeContent}
                 className="rounded-xl bg-teal-700 px-6 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-md hover:bg-teal-800 disabled:cursor-wait disabled:opacity-60"
               >
-                {isSavingHomeContent ? 'Saving shared content…' : 'Save Homepage Content'}
+                {isSavingHomeContent ? 'Saving local content…' : 'Save Homepage Content'}
               </button>
             </form>
             </>

@@ -108,6 +108,7 @@ export default function Login() {
                 autoCapitalize="none"
                 autoComplete="username"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Enter your name"
               />
             </div>
 
@@ -121,7 +122,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-800 font-medium"
-                  placeholder="Enter Password"
+                  placeholder="Enter your password"
                 />
                 <button 
                   type="button" 

@@ -5,15 +5,18 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const SESSION_SECRET = Deno.env.get('ADMIN_SESSION_SECRET');
 const INITIAL_USERNAME = Deno.env.get('ADMIN_INITIAL_USERNAME');
 const INITIAL_PASSWORD = Deno.env.get('ADMIN_INITIAL_PASSWORD');
+const FIREBASE_SERVICE_ACCOUNT_JSON = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_JSON');
+const FIREBASE_STORAGE_BUCKET = Deno.env.get('FIREBASE_STORAGE_BUCKET');
 const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 const PASSWORD_ITERATIONS = 310_000;
 const MAX_BODY_BYTES = 16 * 1024 * 1024;
+const FIREBASE_MEDIA_LIMIT = 5 * 1024 * 1024;
 const FACULTY_PHOTO_LIMIT = 5 * 1024 * 1024;
 const RECEIPT_LIMIT = 5 * 1024 * 1024;
-const GALLERY_MEDIA_LIMIT = 10 * 1024 * 1024;
+const GALLERY_MEDIA_LIMIT = FIREBASE_MEDIA_LIMIT;
 const GALLERY_MEDIA_TYPES = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
   'video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v',
@@ -21,6 +24,7 @@ const GALLERY_MEDIA_TYPES = [
 ];
 
 type JsonRecord = Record<string, unknown>;
+let cachedFirebaseToken: { value: string; expiresAt: number } | null = null;
 
 const json = (body: JsonRecord, status = 200, origin = '') => new Response(
   status === 204 ? null : JSON.stringify(body),
@@ -55,6 +59,262 @@ const decodeBase64Url = (value: string) => {
 
 const hex = (bytes: Uint8Array) =>
   [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+
+const encodeBase64UrlText = (value: string) =>
+  btoa(value).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+
+const decodePem = (value: string) => {
+  const base64 = value.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, '');
+  return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+};
+
+const getFirebaseAccessToken = async () => {
+  if (cachedFirebaseToken && cachedFirebaseToken.expiresAt > Date.now() + 60_000) {
+    return cachedFirebaseToken.value;
+  }
+  if (!FIREBASE_SERVICE_ACCOUNT_JSON) {
+    throw new Error('Firebase server credentials have not been configured.');
+  }
+
+  let account: { client_email?: string; private_key?: string; token_uri?: string; project_id?: string };
+  try {
+    account = JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON);
+  } catch {
+    throw new Error('Firebase service-account configuration is invalid.');
+  }
+  if (!account.client_email || !account.private_key || !account.project_id) {
+    throw new Error('Firebase service-account configuration is incomplete.');
+  }
+  if (!FIREBASE_STORAGE_BUCKET) {
+    throw new Error('Firebase Storage bucket has not been configured.');
+  }
+
+  const tokenUri = account.token_uri || 'https://oauth2.googleapis.com/token';
+  const now = Math.floor(Date.now() / 1000);
+  const assertionHeader = encodeBase64UrlText(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const assertionClaims = encodeBase64UrlText(JSON.stringify({
+    iss: account.client_email,
+    scope: 'https://www.googleapis.com/auth/datastore https://www.googleapis.com/auth/devstorage.read_write',
+    aud: tokenUri,
+    iat: now,
+    exp: now + 3600
+  }));
+  const unsignedAssertion = `${assertionHeader}.${assertionClaims}`;
+  const signingKey = await crypto.subtle.importKey(
+    'pkcs8',
+    decodePem(account.private_key),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = new Uint8Array(await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    signingKey,
+    new TextEncoder().encode(unsignedAssertion)
+  ));
+  const assertion = `${unsignedAssertion}.${encodeBase64Url(signature)}`;
+  const response = await fetch(tokenUri, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion
+    })
+  });
+  if (!response.ok) {
+    console.error('Firebase service-token exchange failed:', response.status, (await response.text()).slice(0, 500));
+    throw new Error('Firebase server authentication failed.');
+  }
+  const result = await response.json();
+  if (typeof result.access_token !== 'string' || !Number.isFinite(Number(result.expires_in))) {
+    throw new Error('Firebase returned an invalid service token.');
+  }
+  cachedFirebaseToken = {
+    value: result.access_token,
+    expiresAt: Date.now() + Number(result.expires_in) * 1000
+  };
+  return result.access_token;
+};
+
+const firebaseProjectId = async () => {
+  if (!FIREBASE_SERVICE_ACCOUNT_JSON) throw new Error('Firebase server credentials have not been configured.');
+  try {
+    const account = JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON);
+    if (typeof account.project_id !== 'string' || !account.project_id) throw new Error();
+    return account.project_id;
+  } catch {
+    throw new Error('Firebase service-account configuration is invalid.');
+  }
+};
+
+const firestoreBaseUrl = async () =>
+  `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(await firebaseProjectId())}/databases/(default)/documents`;
+
+const encodeFirestoreValue = (value: unknown): JsonRecord => {
+  if (value === null || value === undefined) return { nullValue: 'NULL_VALUE' };
+  if (typeof value === 'string') return { stringValue: value };
+  if (typeof value === 'boolean') return { booleanValue: value };
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
+  }
+  if (Array.isArray(value)) {
+    return { arrayValue: { values: value.map(encodeFirestoreValue) } };
+  }
+  if (typeof value === 'object') {
+    const fields: JsonRecord = {};
+    for (const [key, entry] of Object.entries(value)) fields[key] = encodeFirestoreValue(entry);
+    return { mapValue: { fields } };
+  }
+  throw new Error('Unsupported Firestore value.');
+};
+
+const decodeFirestoreValue = (value: JsonRecord): unknown => {
+  if (Object.hasOwn(value, 'nullValue')) return null;
+  if (Object.hasOwn(value, 'stringValue')) return value.stringValue;
+  if (Object.hasOwn(value, 'booleanValue')) return value.booleanValue;
+  if (Object.hasOwn(value, 'integerValue')) return Number(value.integerValue);
+  if (Object.hasOwn(value, 'doubleValue')) return Number(value.doubleValue);
+  if (Object.hasOwn(value, 'timestampValue')) return value.timestampValue;
+  if (Object.hasOwn(value, 'arrayValue')) {
+    const arrayValue = value.arrayValue as JsonRecord;
+    return Array.isArray(arrayValue.values)
+      ? arrayValue.values.map((entry) => decodeFirestoreValue(entry as JsonRecord))
+      : [];
+  }
+  if (Object.hasOwn(value, 'mapValue')) {
+    const mapValue = value.mapValue as JsonRecord;
+    const fields = (mapValue.fields || {}) as JsonRecord;
+    return Object.fromEntries(Object.entries(fields).map(([key, entry]) =>
+      [key, decodeFirestoreValue(entry as JsonRecord)]
+    ));
+  }
+  return undefined;
+};
+
+const decodeFirestoreDocument = (document: JsonRecord) => {
+  const fields = (document.fields || {}) as JsonRecord;
+  const name = typeof document.name === 'string' ? document.name : '';
+  return {
+    id: name.split('/').pop() || '',
+    ...Object.fromEntries(Object.entries(fields).map(([key, value]) =>
+      [key, decodeFirestoreValue(value as JsonRecord)]
+    ))
+  } as JsonRecord;
+};
+
+const firebaseFetch = async (url: string, init: RequestInit = {}) => {
+  const accessToken = await getFirebaseAccessToken();
+  const response = await fetch(url, {
+    ...init,
+    headers: { Authorization: `Bearer ${accessToken}`, ...init.headers }
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    console.error('Firebase data request failed:', response.status, detail.slice(0, 500));
+    throw new Error('The shared Firebase content service could not complete the request.');
+  }
+  const responseText = await response.text();
+  return responseText ? JSON.parse(responseText) : null;
+};
+
+const readFirebaseCollection = async (collectionName: string) => {
+  const baseUrl = await firestoreBaseUrl();
+  const documents: JsonRecord[] = [];
+  let nextPageToken = '';
+  do {
+    const url = new URL(`${baseUrl}/${collectionName}`);
+    url.searchParams.set('pageSize', '1000');
+    if (nextPageToken) url.searchParams.set('pageToken', nextPageToken);
+    const result = await firebaseFetch(url.toString()) as JsonRecord;
+    if (Array.isArray(result.documents)) documents.push(...result.documents.map(decodeFirestoreDocument));
+    nextPageToken = typeof result.nextPageToken === 'string' ? result.nextPageToken : '';
+  } while (nextPageToken);
+  return documents;
+};
+
+const readFirebaseDocument = async (collectionName: string, documentId: string) => {
+  const baseUrl = await firestoreBaseUrl();
+  const response = await fetch(`${baseUrl}/${collectionName}/${encodeURIComponent(documentId)}`, {
+    headers: { Authorization: `Bearer ${await getFirebaseAccessToken()}` }
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    console.error('Firebase document read failed:', response.status, (await response.text()).slice(0, 500));
+    throw new Error('The shared Firebase content service could not complete the request.');
+  }
+  return decodeFirestoreDocument(await response.json());
+};
+
+const writeFirebaseDocument = async (collectionName: string, documentId: string, data: JsonRecord) => {
+  const baseUrl = await firestoreBaseUrl();
+  const fields: JsonRecord = {};
+  for (const [key, value] of Object.entries(data)) fields[key] = encodeFirestoreValue(value);
+  const updateMask = new URLSearchParams();
+  Object.keys(fields).forEach((field) => updateMask.append('updateMask.fieldPaths', field));
+  const result = await firebaseFetch(`${baseUrl}/${collectionName}/${encodeURIComponent(documentId)}?${updateMask}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields })
+  });
+  return decodeFirestoreDocument(result as JsonRecord);
+};
+
+const deleteFirebaseDocument = async (collectionName: string, documentId: string) => {
+  const baseUrl = await firestoreBaseUrl();
+  await firebaseFetch(`${baseUrl}/${collectionName}/${encodeURIComponent(documentId)}`, { method: 'DELETE' });
+};
+
+const uploadFirebaseMedia = async (path: string, bytes: Uint8Array, contentType: string) => {
+  if (!FIREBASE_STORAGE_BUCKET) throw new Error('Firebase Storage bucket has not been configured.');
+  const boundary = `firebase-upload-${crypto.randomUUID()}`;
+  const downloadToken = crypto.randomUUID();
+  const metadata = JSON.stringify({
+    name: path,
+    contentType,
+    metadata: { firebaseStorageDownloadTokens: downloadToken }
+  });
+  const encoder = new TextEncoder();
+  const beforeFile = encoder.encode(
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n` +
+    `--${boundary}\r\nContent-Type: ${contentType}\r\n\r\n`
+  );
+  const afterFile = encoder.encode(`\r\n--${boundary}--`);
+  const multipartBody = new Uint8Array(beforeFile.length + bytes.length + afterFile.length);
+  multipartBody.set(beforeFile);
+  multipartBody.set(bytes, beforeFile.length);
+  multipartBody.set(afterFile, beforeFile.length + bytes.length);
+  const response = await fetch(
+    `https://storage.googleapis.com/upload/storage/v1/b/${encodeURIComponent(FIREBASE_STORAGE_BUCKET)}/o?uploadType=multipart&name=${encodeURIComponent(path)}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${await getFirebaseAccessToken()}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`
+      },
+      body: multipartBody
+    }
+  );
+  if (!response.ok) {
+    console.error('Firebase Storage upload failed:', response.status, (await response.text()).slice(0, 500));
+    throw new Error('The media file could not be uploaded to Firebase Storage.');
+  }
+  return `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(FIREBASE_STORAGE_BUCKET)}/o/${encodeURIComponent(path)}?alt=media&token=${downloadToken}`;
+};
+
+const deleteFirebaseMedia = async (path: string) => {
+  if (!FIREBASE_STORAGE_BUCKET) throw new Error('Firebase Storage bucket has not been configured.');
+  const response = await fetch(
+    `https://storage.googleapis.com/storage/v1/b/${encodeURIComponent(FIREBASE_STORAGE_BUCKET)}/o/${encodeURIComponent(path)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${await getFirebaseAccessToken()}` }
+    }
+  );
+  if (response.status !== 404 && !response.ok) {
+    console.error('Firebase Storage delete failed:', response.status, (await response.text()).slice(0, 500));
+    throw new Error('The media record was updated, but its file could not be removed.');
+  }
+};
 
 const fromHex = (value: string) =>
   Uint8Array.from(value.match(/.{2}/g) || [], (byte) => Number.parseInt(byte, 16));
@@ -166,6 +426,56 @@ const clearLoginFailures = async (username: string) => {
   await serviceFetch('/rest/v1/rpc/admin_login_success', {
     method: 'POST',
     body: JSON.stringify({ requested_username: username })
+  });
+};
+
+const saveHomeContent = async (source: unknown) => {
+  if (!source || typeof source !== 'object' || Array.isArray(source)) {
+    fail('Provide valid homepage content.');
+  }
+  const data = source as JsonRecord;
+  const heroTitle = typeof data.heroTitle === 'string' ? data.heroTitle.trim() : '';
+  const heroDesc = typeof data.heroDesc === 'string' ? data.heroDesc.trim() : '';
+  const stats = Array.isArray(data.stats) ? data.stats : [];
+  const notices = Array.isArray(data.notices) ? data.notices : [];
+  const tickerAnnouncements = Array.isArray(data.tickerAnnouncements) ? data.tickerAnnouncements : [];
+  if (!heroTitle || heroTitle.length > 180 || heroDesc.length > 1000 || stats.length !== 4 ||
+      notices.length > 12 || tickerAnnouncements.length > 12) {
+    fail('Homepage content contains missing or invalid fields.');
+  }
+
+  const cleanStats = stats.map((stat) => {
+    if (!stat || typeof stat !== 'object' || Array.isArray(stat)) fail('Enter valid homepage statistics.');
+    const item = stat as JsonRecord;
+    if (typeof item.value !== 'string' || !item.value.trim() || item.value.length > 40 ||
+        typeof item.label !== 'string' || !item.label.trim() || item.label.length > 100) {
+      fail('Each homepage statistic needs a value and label.');
+    }
+    return { value: item.value.trim(), label: item.label.trim() };
+  });
+  const cleanNotices = notices.map((notice) => {
+    if (!notice || typeof notice !== 'object' || Array.isArray(notice)) fail('Enter valid homepage announcements.');
+    const item = notice as JsonRecord;
+    if (typeof item.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(item.date) ||
+        Number.isNaN(Date.parse(`${item.date}T00:00:00Z`)) ||
+        typeof item.title !== 'string' || !item.title.trim() || item.title.length > 300) {
+      fail('Each announcement needs a valid date and title.');
+    }
+    return { id: crypto.randomUUID(), date: item.date, title: item.title.trim() };
+  });
+  const cleanTicker = tickerAnnouncements.map((announcement) => {
+    if (typeof announcement !== 'string' || !announcement.trim() || announcement.length > 300) {
+      fail('Ticker announcements must be non-empty text up to 300 characters.');
+    }
+    return announcement.trim();
+  });
+  return await writeFirebaseDocument('siteContent', 'home', {
+    heroTitle,
+    heroDesc,
+    stats: cleanStats,
+    notices: cleanNotices,
+    tickerAnnouncements: cleanTicker,
+    updatedAt: new Date().toISOString()
   });
 };
 
@@ -318,14 +628,82 @@ const createReceiptUrl = async (path: string) => {
 
 const readTable = (table: string, query: string) => serviceFetch(db(table, query));
 
+const migrateLegacyGallery = async (existingDocuments: JsonRecord[]) => {
+  const existingIds = new Set(existingDocuments.map((row) => String(row.id)));
+  const migratedDocuments: JsonRecord[] = [];
+  const legacyRows = await readTable(
+    'gallery_media',
+    'select=id,title,media_type,category,description,uploaded_by,file_name,content_type,file_size,storage_path,status,created_at&order=created_at.desc'
+  );
+  for (const legacy of (legacyRows || []) as JsonRecord[]) {
+    const id = String(legacy.id || '');
+    const oldPath = typeof legacy.storage_path === 'string' ? legacy.storage_path : '';
+    const fileSize = Number(legacy.file_size);
+    if (!id || existingIds.has(id)) continue;
+    if (!oldPath || !Number.isFinite(fileSize) || fileSize <= 0 || fileSize > 10 * 1024 * 1024) {
+      throw new Error(`Legacy gallery item ${id || '(unknown)'} has invalid media metadata and needs manual review.`);
+    }
+    const fileResponse = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/gallery-media/${oldPath.split('/').map(encodeURIComponent).join('/')}`,
+      {
+        headers: {
+          apikey: SERVICE_ROLE_KEY!,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        }
+      }
+    );
+    if (!fileResponse.ok) {
+      console.error('Unable to read legacy Supabase gallery file:', id, fileResponse.status);
+      throw new Error('An existing gallery file could not be copied to Firebase. Check its Supabase Storage object.');
+    }
+    const fileBytes = new Uint8Array(await fileResponse.arrayBuffer());
+    const contentType = String(legacy.content_type || fileResponse.headers.get('Content-Type') || '');
+    if (!GALLERY_MEDIA_TYPES.includes(contentType) || fileBytes.length !== fileSize) {
+      throw new Error(`Legacy gallery item ${id} has unsupported or inconsistent file metadata.`);
+    }
+    const extension = String(legacy.file_name || '').split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin';
+    const storagePath = `gallery/${id}.${extension}`;
+    const publicUrl = await uploadFirebaseMedia(storagePath, fileBytes, contentType);
+    try {
+      const migrated = await writeFirebaseDocument('galleryMedia', id, {
+        id,
+        title: String(legacy.title || '').slice(0, 180),
+        mediaType: legacy.media_type === 'video' ? 'video' : 'image',
+        category: legacy.category === 'sports' ? 'sports' : 'facilities',
+        description: String(legacy.description || '').slice(0, 1000),
+        uploadedBy: String(legacy.uploaded_by || 'Student / Visitor').slice(0, 120),
+        fileName: String(legacy.file_name || `${id}.${extension}`).slice(0, 200),
+        contentType,
+        fileSize: fileBytes.length,
+        storagePath,
+        publicUrl,
+        status: legacy.status === 'approved' ? 'approved' : 'pending',
+        createdAt: typeof legacy.created_at === 'string' ? legacy.created_at : new Date().toISOString()
+      });
+      existingIds.add(id);
+      migratedDocuments.push(migrated);
+    } catch (error) {
+      try {
+        await deleteFirebaseMedia(storagePath);
+      } catch (cleanupError) {
+        console.error('Unable to remove a migrated Firebase gallery file after its metadata write failed:', cleanupError);
+      }
+      throw error;
+    }
+  }
+  return migratedDocuments;
+};
+
 const bootstrap = async () => {
-  const [admissionRows, faculty, settingRows, circulars, galleryRows] = await Promise.all([
+  const [admissionRows, faculty, settingRows, circulars, galleryRows, content] = await Promise.all([
     readTable('admissions', 'select=reg_id,record,fee_verified,fee_amount&order=created_at.desc'),
     readTable('faculty_profiles', 'select=id,name,designation,department,qualification,contact,photo_url,photo_path,is_hod&order=sort_order.asc,name.asc'),
     readTable('site_settings', 'select=data&id=eq.global'),
     readTable('examination_circulars', 'select=id,title,publish_date,storage_path,file_name,created_at&order=publish_date.desc,created_at.desc'),
-    readTable('gallery_media', 'select=id,title,media_type,category,description,uploaded_by,file_name,content_type,file_size,storage_path,status,created_at&order=created_at.desc')
+    readFirebaseCollection('galleryMedia'),
+    readFirebaseDocument('siteContent', 'home')
   ]);
+  const migratedGallery = await migrateLegacyGallery(galleryRows);
   const admissions = await Promise.all((admissionRows || []).map(async (row: JsonRecord) => {
     const record = row.record as JsonRecord;
     return {
@@ -343,26 +721,27 @@ const bootstrap = async () => {
     faculty: faculty || [],
     settings: settingRows?.[0]?.data || {},
     circulars: circulars || [],
-    gallery: (galleryRows || []).map((row: JsonRecord) => mapGalleryRow(row))
+    gallery: [...galleryRows, ...migratedGallery].map(mapGalleryRow),
+    homeContent: content || {}
   };
 };
 
 const mapGalleryRow = (row: JsonRecord) => ({
   id: row.id,
   title: row.title,
-  type: row.media_type,
+  type: row.mediaType ?? row.media_type,
   category: row.category,
   desc: row.description,
-  uploadedBy: row.uploaded_by,
-  fileName: row.file_name,
-  mimeType: row.content_type,
-  size: Number(row.file_size) > 1024 * 1024
-    ? `${(Number(row.file_size) / (1024 * 1024)).toFixed(1)} MB`
-    : `${Math.max(1, Math.round(Number(row.file_size) / 1024))} KB`,
-  publicUrl: `${SUPABASE_URL}/storage/v1/object/public/gallery-media/${row.storage_path}`,
+  uploadedBy: row.uploadedBy ?? row.uploaded_by,
+  fileName: row.fileName ?? row.file_name,
+  mimeType: row.contentType ?? row.content_type,
+  size: Number(row.fileSize ?? row.file_size) > 1024 * 1024
+    ? `${(Number(row.fileSize ?? row.file_size) / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(Number(row.fileSize ?? row.file_size) / 1024))} KB`,
+  publicUrl: row.publicUrl || `${SUPABASE_URL}/storage/v1/object/public/gallery-media/${row.storage_path}`,
   status: row.status,
   isApproved: row.status === 'approved',
-  uploadedTime: new Date(String(row.created_at)).toLocaleDateString('en', { dateStyle: 'medium' })
+  uploadedTime: new Date(String(row.createdAt ?? row.created_at)).toLocaleDateString('en', { dateStyle: 'medium' })
 });
 
 const saveGalleryMedia = async (body: JsonRecord, approved: boolean, request: Request) => {
@@ -384,32 +763,31 @@ const saveGalleryMedia = async (body: JsonRecord, approved: boolean, request: Re
   }
   if (!approved) await reservePublicGalleryUpload(request, file.size);
   const pathExtension = file.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin';
-  const storagePath = `${crypto.randomUUID()}.${pathExtension}`;
-  await storePublicFile('gallery-media', storagePath, bytes, mimeType);
+  const id = crypto.randomUUID();
+  const storagePath = `gallery/${id}.${pathExtension}`;
+  const publicUrl = await uploadFirebaseMedia(storagePath, bytes, mimeType);
   const row = {
+    id,
     title,
-    media_type: mimeType.startsWith('video/') ? 'video' : 'image',
+    mediaType: mimeType.startsWith('video/') ? 'video' : 'image',
     category,
     description,
-    uploaded_by: approved ? 'Admin' : uploaderName || 'Student / Visitor',
-    file_name: file.name.slice(0, 200),
-    content_type: mimeType,
-    file_size: file.size,
-    storage_path: storagePath,
-    status: approved ? 'approved' : 'pending'
+    uploadedBy: approved ? 'Admin' : uploaderName || 'Student / Visitor',
+    fileName: file.name.slice(0, 200),
+    contentType: mimeType,
+    fileSize: file.size,
+    storagePath,
+    publicUrl,
+    status: approved ? 'approved' : 'pending',
+    createdAt: new Date().toISOString()
   };
   try {
-    const rows = await serviceFetch(db('gallery_media'), {
-      method: 'POST',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify(row)
-    });
-    return mapGalleryRow(rows?.[0] || {});
+    return mapGalleryRow(await writeFirebaseDocument('galleryMedia', id, row));
   } catch (error) {
     try {
-      await removeStoredFile('gallery-media', storagePath);
+      await deleteFirebaseMedia(storagePath);
     } catch (cleanupError) {
-      console.error('Unable to clean up gallery media after metadata save failed:', cleanupError);
+      console.error('Unable to clean up Firebase media after metadata save failed:', cleanupError);
     }
     throw error;
   }
@@ -566,11 +944,8 @@ const handleAction = async (request: Request, body: JsonRecord) => {
     return await readTable('faculty_profiles', 'select=id,name,designation,department,qualification,contact,photo_url,is_hod&order=sort_order.asc,name.asc') || [];
   }
   if (action === 'public.gallery') {
-    const rows = await readTable(
-      'gallery_media',
-      'select=id,title,media_type,category,description,uploaded_by,file_name,content_type,file_size,storage_path,status,created_at&status=eq.approved&order=created_at.desc'
-    );
-    return (rows || []).map((row: JsonRecord) => mapGalleryRow(row));
+    const rows = await readFirebaseCollection('galleryMedia');
+    return rows.filter((row) => row.status === 'approved').map(mapGalleryRow);
   }
   if (action === 'public.settings') {
     const rows = await readTable('site_settings', 'select=data&id=eq.global');
@@ -718,29 +1093,26 @@ const handleAction = async (request: Request, body: JsonRecord) => {
       if (!id) fail('Select a gallery item to update.');
       if (body.status !== 'approved' && body.status !== 'pending') fail('Choose a valid gallery status.');
       if (body.category !== 'facilities' && body.category !== 'sports') fail('Choose a valid gallery category.');
-      const rows = await serviceFetch(
-        db('gallery_media', `id=eq.${encodeURIComponent(id)}&select=id,title,media_type,category,description,uploaded_by,file_name,content_type,file_size,storage_path,status,created_at`),
-        {
-          method: 'PATCH',
-          headers: { Prefer: 'return=representation' },
-          body: JSON.stringify({ status: body.status, category: body.category })
-        }
-      );
-      if (!rows?.[0]) fail('The gallery item no longer exists.', 404);
-      return mapGalleryRow(rows[0]);
+      const existing = await readFirebaseDocument('galleryMedia', id);
+      if (!existing) fail('The gallery item no longer exists.', 404);
+      const updated = await writeFirebaseDocument('galleryMedia', id, {
+        ...existing,
+        status: body.status,
+        category: body.category
+      });
+      return mapGalleryRow(updated);
     }
     case 'admin.gallery.delete': {
       const id = typeof body.id === 'string' ? body.id : '';
       if (!id) fail('Select a gallery item to delete.');
-      const rows = await readTable('gallery_media', `select=id,storage_path&id=eq.${encodeURIComponent(id)}`);
-      if (!rows?.[0]) fail('The gallery item no longer exists.', 404);
-      await serviceFetch(db('gallery_media', `id=eq.${encodeURIComponent(id)}`), {
-        method: 'DELETE',
-        headers: { Prefer: 'return=minimal' }
-      });
-      await removeStoredFile('gallery-media', rows[0].storage_path);
+      const existing = await readFirebaseDocument('galleryMedia', id);
+      if (!existing) fail('The gallery item no longer exists.', 404);
+      await deleteFirebaseDocument('galleryMedia', id);
+      if (typeof existing.storagePath === 'string') await deleteFirebaseMedia(existing.storagePath);
       return { id };
     }
+    case 'admin.homeContent.save':
+      return await saveHomeContent(body.homeContent);
     case 'admin.admission.update': {
       const regId = typeof body.regId === 'string' ? body.regId.trim() : '';
       if (!regId) fail('Select an admission record to update.');

@@ -8,75 +8,33 @@ import { useLanguage } from '../context/LanguageContext';
 import AnimatedCounter from '../components/AnimatedCounter';
 import { COLLEGE_PHONE, resolveCollegePhone } from '../lib/contactDetails';
 import { publicRequest } from '../lib/adminApi';
+import { subscribeHomeContent } from '../lib/firebase';
+import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
 
 const DEFAULT_PRINCIPAL_MESSAGE = 'It is a matter of great pride and privilege to welcome you to Captain Ashfaq Shaheed Degree College, Tank. This college stands as a beacon of learning in South KP, committed to delivering high-quality intermediate and undergraduate education to our youth.\n\nOur primary goal is to nurture academic curiosity, foster critical thinking, and build a strong sense of responsibility. Naming our college in honor of the martyred military officer, Captain Ashfaq Shaheed, reminds us daily of the virtues of discipline, sacrifice, and duty to our homeland.\n\nWe are proud of our qualified faculty, well-equipped science and computer labs, and a spacious green campus that supports learning. I invite you to join us and become part of a legacy that strives for excellence in every field of life.';
 
 export default function Home() {
   const { t } = useLanguage();
-  const [notices, setNotices] = useState([]);
+  const [homeContent, setHomeContent] = useState(DEFAULT_HOME_CONTENT);
   const [principalName, setPrincipalName] = useState('Prof. Shabir Ahmad');
   const [principalImage, setPrincipalImage] = useState(principalImg);
   const [principalMessage, setPrincipalMessage] = useState(DEFAULT_PRINCIPAL_MESSAGE);
   const [admissionPhone, setAdmissionPhone] = useState(COLLEGE_PHONE);
-  const [admissionEmail, setAdmissionEmail] = useState('admissions@casdct.edu.pk');
-  const [heroTitle, setHeroTitle] = useState('Government Captain Ashfaq Shaheed Degree College Tank');
-  const [heroDesc, setHeroDesc] = useState('A premier educational institution in Khyber Pakhtunkhwa, dedicated to academic excellence, character building, and career guidance.');
-
-  // Stats States
-  const [stat1Value, setStat1Value] = useState('1,200+');
-  const [stat1Label, setStat1Label] = useState('Active Students');
-  const [stat2Value, setStat2Value] = useState('45+');
-  const [stat2Label, setStat2Label] = useState('Qualified Lecturers');
-  const [stat3Value, setStat3Value] = useState('10+');
-  const [stat3Label, setStat3Label] = useState('BS & Inter Programs');
-  const [stat4Value, setStat4Value] = useState('100%');
-  const [stat4Label, setStat4Label] = useState('Dedicated Support');
+  const admissionEmail = 'admissions@casdct.edu.pk';
 
   useEffect(() => {
-    // 1. Notices
-    const storedNotices = localStorage.getItem('casdct_notices');
-    if (storedNotices) {
-      setNotices(JSON.parse(storedNotices));
-    } else {
-      const defaultNotices = [
-        { id: 1, date: 'Aug 24, 2026', title: 'Admissions open for F.Sc Pre-Medical & Pre-Engineering' },
-        { id: 2, date: 'Aug 20, 2026', title: 'BS Computer Science & BS English admission schedule announced' },
-        { id: 3, date: 'Aug 15, 2026', title: 'Orientation ceremony for new intermediate batch on Sept 1st' },
-        { id: 4, date: 'Aug 10, 2026', title: 'HED KP scholarships application deadline extended to Sept 10' }
-      ];
-      localStorage.setItem('casdct_notices', JSON.stringify(defaultNotices));
-      setNotices(defaultNotices);
-    }
-
-    // 3. Admission Desk Info
-    const storedEmail = localStorage.getItem('casdct_admission_email');
-    setAdmissionPhone(COLLEGE_PHONE);
-    setAdmissionEmail(storedEmail || 'admissions@casdct.edu.pk');
-
-    // 4. Stats Info
-    const s1v = localStorage.getItem('casdct_stat1_value');
-    const s1l = localStorage.getItem('casdct_stat1_label');
-    const s2v = localStorage.getItem('casdct_stat2_value');
-    const s2l = localStorage.getItem('casdct_stat2_label');
-    const s3v = localStorage.getItem('casdct_stat3_value');
-    const s3l = localStorage.getItem('casdct_stat3_label');
-    const s4v = localStorage.getItem('casdct_stat4_value');
-    const s4l = localStorage.getItem('casdct_stat4_label');
-    
-    setStat1Value(s1v || '1,200+');
-    setStat1Label(s1l || 'Active Students');
-    setStat2Value(s2v || '45+');
-    setStat2Label(s2l || 'Qualified Lecturers');
-    setStat3Value(s3v || '10+');
-    setStat3Label(s3l || 'BS & Inter Programs');
-    setStat4Value(s4v || '100%');
-    setStat4Label(s4l || 'Dedicated Support');
-
-    // 5. Hero Banner Details
-    const storedHeroTitle = localStorage.getItem('casdct_hero_title');
-    const storedHeroDesc = localStorage.getItem('casdct_hero_desc');
-    if (storedHeroTitle) setHeroTitle(storedHeroTitle);
-    if (storedHeroDesc) setHeroDesc(storedHeroDesc);
+    const unsubscribe = subscribeHomeContent((content) => {
+      setHomeContent({
+        ...DEFAULT_HOME_CONTENT,
+        ...content,
+        stats: Array.isArray(content.stats) && content.stats.length === 4
+          ? content.stats
+          : DEFAULT_HOME_CONTENT.stats,
+        notices: Array.isArray(content.notices) ? content.notices : [],
+        tickerAnnouncements: Array.isArray(content.tickerAnnouncements) ? content.tickerAnnouncements : []
+      });
+    }, (error) => console.error('Unable to subscribe to shared homepage content:', error));
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -103,10 +61,10 @@ export default function Home() {
   }, []);
 
   const stats = [
-    { icon: <Users className="w-8 h-8 text-teal-500" />, count: stat1Value, label: stat1Label === 'Active Students' ? t('activeStudents') : stat1Label },
-    { icon: <BookOpen className="w-8 h-8 text-teal-500" />, count: stat2Value, label: stat2Label === 'Qualified Lecturers' ? t('qualifiedLecturers') : stat2Label },
-    { icon: <Award className="w-8 h-8 text-teal-500" />, count: stat3Value, label: stat3Label === 'BS & Inter Programs' ? t('bsInterPrograms') : stat3Label },
-    { icon: <CheckCircle className="w-8 h-8 text-teal-500" />, count: stat4Value, label: stat4Label === 'Dedicated Support' ? t('dedicatedSupport') : stat4Label }
+    { icon: <Users className="w-8 h-8 text-teal-500" />, count: homeContent.stats[0].value, label: homeContent.stats[0].label === 'Active Students' ? t('activeStudents') : homeContent.stats[0].label },
+    { icon: <BookOpen className="w-8 h-8 text-teal-500" />, count: homeContent.stats[1].value, label: homeContent.stats[1].label === 'Qualified Lecturers' ? t('qualifiedLecturers') : homeContent.stats[1].label },
+    { icon: <Award className="w-8 h-8 text-teal-500" />, count: homeContent.stats[2].value, label: homeContent.stats[2].label === 'BS & Inter Programs' ? t('bsInterPrograms') : homeContent.stats[2].label },
+    { icon: <CheckCircle className="w-8 h-8 text-teal-500" />, count: homeContent.stats[3].value, label: homeContent.stats[3].label === 'Dedicated Support' ? t('dedicatedSupport') : homeContent.stats[3].label }
   ];
 
   return (
@@ -130,11 +88,11 @@ export default function Home() {
             </span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight tracking-tight font-serif text-white mb-6 text-center max-w-3xl">
               <span className="bg-gradient-to-r from-teal-400 to-emerald-300 bg-clip-text text-transparent">
-                {heroTitle === 'Government Captain Ashfaq Shaheed Degree College Tank' ? t('heroTitle') : heroTitle}
+                {homeContent.heroTitle === DEFAULT_HOME_CONTENT.heroTitle ? t('heroTitle') : homeContent.heroTitle}
               </span>
             </h1>
             <p className="text-lg text-slate-300 mb-8 leading-relaxed max-w-2xl text-center">
-              {heroDesc === 'A premier educational institution in Khyber Pakhtunkhwa, dedicated to academic excellence, character building, and career guidance.' ? t('heroDesc') : heroDesc}
+              {homeContent.heroDesc === DEFAULT_HOME_CONTENT.heroDesc ? t('heroDesc') : homeContent.heroDesc}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full">
               <Link 
@@ -245,11 +203,13 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="mt-6 space-y-5">
-                  {notices.map((notice) => (
+                  {homeContent.notices.map((notice) => (
                     <div key={notice.id} className="flex gap-4 group cursor-pointer border-b border-slate-50 dark:border-slate-800/60 pb-4 last:border-0 last:pb-0">
                       <div className="flex-shrink-0 bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-50 dark:group-hover:bg-slate-700 text-slate-600 dark:text-slate-400 group-hover:text-teal-700 dark:group-hover:text-teal-350 w-24 h-16 rounded-xl flex flex-col items-center justify-center transition-colors">
                         <Calendar className="w-4 h-4 mb-1" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-center">{notice.date.split(',')[0]}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-center">
+                          {new Date(`${notice.date}T00:00:00`).toLocaleDateString(t('home') === 'ہوم' ? 'ur' : 'en', { month: 'short', day: 'numeric' })}
+                        </span>
                       </div>
                       <div className="flex-grow pt-1">
                         <h4 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-200 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors leading-snug">

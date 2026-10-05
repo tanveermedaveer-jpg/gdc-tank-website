@@ -15,6 +15,8 @@ import {
 } from '../lib/supabase';
 import { adminFileRequest, adminRequest, clearAdminSession, getAdminSessionUsername } from '../lib/adminApi';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
+import { subscribeHomeContent } from '../lib/firebase';
+import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
 
 const isVideoMediaFile = (file) =>
   file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
@@ -156,10 +158,35 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [collegeAddress, setCollegeAddress] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [isMeritListLive, setIsMeritListLive] = useState(false);
+  const [homeContentDraft, setHomeContentDraft] = useState(DEFAULT_HOME_CONTENT);
+  const [noticeDraftText, setNoticeDraftText] = useState('');
+  const [tickerDraftText, setTickerDraftText] = useState('');
+  const [homeContentError, setHomeContentError] = useState('');
+  const [isSavingHomeContent, setIsSavingHomeContent] = useState(false);
 
   useEffect(() => () => {
     if (adminUploadCloseTimer.current) window.clearTimeout(adminUploadCloseTimer.current);
   }, []);
+
+  useEffect(() => subscribeHomeContent((content) => {
+    const stats = Array.isArray(content.stats) && content.stats.length === 4
+      ? content.stats
+      : DEFAULT_HOME_CONTENT.stats;
+    const notices = Array.isArray(content.notices) ? content.notices : [];
+    const tickerAnnouncements = Array.isArray(content.tickerAnnouncements) ? content.tickerAnnouncements : [];
+    setHomeContentDraft({
+      ...DEFAULT_HOME_CONTENT,
+      ...content,
+      stats,
+      notices,
+      tickerAnnouncements
+    });
+    setNoticeDraftText(notices.map((notice) => `${notice.date}|${notice.title}`).join('\n'));
+    setTickerDraftText(tickerAnnouncements.join('\n'));
+  }, (error) => {
+    console.error('Unable to subscribe to shared admin homepage content:', error);
+    setHomeContentError(error.message || 'Homepage content could not be loaded.');
+  }), []);
 
   // Helper: Sort list by merit percentage descending (highest score first)
   const sortMeritDescending = (list) => {
@@ -420,8 +447,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       setAdminUploadFile(null);
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setAdminUploadError('Image and video files must be 10 MB or smaller.');
+    if (file.size > 5 * 1024 * 1024) {
+      setAdminUploadError('Image and video files must be 5 MB or smaller.');
       setAdminUploadFile(null);
       return;
     }
@@ -632,6 +659,34 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       console.error('Unable to save admin settings:', error);
       setSettingsSaved(false);
       showToast(error.message || 'Settings could not be saved.', 'error');
+    }
+  };
+
+  const handleSaveHomeContent = async (event) => {
+    event.preventDefault();
+    setHomeContentError('');
+    const notices = noticeDraftText.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+      const separator = line.indexOf('|');
+      if (separator < 0) return { date: '', title: '' };
+      return { date: line.slice(0, separator).trim(), title: line.slice(separator + 1).trim() };
+    });
+    const tickerAnnouncements = tickerDraftText.split('\n').map((line) => line.trim()).filter(Boolean);
+    const content = {
+      ...homeContentDraft,
+      notices,
+      tickerAnnouncements
+    };
+
+    setIsSavingHomeContent(true);
+    try {
+      await adminRequest('admin.homeContent.save', { homeContent: content });
+      setHomeContentDraft(content);
+      showToast('Shared homepage content and announcements saved.', 'success');
+    } catch (error) {
+      console.error('Unable to save shared homepage content:', error);
+      setHomeContentError(error.message || 'Homepage content could not be saved.');
+    } finally {
+      setIsSavingHomeContent(false);
     }
   };
 
@@ -1711,7 +1766,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                               <span className="text-teal-600 dark:text-teal-400">Choose a file</span> or drag it here
                             </span>
-                            <span className="mt-1 text-xs text-slate-500">Supported images and videos, maximum 10 MB</span>
+                            <span className="mt-1 text-xs text-slate-500">Supported images and videos, maximum 5 MB</span>
                           </>
                         )}
                       </label>
@@ -1994,6 +2049,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
           {/* ---------------- SETTINGS TAB ---------------- */}
           {activeTab === 'settings' && (
+            <>
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Credentials & College Settings</h2>
@@ -2114,6 +2170,106 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 </button>
               </form>
             </div>
+            <form onSubmit={handleSaveHomeContent} className="max-w-4xl space-y-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Shared Homepage Content & Announcements</h2>
+                <p className="mt-1 text-xs text-slate-500">Changes are saved to Firestore and appear on every device in real time. Announcement lines use YYYY-MM-DD|Title.</p>
+              </div>
+              {homeContentError && (
+                <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">{homeContentError}</p>
+              )}
+              <div className="space-y-4">
+                <label className="block text-xs font-bold uppercase text-slate-500">
+                  Homepage headline
+                  <input
+                    type="text"
+                    maxLength={180}
+                    required
+                    value={homeContentDraft.heroTitle}
+                    onChange={(event) => setHomeContentDraft((current) => ({ ...current, heroTitle: event.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </label>
+                <label className="block text-xs font-bold uppercase text-slate-500">
+                  Homepage description
+                  <textarea
+                    rows={3}
+                    maxLength={1000}
+                    value={homeContentDraft.heroDesc}
+                    onChange={(event) => setHomeContentDraft((current) => ({ ...current, heroDesc: event.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {homeContentDraft.stats.map((stat, index) => (
+                    <div key={`home-stat-${index}`} className="grid grid-cols-2 gap-2">
+                      <label className="block text-xs font-bold uppercase text-slate-500">
+                        Statistic {index + 1} value
+                        <input
+                          type="text"
+                          maxLength={40}
+                          required
+                          value={stat.value}
+                          onChange={(event) => setHomeContentDraft((current) => ({
+                            ...current,
+                            stats: current.stats.map((item, itemIndex) =>
+                              itemIndex === index ? { ...item, value: event.target.value } : item
+                            )
+                          }))}
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        />
+                      </label>
+                      <label className="block text-xs font-bold uppercase text-slate-500">
+                        Statistic {index + 1} label
+                        <input
+                          type="text"
+                          maxLength={100}
+                          required
+                          value={stat.label}
+                          onChange={(event) => setHomeContentDraft((current) => ({
+                            ...current,
+                            stats: current.stats.map((item, itemIndex) =>
+                              itemIndex === index ? { ...item, label: event.target.value } : item
+                            )
+                          }))}
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <label className="block text-xs font-bold uppercase text-slate-500">
+                  Homepage notice board
+                  <textarea
+                    rows={6}
+                    value={noticeDraftText}
+                    onChange={(event) => setNoticeDraftText(event.target.value)}
+                    placeholder="2026-10-05|Admissions announcement"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                  <span className="mt-1 block text-[11px] font-medium normal-case text-slate-500">Add, edit, or remove notices, one per line. Maximum 12.</span>
+                </label>
+                <label className="block text-xs font-bold uppercase text-slate-500">
+                  Scrolling ticker announcements
+                  <textarea
+                    rows={5}
+                    value={tickerDraftText}
+                    onChange={(event) => setTickerDraftText(event.target.value)}
+                    placeholder="One public announcement per line"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                  <span className="mt-1 block text-[11px] font-medium normal-case text-slate-500">Add, edit, or remove ticker messages, one per line. Maximum 12.</span>
+                </label>
+              </div>
+              <button
+                type="submit"
+                disabled={isSavingHomeContent}
+                className="rounded-xl bg-teal-700 px-6 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-md hover:bg-teal-800 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isSavingHomeContent ? 'Saving shared content…' : 'Save Homepage Content'}
+              </button>
+            </form>
+            </>
           )}
 
           {/* ---------------- HELP & SUPPORT TAB ---------------- */}

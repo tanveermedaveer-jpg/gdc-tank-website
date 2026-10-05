@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Eye, Image as ImageIcon, X, Download, Plus, Upload, CheckCircle2, Video } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
-import { publicFileRequest, publicRequest } from '../lib/adminApi';
+import { publicFileRequest } from '../lib/adminApi';
+import { subscribeApprovedGallery } from '../lib/firebase';
 
 const GALLERY_FILE_TYPES = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
@@ -32,40 +33,29 @@ export default function Gallery() {
   const [galleryError, setGalleryError] = useState('');
 
   useEffect(() => {
-    let isMounted = true;
-    const loadApprovedGallery = async () => {
-      try {
-        const items = await publicRequest('public.gallery');
-        if (!isMounted) return;
-        setGalleryItems((items || []).map(item => ({
-          ...item,
-          image: item.publicUrl,
-          mediaUrl: item.publicUrl
-        })));
-        setGalleryError('');
-      } catch (error) {
-        if (!isMounted) return;
-        console.error('Unable to load shared approved gallery media:', error);
-        setGalleryError('Gallery items could not be loaded. Please try again later.');
-      }
-    };
-
-    loadApprovedGallery();
-    const refreshTimer = window.setInterval(loadApprovedGallery, 30000);
-    window.addEventListener('casdct_media_updated', loadApprovedGallery);
-    return () => {
-      isMounted = false;
-      window.clearInterval(refreshTimer);
-      window.removeEventListener('casdct_media_updated', loadApprovedGallery);
-    };
+    return subscribeApprovedGallery((items) => {
+      setGalleryItems(items.map((item) => ({
+        ...item,
+        type: item.mediaType,
+        desc: item.description,
+        uploadedBy: item.uploadedBy,
+        fileName: item.fileName,
+        image: item.publicUrl,
+        mediaUrl: item.publicUrl
+      })));
+      setGalleryError('');
+    }, (error) => {
+      console.error('Unable to subscribe to shared approved gallery media:', error);
+      setGalleryError('Gallery items could not be loaded. Please try again later.');
+    });
   }, []);
 
   // Handle file selection — auto-detect type and create preview
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!GALLERY_FILE_TYPES.includes(file.type) || file.size > 10 * 1024 * 1024) {
-      setUploadError('Choose a supported image or video file no larger than 10 MB.');
+    if (!GALLERY_FILE_TYPES.includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setUploadError('Choose a supported image or video file no larger than 5 MB.');
       if (uploadFilePreview) URL.revokeObjectURL(uploadFilePreview);
       setUploadFile(null);
       setUploadFilePreview('');
@@ -396,7 +386,7 @@ export default function Gallery() {
                         <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                           <span className="text-teal-600 dark:text-teal-400 font-bold">Click to browse</span> or drag & drop
                         </p>
-                        <p className="text-[10px] text-slate-400">Supported images and videos (max 10 MB)</p>
+                        <p className="text-[10px] text-slate-400">Supported images and videos (max 5 MB)</p>
                       </div>
                     )}
                     <input

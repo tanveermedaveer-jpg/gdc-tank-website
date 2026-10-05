@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, ChevronRight, GraduationCap, X } from 'lucide-react';
+import { Phone, MapPin, ChevronRight, GraduationCap, X } from 'lucide-react';
 import { FaFacebookF, FaXTwitter, FaInstagram } from 'react-icons/fa6';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
@@ -19,15 +19,12 @@ export default function Footer() {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const [collegePhone, setCollegePhone] = useState(COLLEGE_PHONE);
-  const [collegeEmail, setCollegeEmail] = useState('info@casdct.edu.pk');
   const [collegeAddress, setCollegeAddress] = useState(COLLEGE_ADDRESS);
 
   useEffect(() => {
     const storedPhone = localStorage.getItem('casdct_college_phone');
-    const storedEmail = localStorage.getItem('casdct_college_email');
     const storedAddress = localStorage.getItem('casdct_college_address');
     setCollegePhone(resolveCollegePhone(storedPhone));
-    if (storedEmail) setCollegeEmail(storedEmail);
     setCollegeAddress(resolveCollegeAddress(storedAddress));
   }, []);
 
@@ -229,12 +226,6 @@ export default function Footer() {
             <li className="flex items-center">
               <Phone className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" />
               <span>{collegePhone}</span>
-            </li>
-            <li className="flex items-center">
-              <Mail className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" />
-              <a href={`mailto:${collegeEmail}`} className="hover:text-white transition-colors">
-                {collegeEmail}
-              </a>
             </li>
             <li className="flex items-start pt-2">
               <GraduationCap className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0 mt-0.5" />

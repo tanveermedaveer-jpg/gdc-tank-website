@@ -226,18 +226,24 @@ export default function Contact() {
               </div>
 
               {/* Embedded Google Map */}
-              <div className="relative h-64 rounded-2xl overflow-hidden shadow-md border border-slate-200 bg-teal-50 flex flex-col items-center justify-center text-center">
-                <iframe 
-                  title="Government Degree College Tank Location"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13540.0!2d70.3831!3d32.2217!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDEzJzE4LjEiTiA3MMKwMjInNTkuMiJF!5e0!3m2!1sen!2spk!4v1"
-                  className="w-full h-full border-0 absolute inset-0 z-0"
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
-                <div className="absolute bottom-3 right-3 z-10">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
+                <div className="px-5 py-4">
+                  <h3 className="text-sm font-bold text-blue-950">{COLLEGE_ADDRESS}</h3>
+                  <p className="mt-1 text-xs text-slate-500">{COLLEGE_ADDRESS}</p>
+                </div>
+                <div className="relative h-64 bg-teal-50">
+                  <iframe
+                    title={COLLEGE_ADDRESS}
+                    src="https://www.google.com/maps?q=32.2096916,70.3881146&z=16&output=embed"
+                    className="absolute inset-0 z-0 h-full w-full border-0"
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  ></iframe>
+                </div>
+                <div className="flex justify-end p-3">
                   <a 
-                    href="https://www.google.com/maps/place/32%C2%B013'18.1%22N+70%C2%B022'59.2%22E/@32.2217,70.3831,15z" 
+                    href="https://www.google.com/maps/search/?api=1&query=32.2096916%2C70.3881146"
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="bg-teal-700 hover:bg-teal-800 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] shadow-lg transition-colors tracking-wide uppercase inline-flex items-center"

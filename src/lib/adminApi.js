@@ -223,14 +223,6 @@ export const signInAdmin = async (username, password) => {
   return { username: result.username };
 };
 
-export const getAdminLoginInfo = async () => {
-  const result = await authenticateAdmin('loginInfo', {});
-  if (typeof result.username !== 'string' || !result.username) {
-    throw new Error('The authentication service returned invalid login information.');
-  }
-  return result;
-};
-
 export const updateAdminCredentials = async (username, password) => {
   const result = await authenticateAdmin('updateCredentials', { username, password });
   if (typeof result.username !== 'string' || !result.username) {

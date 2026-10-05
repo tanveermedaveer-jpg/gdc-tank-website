@@ -5,17 +5,16 @@ import campusImg from '../assets/campus.png';
 import {
   clearAdminSession,
   verifyAdminSession,
-  getAdminLoginInfo,
   hasAdminSession,
   signInAdmin
 } from '../lib/adminApi';
 
 export default function Login() {
-  const [username, setUsername] = useState('Shabir Ahmed');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isCheckingSession, setIsCheckingSession] = useState(hasAdminSession);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,9 +22,8 @@ export default function Login() {
   useEffect(() => {
     let isMounted = true;
     const checkSession = async () => {
+      if (!hasAdminSession()) return;
       try {
-        const loginInfo = await getAdminLoginInfo();
-        if (isMounted) setUsername(loginInfo.username);
         if (hasAdminSession() && await verifyAdminSession()) {
           const targetPath = location.state?.from?.pathname || '/admin';
           navigate(targetPath, { replace: true });
@@ -93,30 +91,20 @@ export default function Login() {
               <Lock className="w-6 h-6" />
             </div>
             <h1 className="text-2xl font-bold text-blue-950 font-serif">Login to your account</h1>
-            <p className="text-slate-500 text-xs sm:text-sm mt-2 leading-relaxed">Sign in with the college admin account.</p>
           </div>
-
-          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
-            Admin credentials are verified securely by the college server. Portal records and uploaded files remain local to this browser and do not sync to other devices.
-          </div>
-
-          {error && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold p-3.5 rounded-xl mb-5 text-center">
-              {error}
-            </div>
-          )}
 
           {isCheckingSession ? (
             <p role="status" className="text-center text-sm text-slate-500">Verifying admin session…</p>
           ) : (
           <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ADMIN USERNAME</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ADMIN USERNAME *</label>
               <input
                 type="text"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 required
+                autoFocus
                 autoCapitalize="none"
                 autoComplete="username"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -145,6 +133,8 @@ export default function Login() {
                 </button>
               </div>
             </div>
+
+            {error && <p role="status" className="text-center text-xs text-slate-500">{error}</p>}
 
             <button 
               type="submit"

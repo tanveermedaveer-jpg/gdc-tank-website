@@ -173,17 +173,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  if (body.action === 'loginInfo') {
-    try {
-      const { sql } = getConfiguration();
-      const credential = await getAdminCredential(sql);
-      return res.status(200).json({ username: credential.username });
-    } catch (error) {
-      console.error('Unable to load admin login details:', error);
-      return sendError(res, 503, 'Admin authentication is unavailable. Verify the server configuration and database connection.');
-    }
-  }
-
   let sql;
   let sessionSecret;
   let credential;

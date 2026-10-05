@@ -228,13 +228,13 @@ export default function Contact() {
               {/* Embedded Google Map */}
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
                 <div className="px-5 py-4">
-                  <h3 className="text-sm font-bold text-blue-950">{COLLEGE_ADDRESS}</h3>
+                  <h3 className="text-sm font-bold text-blue-950">Government Captain Ashfaq Shaheed Degree College, Tank</h3>
                   <p className="mt-1 text-xs text-slate-500">{COLLEGE_ADDRESS}</p>
                 </div>
                 <div className="relative h-64 bg-teal-50">
                   <iframe
-                    title={COLLEGE_ADDRESS}
-                    src="https://www.google.com/maps?q=32.2096916,70.3881146&z=16&output=embed"
+                    title={`Government Captain Ashfaq Shaheed Degree College, Tank — ${COLLEGE_ADDRESS}`}
+                    src="https://www.google.com/maps?q=32.2106769,70.3950047&z=17&output=embed"
                     className="absolute inset-0 z-0 h-full w-full border-0"
                     allowFullScreen=""
                     loading="lazy"
@@ -243,7 +243,7 @@ export default function Contact() {
                 </div>
                 <div className="flex justify-end p-3">
                   <a 
-                    href="https://www.google.com/maps/search/?api=1&query=32.2096916%2C70.3881146"
+                    href="https://www.google.com/maps/search/?api=1&query=32.2106769%2C70.3950047"
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="bg-teal-700 hover:bg-teal-800 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] shadow-lg transition-colors tracking-wide uppercase inline-flex items-center"

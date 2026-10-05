@@ -1,11 +1,12 @@
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from './contactDetails';
 import { DEFAULT_HOME_CONTENT } from './siteContentDefaults';
+import { uploadPresigned } from '@vercel/blob/client';
 
 const DATABASE_NAME = 'casdct-local-portal';
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'records';
-const SESSION_MARKER_KEY = 'casdct_admin_session_active';
-const SESSION_USERNAME_KEY = 'casdct_local_admin_username';
+const SESSION_MARKER_KEY = 'casdct_admin_session_server';
+const SESSION_USERNAME_KEY = 'casdct_server_admin_username';
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 const MAX_RECEIPT_SIZE = 5 * 1024 * 1024;
 const MAX_CIRCULAR_SIZE = 10 * 1024 * 1024;
@@ -16,6 +17,25 @@ const DEFAULT_SETTINGS = {
   phone: COLLEGE_PHONE,
   address: COLLEGE_ADDRESS,
   merit_list_live: false
+};
+
+const isStoredFile = async (path) => {
+  const response = await fetch(`/api/portal-file?path=${encodeURIComponent(path)}`, {
+    method: 'HEAD',
+    credentials: 'same-origin',
+    cache: 'no-store'
+  });
+  if (response.status === 404) return false;
+  if (!response.ok) {
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error('The file service returned an invalid response.');
+    }
+    throw new Error(result.error || 'Unable to check the stored file.');
+  }
+  return true;
 };
 
 let databasePromise;
@@ -44,74 +64,122 @@ const openDatabase = () => {
   return databasePromise;
 };
 
+const apiRequest = async (url, options = {}) => {
+  const response = await fetch(url, {
+    credentials: 'same-origin',
+    cache: 'no-store',
+    ...options
+  });
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error('The portal service returned an invalid response.');
+  }
+  if (!response.ok) throw new Error(result.error || 'The portal request failed.');
+  return result;
+};
+
+const readRecord = async (key) => await apiRequest(`/api/portal-data?key=${encodeURIComponent(key)}`);
+
 const readValue = async (key) => {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, 'readonly');
-    const request = transaction.objectStore(STORE_NAME).get(key);
-    request.onsuccess = () => resolve(request.result?.value);
-    request.onerror = () => reject(request.error || new Error('Unable to read local portal data.'));
-    transaction.onabort = () => reject(transaction.error || new Error('Local portal data read was interrupted.'));
+  if (key.startsWith('file:')) {
+    const response = await fetch(`/api/portal-file?path=${encodeURIComponent(key.slice(5))}`, {
+      credentials: 'same-origin',
+      cache: 'no-store'
+    });
+    if (response.status === 404) return undefined;
+    if (!response.ok) {
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error('The file service returned an invalid response.');
+      }
+      throw new Error(result.error || 'Unable to read the stored file.');
+    }
+    return await response.blob();
+  }
+  return (await readRecord(key)).value;
+};
+
+const uploadFile = async (path, file) => {
+  const source = file instanceof File
+    ? file
+    : new File([file], path.split('/').pop(), { type: file.type || 'application/octet-stream' });
+  const publicSubmission = path.startsWith('receipts/') || path.startsWith('gallery/');
+  const uploaded = await uploadPresigned(path, source, {
+    access: 'private',
+    handleUploadUrl: '/api/blob-upload',
+    clientPayload: JSON.stringify({ publicSubmission })
+  });
+  await apiRequest(`/api/portal-file?path=${encodeURIComponent(path)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      path,
+      pathname: uploaded.pathname,
+      contentType: uploaded.contentType,
+      publicSubmission
+    })
   });
 };
 
 const writeValue = async (key, value) => {
-  await writeValues([[key, value]]);
-  return value;
-};
-
-const writeValues = async (entries) => {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    entries.forEach(([key, value]) => store.put({ key, value }));
-    transaction.oncomplete = () => {
-      entries.forEach(([key]) => notifyLocalDataChanged(key));
-      resolve();
-    };
-    transaction.onerror = () => reject(transaction.error || new Error('Unable to save local portal data.'));
-    transaction.onabort = () => reject(transaction.error || new Error('Local portal data update was interrupted.'));
-  });
+  if (key.startsWith('file:')) {
+    if (!(value instanceof Blob)) throw new Error('The uploaded file is invalid.');
+    await uploadFile(key.slice(5), value);
+    return value;
+  }
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const current = await readRecord(key);
+    try {
+      await apiRequest('/api/portal-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'write',
+          key,
+          value,
+          expectedVersion: current.version
+        })
+      });
+      notifyLocalDataChanged(key);
+      return value;
+    } catch (error) {
+      if (!error.message.includes('changed on another device') || attempt === 4) throw error;
+    }
+  }
+  throw new Error('Unable to save portal data after concurrent updates.');
 };
 
 const updateValue = async (key, updater, initialValue) => {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.get(key);
-    let updatedValue;
-    let result;
-    request.onsuccess = () => {
-      try {
-        const updated = updater(request.result ? request.result.value : initialValue);
-        updatedValue = updated.value;
-        result = updated.result;
-        store.put({ key, value: updatedValue });
-      } catch (error) {
-        transaction.abort();
-        reject(error);
-      }
-    };
-    transaction.oncomplete = () => {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const current = await readRecord(key);
+    const updated = updater(current.value === undefined ? initialValue : current.value);
+    try {
+      await apiRequest('/api/portal-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'write',
+          key,
+          value: updated.value,
+          expectedVersion: current.version
+        })
+      });
       notifyLocalDataChanged(key);
-      resolve(result);
-    };
-    transaction.onerror = () => reject(transaction.error || new Error('Unable to update local portal data.'));
-    transaction.onabort = () => reject(transaction.error || new Error('Local portal data update was interrupted.'));
-  });
+      return updated.result;
+    } catch (error) {
+      if (!error.message.includes('changed on another device') || attempt === 4) throw error;
+    }
+  }
+  throw new Error('Unable to save portal data after concurrent updates.');
 };
 
 const deleteValue = async (key) => {
-  const database = await openDatabase();
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, 'readwrite');
-    transaction.objectStore(STORE_NAME).delete(key);
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error || new Error('Unable to remove local portal data.'));
-    transaction.onabort = () => reject(transaction.error || new Error('Local portal data removal was interrupted.'));
-  });
+  if (!key.startsWith('file:')) throw new Error('Invalid stored file reference.');
+  await apiRequest(`/api/portal-file?path=${encodeURIComponent(key.slice(5))}`, { method: 'DELETE' });
 };
 
 const notifyLocalDataChanged = (key) => {
@@ -122,9 +190,7 @@ const notifyLocalDataChanged = (key) => {
 const getOrCreateValue = async (key, factory) => {
   const current = await readValue(key);
   if (current !== undefined) return current;
-  const value = await factory();
-  await writeValue(key, value);
-  return value;
+  return await factory();
 };
 
 const getAdmissions = () => getOrCreateValue('admissions', () => []);
@@ -179,11 +245,14 @@ const getHomeContent = () => getOrCreateValue('homeContent', async () => {
 
 const isLocalSessionValid = () => {
   const username = sessionStorage.getItem(SESSION_USERNAME_KEY);
-  return Boolean(hasAdminSession() && username);
+  return hasAdminSession() && Boolean(username);
 };
 
-export const hasAdminSession = () => Boolean(sessionStorage.getItem(SESSION_MARKER_KEY));
-export const getAdminSessionUsername = () => sessionStorage.getItem(SESSION_USERNAME_KEY) || '';
+export const hasAdminSession = () =>
+  sessionStorage.getItem(SESSION_MARKER_KEY) === '1' &&
+  Boolean(sessionStorage.getItem(SESSION_USERNAME_KEY));
+export const getAdminSessionUsername = () =>
+  hasAdminSession() ? sessionStorage.getItem(SESSION_USERNAME_KEY) : '';
 
 export const clearAdminSession = () => {
   sessionStorage.removeItem(SESSION_MARKER_KEY);
@@ -192,67 +261,117 @@ export const clearAdminSession = () => {
 
 export { MAX_CIRCULAR_SIZE as MAX_CIRCULAR_SIZE_BYTES };
 
-const authenticateAdmin = async (action, values) => {
-  const response = await fetch('/api/admin-auth', {
+export const signInAdmin = async (username, password) => {
+  const result = await apiRequest('/api/admin-auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin',
-    cache: 'no-store',
-    body: JSON.stringify({ action, ...values })
+    body: JSON.stringify({ action: 'login', username, password })
   });
-  let result;
+  if (typeof result.username !== 'string' || !result.username) {
+    throw new Error('The authentication service returned an invalid admin account.');
+  }
+  sessionStorage.setItem(SESSION_MARKER_KEY, '1');
+  sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
   try {
-    result = await response.json();
-  } catch {
-    throw new Error('The authentication service returned an invalid response.');
+    await migrateLocalData();
+  } catch (error) {
+    clearAdminSession();
+    throw new Error(`Signed in, but local data could not be migrated: ${error.message}`);
   }
-  if (!response.ok) {
-    if (response.status === 401) clearAdminSession();
-    throw new Error(result.error || 'Admin authentication failed.');
-  }
-  return result;
-};
-
-export const signInAdmin = async (username, password) => {
-  const result = await authenticateAdmin('login', { username, password });
-  if (typeof result.username !== 'string' || !result.username) {
-    throw new Error('The authentication service returned an invalid session.');
-  }
-  sessionStorage.setItem(SESSION_MARKER_KEY, '1');
-  sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
-  return { username: result.username };
-};
-
-export const updateAdminCredentials = async (username, password) => {
-  const result = await authenticateAdmin('updateCredentials', { username, password });
-  if (typeof result.username !== 'string' || !result.username) {
-    throw new Error('The authentication service returned an invalid credential update.');
-  }
-  sessionStorage.setItem(SESSION_MARKER_KEY, '1');
-  sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
   return { username: result.username };
 };
 
 export const verifyAdminSession = async () => {
   if (!hasAdminSession()) return false;
   try {
-    const result = await authenticateAdmin('verify', {});
+    const result = await apiRequest('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verify' })
+    });
     if (result.username !== getAdminSessionUsername()) {
       clearAdminSession();
       return false;
     }
     return true;
   } catch (error) {
-    if (error.message === 'Admin session is invalid or has expired.') return false;
+    if (error.message === 'Admin session is invalid or has expired.') {
+      clearAdminSession();
+      return false;
+    }
     throw error;
   }
 };
 
 export const signOutAdmin = async () => {
   try {
-    await authenticateAdmin('logout', {});
+    await apiRequest('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'logout' })
+    });
   } finally {
     clearAdminSession();
+  }
+};
+
+const getLegacyEntries = async () => {
+  if (!globalThis.indexedDB) return [];
+  const database = await openDatabase();
+  return await new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, 'readonly');
+    const request = transaction.objectStore(STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error || new Error('Unable to read browser-local portal data for migration.'));
+    transaction.onabort = () => reject(transaction.error || new Error('Browser-local data migration was interrupted.'));
+  });
+};
+
+const sendMigrationChunk = async (key, value) => {
+  await apiRequest('/api/portal-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'migrate', key, value })
+  });
+};
+
+const migrateLocalData = async () => {
+  const entries = await getLegacyEntries();
+  if (!entries.length) return;
+
+  const values = new Map(entries.map(({ key, value }) => [key, value]));
+  for (const [key, value] of values) {
+    if (key.startsWith('file:') && value instanceof Blob) {
+      if (!await isStoredFile(key.slice(5))) await writeValue(key, value);
+    }
+  }
+
+  const recordKeys = ['admissions', 'faculty', 'gallery', 'circulars', 'settings', 'homeContent'];
+  for (const key of recordKeys) {
+    const value = key === 'homeContent' && !values.has(key)
+      ? await getHomeContent()
+      : values.get(key);
+    if (value === undefined) continue;
+    if (Array.isArray(value)) {
+      if (key === 'faculty') {
+        for (const member of value) {
+          if (member.photoBlob instanceof Blob && member.photoPath) {
+            if (!await isStoredFile(member.photoPath)) {
+              await writeValue(`file:${member.photoPath}`, member.photoBlob);
+            }
+          }
+        }
+      }
+      const sanitized = key === 'faculty'
+        ? value.map(({ photoBlob: _photoBlob, ...member }) => member)
+        : value;
+      for (let offset = 0; offset < sanitized.length; offset += 50) {
+        await sendMigrationChunk(key, sanitized.slice(offset, offset + 50));
+      }
+    } else {
+      await sendMigrationChunk(key, value);
+    }
+    notifyLocalDataChanged(key);
   }
 };
 
@@ -270,8 +389,7 @@ const createFileUrl = (path, blob) => {
 
 const removeLocalFile = async (path) => {
   if (!path) return;
-  const blob = await readValue(`file:${path}`);
-  if (blob) await deleteValue(`file:${path}`);
+  if (await isStoredFile(path)) await deleteValue(`file:${path}`);
   const cached = fileUrlCache.get(path);
   if (cached) {
     URL.revokeObjectURL(cached.url);
@@ -351,9 +469,18 @@ const saveGalleryFile = async (payload, file, approved) => {
   };
   await saveLocalFile(item.storagePath, file, MAX_MEDIA_SIZE, 'Gallery media');
   try {
-    await updateValue('gallery', (gallery) => ({ value: [item, ...gallery] }), []);
+    if (approved) {
+      await updateValue('gallery', (gallery) => ({ value: [item, ...gallery] }), []);
+    } else {
+      const result = await apiRequest('/api/portal-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'public.append', key: 'gallery', value: item })
+      });
+      return { id: result.id, status: result.status };
+    }
   } catch (error) {
-    await removeLocalFile(item.storagePath);
+    if (approved) await removeLocalFile(item.storagePath);
     throw error;
   }
   return mapGalleryRecord(item);
@@ -382,7 +509,6 @@ const saveAdmission = async (payload, file) => {
   const program = typeof record.program === 'string' ? record.program.trim() : '';
   const phone = typeof record.phone === 'string' ? record.phone.trim() : '';
   if (!fullName || !program || !phone) throw new Error('Complete the required name, program, and phone fields.');
-  const regId = `STU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const isBsProgram = program.toLowerCase().startsWith('bs');
   const obtained = Number(isBsProgram ? record.interObtainedMarks : record.matricMarks);
   const total = Number(isBsProgram ? record.interTotalMarks : record.matricTotal);
@@ -393,7 +519,6 @@ const saveAdmission = async (payload, file) => {
     studentName: fullName,
     phone,
     program,
-    regId,
     meritPct: validMarks ? Math.round((obtained / total) * 1000) / 10 : 0,
     marksText: validMarks ? `${obtained}/${total}` : 'N/A',
     status: 'pending',
@@ -411,13 +536,11 @@ const saveAdmission = async (payload, file) => {
     admission.feeSlipName = file.name.slice(0, 200);
     await saveLocalFile(admission.feeSlipPath, file, MAX_RECEIPT_SIZE, 'Receipt');
   }
-  try {
-    await updateValue('admissions', (admissions) => ({ value: [admission, ...admissions] }), []);
-  } catch (error) {
-    await removeLocalFile(admission.feeSlipPath);
-    throw error;
-  }
-  return { regId, program, meritPct: admission.meritPct };
+  return await apiRequest('/api/portal-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'public.append', key: 'admissions', value: admission })
+  });
 };
 
 const saveFaculty = async (payload, file) => {
@@ -430,34 +553,40 @@ const saveFaculty = async (payload, file) => {
   if (file && (!(file instanceof File) || !file.type.startsWith('image/') || file.size > MAX_MEDIA_SIZE)) {
     throw new Error('Select a valid faculty photo no larger than 5 MB.');
   }
-  let member;
-  let oldPhotoPath = '';
-  await updateValue('faculty', (faculty) => {
-    const existing = faculty.find((item) => item.id === source.id);
-    member = {
-      ...existing,
-      id: existing?.id || crypto.randomUUID(),
-      name: source.name.trim(),
-      designation: source.designation.trim(),
-      department: source.department.trim(),
-      qualification: source.qualification.trim(),
-      contact: typeof source.contact === 'string' ? source.contact.trim() : '',
-      is_hod: source.is_hod === true,
-      sort_order: Number.isInteger(source.sort_order) ? source.sort_order : 0,
-      photo_url: existing?.photo_url || '',
-      photoPath: existing?.photoPath || '',
-      photoBlob: existing?.photoBlob || null
-    };
-    if (file) {
-      oldPhotoPath = member.photoPath;
-      member.photoPath = `faculty/${crypto.randomUUID()}`;
-      member.photoBlob = file;
-      member.photo_url = '';
-    }
-    return { value: [member, ...faculty.filter((item) => item.id !== member.id)] };
-  }, []);
+  const faculty = await getFaculty();
+  const existing = faculty.find((item) => item.id === source.id);
+  const oldPhotoPath = file ? existing?.photoPath || '' : '';
+  const member = {
+    ...existing,
+    id: existing?.id || crypto.randomUUID(),
+    name: source.name.trim(),
+    designation: source.designation.trim(),
+    department: source.department.trim(),
+    qualification: source.qualification.trim(),
+    contact: typeof source.contact === 'string' ? source.contact.trim() : '',
+    is_hod: source.is_hod === true,
+    sort_order: Number.isInteger(source.sort_order) ? source.sort_order : 0,
+    photo_url: existing?.photo_url || '',
+    photoPath: existing?.photoPath || ''
+  };
+  let photoUrl = member.photo_url;
+  if (file) {
+    member.photoPath = `faculty/${crypto.randomUUID()}`;
+    member.photo_url = '';
+    photoUrl = await saveLocalFile(member.photoPath, file, MAX_MEDIA_SIZE, 'Faculty photo');
+  } else if (member.photoPath) {
+    photoUrl = createFileUrl(member.photoPath, await readValue(`file:${member.photoPath}`));
+  }
+  try {
+    await updateValue('faculty', (currentFaculty) => ({
+      value: [member, ...currentFaculty.filter((item) => item.id !== member.id)]
+    }), []);
+  } catch (error) {
+    if (file) await removeLocalFile(member.photoPath);
+    throw error;
+  }
   if (oldPhotoPath) await removeLocalFile(oldPhotoPath);
-  return mapFacultyRecord(member);
+  return mapFacultyRecord({ ...member, photo_url: photoUrl });
 };
 
 const updateAdmissionRecord = async (payload) => {
@@ -670,9 +799,6 @@ const request = async (action, payload = {}, file = null) => {
   if (action.startsWith('public.')) return await handlePublicAction(action, payload, file);
   if (action === 'auth.login') return await signInAdmin(payload.username, payload.password);
   if (action === 'auth.logout') return await signOutAdmin();
-  if (action === 'auth.credentials.update') {
-    return await updateAdminCredentials(payload.username, payload.password);
-  }
   return await handleAdminAction(action, payload, file);
 };
 
@@ -683,8 +809,15 @@ export const publicFileRequest = (action, payload, file) => request(action, payl
 
 export const subscribeLocalData = (key, onData, onError) => {
   let isActive = true;
-  const readLatest = async () => {
+  let isReading = false;
+  let version;
+  const readLatest = async (force = false) => {
+    if (isReading) return;
+    isReading = true;
     try {
+      const record = await readRecord(key);
+      if (!force && version === record.version) return;
+      version = record.version;
       const value = key === 'homeContent'
         ? await getHomeContent()
         : key === 'gallery'
@@ -699,19 +832,23 @@ export const subscribeLocalData = (key, onData, onError) => {
       if (isActive) onData(value);
     } catch (error) {
       if (isActive) onError(error);
+    } finally {
+      isReading = false;
     }
   };
   const handleLocalUpdate = (event) => {
-    if (event.detail?.key === key) readLatest();
+    if (event.detail?.key === key) readLatest(true);
   };
   const handleBroadcast = (event) => {
-    if (event.data?.key === key) readLatest();
+    if (event.data?.key === key) readLatest(true);
   };
-  readLatest();
+  readLatest(true);
+  const refreshTimer = window.setInterval(() => readLatest(), 5000);
   window.addEventListener('casdct_local_data_updated', handleLocalUpdate);
   channel?.addEventListener('message', handleBroadcast);
   return () => {
     isActive = false;
+    window.clearInterval(refreshTimer);
     window.removeEventListener('casdct_local_data_updated', handleLocalUpdate);
     channel?.removeEventListener('message', handleBroadcast);
   };
@@ -761,6 +898,24 @@ export const subscribeMeritList = (onMeritList, onError) => {
 
 export const subscribeLocalChanges = (keys, onChange) => {
   const allowedKeys = new Set(keys);
+  const versions = new Map();
+  let isReading = false;
+  const checkRemoteChanges = async () => {
+    if (isReading) return;
+    isReading = true;
+    try {
+      await Promise.all([...allowedKeys].map(async (key) => {
+        const { version } = await readRecord(key);
+        const previousVersion = versions.get(key);
+        versions.set(key, version);
+        if (previousVersion !== undefined && previousVersion !== version) onChange(key);
+      }));
+    } catch (error) {
+      console.error('Unable to check for portal updates from other devices:', error);
+    } finally {
+      isReading = false;
+    }
+  };
   const handleEvent = (event) => {
     if (allowedKeys.has(event.detail?.key)) onChange(event.detail.key);
   };
@@ -769,7 +924,10 @@ export const subscribeLocalChanges = (keys, onChange) => {
   };
   window.addEventListener('casdct_local_data_updated', handleEvent);
   channel?.addEventListener('message', handleBroadcast);
+  const refreshTimer = window.setInterval(checkRemoteChanges, 5000);
+  checkRemoteChanges();
   return () => {
+    window.clearInterval(refreshTimer);
     window.removeEventListener('casdct_local_data_updated', handleEvent);
     channel?.removeEventListener('message', handleBroadcast);
   };

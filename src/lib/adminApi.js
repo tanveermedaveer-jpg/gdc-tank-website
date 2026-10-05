@@ -5,7 +5,7 @@ import { uploadPresigned } from '@vercel/blob/client';
 const DATABASE_NAME = 'casdct-local-portal';
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'records';
-const SESSION_MARKER_KEY = 'casdct_admin_session_server';
+const SESSION_MARKER_KEY = 'casdct_firebase_admin_session';
 const SESSION_USERNAME_KEY = 'casdct_server_admin_username';
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 const MAX_RECEIPT_SIZE = 5 * 1024 * 1024;
@@ -23,7 +23,8 @@ const isStoredFile = async (path) => {
   const response = await fetch(`/api/portal-file?path=${encodeURIComponent(path)}`, {
     method: 'HEAD',
     credentials: 'same-origin',
-    cache: 'no-store'
+    cache: 'no-store',
+    headers: await getFirebaseAuthorizationHeaders()
   });
   if (response.status === 404) return false;
   if (!response.ok) {
@@ -43,6 +44,23 @@ const fileUrlCache = new Map();
 const channel = typeof BroadcastChannel === 'undefined'
   ? null
   : new BroadcastChannel('casdct-local-portal');
+
+const getFirebaseAuthClient = async () => {
+  const [{ firebaseAuth }, auth] = await Promise.all([
+    import('./firebase'),
+    import('@firebase/auth')
+  ]);
+  return { firebaseAuth, ...auth };
+};
+
+const getFirebaseAuthorizationHeaders = async (force = false) => {
+  if (!force && !hasAdminSession()) return {};
+  const { firebaseAuth } = await getFirebaseAuthClient();
+  await firebaseAuth.authStateReady();
+  const user = firebaseAuth.currentUser;
+  if (!user) return {};
+  return { Authorization: `Bearer ${await user.getIdToken()}` };
+};
 
 const openDatabase = () => {
   if (!globalThis.indexedDB) {
@@ -64,11 +82,16 @@ const openDatabase = () => {
   return databasePromise;
 };
 
-const apiRequest = async (url, options = {}) => {
+const apiRequest = async (url, options = {}, forceAuth = false) => {
+  const headers = new Headers(options.headers);
+  for (const [name, value] of Object.entries(await getFirebaseAuthorizationHeaders(forceAuth || hasAdminSession()))) {
+    headers.set(name, value);
+  }
   const response = await fetch(url, {
     credentials: 'same-origin',
     cache: 'no-store',
-    ...options
+    ...options,
+    headers
   });
   let result;
   try {
@@ -76,7 +99,11 @@ const apiRequest = async (url, options = {}) => {
   } catch {
     throw new Error('The portal service returned an invalid response.');
   }
-  if (!response.ok) throw new Error(result.error || 'The portal request failed.');
+  if (!response.ok) {
+    const error = new Error(result.error || 'The portal request failed.');
+    error.status = response.status;
+    throw error;
+  }
   return result;
 };
 
@@ -86,7 +113,8 @@ const readValue = async (key) => {
   if (key.startsWith('file:')) {
     const response = await fetch(`/api/portal-file?path=${encodeURIComponent(key.slice(5))}`, {
       credentials: 'same-origin',
-      cache: 'no-store'
+      cache: 'no-store',
+      headers: await getFirebaseAuthorizationHeaders()
     });
     if (response.status === 404) return undefined;
     if (!response.ok) {
@@ -111,7 +139,8 @@ const uploadFile = async (path, file) => {
   const uploaded = await uploadPresigned(path, source, {
     access: 'private',
     handleUploadUrl: '/api/blob-upload',
-    clientPayload: JSON.stringify({ publicSubmission })
+    clientPayload: JSON.stringify({ publicSubmission }),
+    headers: await getFirebaseAuthorizationHeaders()
   });
   await apiRequest(`/api/portal-file?path=${encodeURIComponent(path)}`, {
     method: 'POST',
@@ -261,24 +290,38 @@ export const clearAdminSession = () => {
 
 export { MAX_CIRCULAR_SIZE as MAX_CIRCULAR_SIZE_BYTES };
 
-export const signInAdmin = async (username, password) => {
-  const result = await apiRequest('/api/admin-auth', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'login', username, password })
-  });
-  if (typeof result.username !== 'string' || !result.username) {
-    throw new Error('The authentication service returned an invalid admin account.');
-  }
-  sessionStorage.setItem(SESSION_MARKER_KEY, '1');
-  sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
+export const signInAdmin = async (email, password) => {
+  const {
+    firebaseAuth,
+    browserSessionPersistence,
+    setPersistence,
+    signInWithEmailAndPassword,
+    signOut
+  } = await getFirebaseAuthClient();
+  await setPersistence(firebaseAuth, browserSessionPersistence);
+  await signInWithEmailAndPassword(firebaseAuth, email, password);
   try {
+    const result = await apiRequest('/api/admin-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login' })
+    }, true);
+    if (typeof result.username !== 'string' || !result.username) {
+      throw new Error('The authentication service returned an invalid admin account.');
+    }
+    sessionStorage.setItem(SESSION_MARKER_KEY, '1');
+    sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
     await migrateLocalData();
+    return { username: result.username };
   } catch (error) {
     clearAdminSession();
-    throw new Error(`Signed in, but local data could not be migrated: ${error.message}`);
+    try {
+      await signOut(firebaseAuth);
+    } catch (signOutError) {
+      console.error('Unable to clear Firebase sign-in after unsuccessful admin setup:', signOutError);
+    }
+    throw error;
   }
-  return { username: result.username };
 };
 
 export const verifyAdminSession = async () => {
@@ -295,7 +338,7 @@ export const verifyAdminSession = async () => {
     }
     return true;
   } catch (error) {
-    if (error.message === 'Admin session is invalid or has expired.') {
+    if (error.status === 401 || error.status === 403) {
       clearAdminSession();
       return false;
     }
@@ -312,6 +355,8 @@ export const signOutAdmin = async () => {
     });
   } finally {
     clearAdminSession();
+    const { firebaseAuth, signOut } = await getFirebaseAuthClient();
+    await signOut(firebaseAuth);
   }
 };
 
@@ -797,7 +842,7 @@ const handleAdminAction = async (action, payload, file) => {
 
 const request = async (action, payload = {}, file = null) => {
   if (action.startsWith('public.')) return await handlePublicAction(action, payload, file);
-  if (action === 'auth.login') return await signInAdmin(payload.username, payload.password);
+  if (action === 'auth.login') return await signInAdmin(payload.email, payload.password);
   if (action === 'auth.logout') return await signOutAdmin();
   return await handleAdminAction(action, payload, file);
 };

@@ -183,7 +183,7 @@ export default async function handler(req, res) {
       const sql = await getDatabase();
       if (PUBLIC_KEYS.has(key)) {
         let admin = false;
-        if (String(req.headers?.cookie || '').includes('casdct_admin_session=')) {
+        if (req.headers?.authorization) {
           try {
             await getAuthenticatedAdmin(req);
             admin = true;
@@ -201,10 +201,7 @@ export default async function handler(req, res) {
       const record = await readRecord(authenticatedSql, key);
       return res.status(200).json({ value: record.value, version: record.version });
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        res.setHeader('Set-Cookie', 'casdct_admin_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0');
-      }
-      return sendError(res, error);
+        return sendError(res, error);
     }
   }
 
@@ -237,9 +234,6 @@ export default async function handler(req, res) {
     }
     throw new ApiError(400, 'Unknown portal data action.');
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      res.setHeader('Set-Cookie', 'casdct_admin_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0');
-    }
     return sendError(res, error);
   }
 }

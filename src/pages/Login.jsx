@@ -10,7 +10,7 @@ import {
 } from '../lib/adminApi';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -43,7 +43,7 @@ export default function Login() {
     setIsSubmitting(true);
     setError('');
     try {
-      await signInAdmin(username, password);
+      await signInAdmin(email, password);
       const targetPath = location.state?.from?.pathname || '/admin';
       navigate(targetPath, { replace: true });
     } catch (loginError) {
@@ -105,19 +105,19 @@ export default function Login() {
           ) : (
             <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
               <div className="space-y-2">
-                <label htmlFor="admin-username" className="block text-sm font-semibold text-slate-800">
-                  Username
+                <label htmlFor="admin-email" className="block text-sm font-semibold text-slate-800">
+                  Email
                 </label>
                 <input
-                  id="admin-username"
-                  type="text"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
+                  id="admin-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   required
                   autoFocus
                   autoCapitalize="none"
-                  autoComplete="off"
-                  placeholder="Enter your name"
+                  autoComplete="username"
+                  placeholder="Enter your admin email"
                   className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-700 focus:ring-4 focus:ring-teal-700/10"
                 />
               </div>
@@ -133,7 +133,7 @@ export default function Login() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     required
-                    autoComplete="new-password"
+                    autoComplete="current-password"
                     placeholder="Enter your password"
                     className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-4 pr-12 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-700 focus:ring-4 focus:ring-teal-700/10"
                   />

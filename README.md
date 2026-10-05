@@ -2,23 +2,23 @@
 
 ## Shared admin portal and database
 
-The portal stores admissions, faculty, gallery metadata, circulars, institutional settings, homepage content, and admin credentials in Neon Postgres. Uploaded receipts, images, videos, and PDFs are stored in a **private Vercel Blob store**; the app serves files through authenticated API routes. Admin updates are written to the shared services and are visible after a page refresh. Open pages check for remote changes every five seconds.
+The portal stores admissions, faculty, gallery metadata, circulars, institutional settings, and homepage content in Neon Postgres. Admin sign-in uses Firebase Authentication; the browser keeps Firebase's session-scoped auth state and sends Firebase ID tokens to the API. The server verifies each token and authorizes only the configured admin UID. No separate application session secret or signed-cookie setup is required. Uploaded receipts, images, videos, and PDFs are stored in a **private Vercel Blob store**; the app serves files through authenticated API routes. Admin updates are written to the shared services and are visible after a page refresh. Open pages check for remote changes every five seconds.
 
-Admin passwords are hashed with scrypt in the database. Sessions use signed, eight-hour `HttpOnly`, `Secure`, `SameSite=Strict` cookies. Login attempts are limited to five per address in a 15-minute window. Passwords and database credentials are never included in client JavaScript.
+Firebase handles password verification and account protections. Neon is not used to store or verify admin passwords. The Firebase web API key in the client is a public project identifier, not an admin credential; restrict its allowed APIs and website referrers in Google Cloud.
 
 ### Configure Vercel
 
 1. Create a Neon Postgres database and set its connection string as `DATABASE_URL` in the Vercel project for Production and Preview.
-2. Set `ADMIN_INITIAL_PASSWORD` to a new, private password between 16 and 256 characters. The first authentication request creates the admin account and stores a salted scrypt hash. The default username is **Shabir Ahmed**; optionally set `ADMIN_USERNAME` before the account is first created. Changing these seed variables does not change an account that already exists.
-3. Generate a separate random `ADMIN_SESSION_SECRET` of at least 32 characters.
+2. In Firebase Console, enable **Authentication → Sign-in method → Email/Password** and create the admin user. Copy that user's UID from the Users page.
+3. Set `FIREBASE_ADMIN_UID` to the admin user's exact UID in Vercel. The Firebase project ID is configured in the app; only this Firebase account can access the admin portal.
 4. In the project's Vercel **Storage** settings, create a **private** Blob store and connect it to this Vercel project. Enable the required deployment environments. Vercel provides the Blob/OIDC configuration. For local development, use `BLOB_READ_WRITE_TOKEN` and `BLOB_WEBHOOK_PUBLIC_KEY` from the connected store.
-5. Redeploy. The API initializes the database tables on first use. If the database or environment variables are missing, the login page reports the specific setup requirement rather than an ambiguous authentication-unavailable banner.
+5. Redeploy. The API initializes the portal data tables on first use. Missing Firebase or database configuration is reported explicitly.
 
-Do not commit actual environment values. `.env.example` contains placeholders only.
+Do not commit database, UID, or Blob environment values. `.env.example` contains setup guidance and placeholders only.
 
 ### Local development
 
-Use `vercel env pull` to obtain local credentials without committing them, then start the Vercel development server:
+Use `vercel env pull` to obtain local credentials without committing them, then start the Vercel development server. The Firebase web client config is included in the app; server-side authorization still requires `FIREBASE_ADMIN_UID`:
 
 ```powershell
 npm install

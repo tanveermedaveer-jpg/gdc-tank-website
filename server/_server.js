@@ -1,13 +1,9 @@
-import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
-import { promisify } from 'node:util';
 import { neon } from '@neondatabase/serverless';
+import { getAuth } from 'firebase-admin/auth';
+import { getApps, initializeApp } from 'firebase-admin/app';
 
-const scrypt = promisify(scryptCallback);
-const SESSION_COOKIE = 'casdct_admin_session';
-const SESSION_DURATION_SECONDS = 8 * 60 * 60;
-const PASSWORD_KEY_BYTES = 64;
-const SCRYPT_OPTIONS = { N: 32_768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 let schemaPromise;
+const FIREBASE_PROJECT_ID = 'degree-college-tank';
 
 export class ApiError extends Error {
   constructor(status, message) {
@@ -23,16 +19,6 @@ export const getDatabase = async () => {
   const sql = neon(process.env.DATABASE_URL);
   if (!schemaPromise) {
     schemaPromise = (async () => {
-      await sql`
-        CREATE TABLE IF NOT EXISTS casdct_admin_credentials (
-          singleton BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (singleton),
-          username VARCHAR(80) NOT NULL,
-          password_salt TEXT NOT NULL,
-          password_hash TEXT NOT NULL,
-          token_version INTEGER NOT NULL DEFAULT 1,
-          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        )
-      `;
       await sql`
         CREATE TABLE IF NOT EXISTS casdct_portal_records (
           record_key TEXT PRIMARY KEY,
@@ -50,13 +36,6 @@ export const getDatabase = async () => {
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `;
-      await sql`
-        CREATE TABLE IF NOT EXISTS casdct_admin_login_attempts (
-          address_hash TEXT PRIMARY KEY,
-          attempt_count INTEGER NOT NULL,
-          window_started_at TIMESTAMPTZ NOT NULL
-        )
-      `;
     })().catch((error) => {
       schemaPromise = undefined;
       throw error;
@@ -66,110 +45,56 @@ export const getDatabase = async () => {
   return sql;
 };
 
-const hashPassword = async (password, salt) =>
-  await scrypt(password, salt, PASSWORD_KEY_BYTES, SCRYPT_OPTIONS);
-
-export const getAdminCredential = async (sql) => {
-  let rows = await sql`
-    SELECT username, password_salt, password_hash, token_version
-    FROM casdct_admin_credentials WHERE singleton = TRUE LIMIT 1
-  `;
-  if (rows.length) return rows[0];
-
-  const username = process.env.ADMIN_USERNAME || 'Shabir Ahmed';
-  const password = process.env.ADMIN_INITIAL_PASSWORD;
-  if (!password || password.length < 16 || password.length > 256) {
-    throw new ApiError(503, 'Admin setup is incomplete. Set ADMIN_INITIAL_PASSWORD (16–256 characters) in Vercel.');
+export const getFirebaseAdminUid = () => {
+  const uid = process.env.FIREBASE_ADMIN_UID;
+  if (!uid || uid.length > 128) {
+    throw new ApiError(503, 'Admin access is not configured. Set FIREBASE_ADMIN_UID to the administrator user UID in Vercel.');
   }
-  const salt = randomBytes(16);
-  const passwordHash = await hashPassword(password, salt);
-  await sql`
-    INSERT INTO casdct_admin_credentials
-      (singleton, username, password_salt, password_hash)
-    VALUES (TRUE, ${username}, ${salt.toString('hex')}, ${passwordHash.toString('hex')})
-    ON CONFLICT (singleton) DO NOTHING
-  `;
-  rows = await sql`
-    SELECT username, password_salt, password_hash, token_version
-    FROM casdct_admin_credentials WHERE singleton = TRUE LIMIT 1
-  `;
-  if (!rows.length) throw new ApiError(503, 'Unable to initialize the admin account.');
-  return rows[0];
+  return uid;
 };
 
-const isEqual = (left, right) => {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+const getFirebaseAuth = () => {
+  const app = getApps().find((item) => item.name === 'portal-auth') ||
+    initializeApp({ projectId: FIREBASE_PROJECT_ID }, 'portal-auth');
+  return getAuth(app);
 };
 
-export const getSessionSecret = () => {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new ApiError(503, 'Admin session signing is not configured. Set ADMIN_SESSION_SECRET (at least 32 characters) in Vercel.');
+export const verifyFirebaseIdToken = async (idToken) => {
+  const auth = getFirebaseAuth();
+  let decodedToken;
+  try {
+    decodedToken = await auth.verifyIdToken(idToken);
+  } catch (error) {
+    if (typeof error?.code === 'string' && error.code.startsWith('auth/')) {
+      throw new ApiError(401, 'Invalid or expired Firebase sign-in. Please try again.');
+    }
+    throw error;
   }
-  return secret;
+  const adminUid = getFirebaseAdminUid();
+  if (decodedToken.uid !== adminUid || typeof decodedToken.email !== 'string') {
+    throw new ApiError(403, 'This Firebase account is not authorized for the admin portal.');
+  }
+  return { uid: decodedToken.uid, email: decodedToken.email };
 };
 
-export const getLoginAddressHash = (req) => {
-  const forwardedFor = req.headers?.['x-forwarded-for'] || '';
-  const address = String(forwardedFor).split(',')[0].trim().slice(0, 128) || 'unknown';
-  return createHmac('sha256', getSessionSecret()).update(`login-rate:${address}`).digest('hex');
+export const getFirebaseIdToken = (req) => {
+  const authorization = req.headers?.authorization;
+  const match = typeof authorization === 'string' && authorization.match(/^Bearer ([^\s]+)$/i);
+  if (!match || match[1].length > 8192) {
+    throw new ApiError(401, 'Sign in with the authorized Firebase admin account to continue.');
+  }
+  return match[1];
 };
 
-const sign = (payload, secret) =>
-  createHmac('sha256', secret).update(payload).digest('base64url');
-
-export const createSessionToken = (credential) => {
-  const payload = Buffer.from(JSON.stringify({
-    username: credential.username,
-    version: credential.token_version,
-    expiresAt: Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS
-  })).toString('base64url');
-  return `${payload}.${sign(payload, getSessionSecret())}`;
-};
-
-const readCookie = (req) => {
-  const cookieHeader = req.headers?.cookie || '';
-  const cookie = cookieHeader.split(';').map((part) => part.trim())
-    .find((part) => part.startsWith(`${SESSION_COOKIE}=`));
-  return cookie ? cookie.slice(SESSION_COOKIE.length + 1) : '';
-};
-
-export const setSessionCookie = (res, token) => {
-  res.setHeader(
-    'Set-Cookie',
-    `${SESSION_COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${SESSION_DURATION_SECONDS}`
-  );
-};
-
-export const clearSessionCookie = (res) => {
-  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`);
+export const getVerifiedAdmin = async (req) => {
+  const token = getFirebaseIdToken(req);
+  return await verifyFirebaseIdToken(token);
 };
 
 export const getAuthenticatedAdmin = async (req) => {
+  const admin = await getVerifiedAdmin(req);
   const sql = await getDatabase();
-  const credential = await getAdminCredential(sql);
-  const secret = getSessionSecret();
-  const token = readCookie(req);
-  if (!token || token.length > 2048) throw new ApiError(401, 'Admin session is invalid or has expired.');
-  const [payload, signature, extra] = token.split('.');
-  if (!payload || !signature || extra !== undefined || !isEqual(signature, sign(payload, secret))) {
-    throw new ApiError(401, 'Admin session is invalid or has expired.');
-  }
-  try {
-    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-    if (claims.username !== credential.username ||
-        claims.version !== credential.token_version ||
-        !Number.isInteger(claims.expiresAt) ||
-        claims.expiresAt <= Math.floor(Date.now() / 1000)) {
-      throw new ApiError(401, 'Admin session is invalid or has expired.');
-    }
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(401, 'Admin session is invalid or has expired.');
-  }
-  return { sql, credential };
+  return { sql, admin };
 };
 
 export const isSameOrigin = (req) => {
@@ -191,7 +116,7 @@ export const sendError = (res, error) => {
   if (status >= 500) console.error('Portal API request failed:', error);
   const message = error instanceof ApiError
     ? error.message
-    : 'The database request failed. Verify the Neon connection and try again.';
+    : 'The server could not complete this request. Verify the configured services and try again.';
   return res.status(status).json({ error: message });
 };
 
@@ -205,10 +130,3 @@ export const parseJsonBody = (req) => {
   }
   return req.body;
 };
-
-export const verifyPassword = async (password, credential) => {
-  const suppliedHash = await hashPassword(password, Buffer.from(credential.password_salt, 'hex'));
-  return isEqual(suppliedHash, Buffer.from(credential.password_hash, 'hex'));
-};
-
-export { PASSWORD_KEY_BYTES };

@@ -67,9 +67,6 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'GET, HEAD, DELETE');
     return res.status(405).json({ error: 'Method not allowed.' });
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      res.setHeader('Set-Cookie', 'casdct_admin_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0');
-    }
     if (res.headersSent) {
       console.error('Unable to stream portal file:', error);
       return res.end();

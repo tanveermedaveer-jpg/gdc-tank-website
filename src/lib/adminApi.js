@@ -311,8 +311,16 @@ export const signInAdmin = async (email, password) => {
     }
     sessionStorage.setItem(SESSION_MARKER_KEY, '1');
     sessionStorage.setItem(SESSION_USERNAME_KEY, result.username);
-    await migrateLocalData();
-    return { username: result.username };
+    try {
+      await migrateLocalData();
+      return { username: result.username };
+    } catch (error) {
+      console.error('Admin signed in, but local portal data migration failed:', error);
+      return {
+        username: result.username,
+        migrationWarning: `Signed in successfully, but existing browser data could not be migrated: ${error.message}`
+      };
+    }
   } catch (error) {
     clearAdminSession();
     try {

@@ -43,9 +43,14 @@ export default function Login() {
     setIsSubmitting(true);
     setError('');
     try {
-      await signInAdmin(email, password);
+      const result = await signInAdmin(email, password);
       const targetPath = location.state?.from?.pathname || '/admin';
-      navigate(targetPath, { replace: true });
+      navigate(targetPath, {
+        replace: true,
+        state: result.migrationWarning
+          ? { adminWarning: result.migrationWarning }
+          : null
+      });
     } catch (loginError) {
       clearAdminSession();
       setError(loginError.message || 'Unable to sign in. Please try again.');

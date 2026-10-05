@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Bell, Search, Users, Clock, Wallet, Check, X, Download, Play, Eye,
   Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
@@ -45,6 +45,7 @@ const formatRecordedFeeAmount = (admission) => {
 
 export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: propSetDarkMode }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Dark Mode State
   const [localDarkMode, setLocalDarkMode] = useState(() => {
@@ -90,6 +91,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     setToastMessage({ text: msg, type });
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  useEffect(() => {
+    const warning = location.state?.adminWarning;
+    if (!warning) return undefined;
+    const timeout = window.setTimeout(() => showToast(warning, 'error'), 0);
+    navigate(location.pathname, { replace: true, state: null });
+    return () => window.clearTimeout(timeout);
+  }, [location.pathname, location.state, navigate]);
 
   // Handle Tab Click with Badge Reset
   const handleTabSelect = (tabKey) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Lock, ArrowLeft, Eye, EyeOff, X } from 'lucide-react';
+import { Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import {
   clearAdminSession,
@@ -57,109 +57,117 @@ export default function Login() {
 
 
   return (
-    <div className="flex-grow flex items-center justify-center py-16 relative bg-slate-900">
-      {/* Background Image with Dark Blur Overlay */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src={campusImg} 
-          alt="Campus Background" 
-          className="w-full h-full object-cover opacity-20 blur-[2px]" 
-        />
-        <div className="absolute inset-0 bg-slate-950/70"></div>
-      </div>
+    <main className="relative isolate flex flex-grow items-center justify-center overflow-hidden bg-slate-950 px-4 py-12 sm:py-16">
+      <img
+        src={campusImg}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 -z-20 h-full w-full object-cover opacity-25"
+      />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-950/95 via-slate-950/80 to-teal-950/80" />
 
-      <div className="relative z-10 w-full max-w-md mx-auto px-4">
-        {/* Back Link */}
-        <Link to="/" className="inline-flex items-center text-teal-400 hover:text-teal-350 text-sm font-bold mb-6 transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Homepage
-        </Link>
-
-        {/* Login Card */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-2xl relative">
-          {/* Close (X) button */}
-          <Link 
-            to="/" 
-            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors p-1.5 hover:bg-slate-50 rounded-lg"
-            title="Exit to Homepage"
-            aria-label="Exit to Homepage"
+      <section
+        aria-labelledby="login-title"
+        className="w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-white shadow-2xl shadow-black/30"
+      >
+        <div className="bg-gradient-to-br from-teal-800 to-slate-900 px-7 py-8 text-white sm:px-9">
+          <Link
+            to="/"
+            className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-teal-100 transition-colors hover:text-white"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to homepage
           </Link>
-          <div className="text-center pb-6 border-b border-slate-100 mb-6">
-            <div className="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center text-teal-655 mx-auto mb-3">
-              <Lock className="w-6 h-6" />
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
+              <Lock className="h-6 w-6" aria-hidden="true" />
             </div>
-            <h1 className="text-2xl font-bold text-blue-950 font-serif">Login to your account</h1>
-          </div>
-
-          {isCheckingSession ? (
-            <p role="status" className="text-center text-sm text-slate-500">Verifying admin session…</p>
-          ) : (
-          <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ADMIN USERNAME *</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                required
-                autoFocus
-                autoCapitalize="none"
-                autoComplete="username"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="Enter your name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ADMIN PASSWORD *</label>
-              <div className="relative">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-800 font-medium"
-                  placeholder="Enter your password"
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
-                </button>
-              </div>
-            </div>
-
-            {error && <p role="status" className="text-center text-xs text-slate-500">{error}</p>}
-
-            <button 
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-teal-700 hover:bg-teal-800 text-white w-full py-2.5 rounded-md font-bold transition-colors text-sm uppercase tracking-wider shadow-md"
-            >
-              {isSubmitting ? 'PLEASE WAIT...' : 'LOGIN'}
-            </button>
-          </form>
-          )}
-
-          {/* Links Section */}
-          <div className="pt-6 border-t border-slate-100 mt-6 text-center space-y-3.5 text-xs font-medium">
-            <div>
-              <Link 
-                to="/" 
-                className="inline-flex items-center text-teal-700 hover:text-teal-800 font-bold hover:underline"
-              >
-                ← Back to Home
-              </Link>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200">
+                Admin portal
+              </p>
+              <h1 id="login-title" className="mt-1 text-2xl font-bold tracking-tight">
+                Welcome back
+              </h1>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <div className="px-7 py-8 sm:px-9">
+          <p className="mb-6 text-sm leading-6 text-slate-600">
+            Sign in with your administrator account to continue.
+          </p>
+
+          {isCheckingSession ? (
+            <p role="status" className="py-8 text-center text-sm text-slate-600">
+              Verifying admin session…
+            </p>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
+              <div className="space-y-2">
+                <label htmlFor="admin-username" className="block text-sm font-semibold text-slate-800">
+                  Username
+                </label>
+                <input
+                  id="admin-username"
+                  type="text"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  required
+                  autoFocus
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  placeholder="Enter your name"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-700 focus:ring-4 focus:ring-teal-700/10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="admin-password" className="block text-sm font-semibold text-slate-800">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="admin-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    autoComplete="new-password"
+                    placeholder="Enter your password"
+                    className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-4 pr-12 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-700 focus:ring-4 focus:ring-teal-700/10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-500 transition-colors hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-700"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword
+                      ? <EyeOff className="h-5 w-5" aria-hidden="true" />
+                      : <Eye className="h-5 w-5" aria-hidden="true" />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <p id="login-error" role="alert" className="text-sm text-slate-600">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex w-full items-center justify-center rounded-xl bg-teal-800 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-teal-900/20 transition-colors hover:bg-teal-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-700/20 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isSubmitting ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
+          )}
+        </div>
+      </section>
+    </main>
   );
 }

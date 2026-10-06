@@ -14,7 +14,6 @@ export default function Login() {
     if (username.trim() === 'Shabir Ahmad' && password.trim() === '122011577') {
       localStorage.setItem('userRole', 'admin');
       localStorage.setItem('isLoggedIn', 'true');
-      // Direct hard redirect to bypass any router/protected route issues
       window.location.href = '/admin';
     } else {
       setError('Invalid username or password');
@@ -39,7 +38,7 @@ export default function Login() {
             />
           </div>
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Password</label>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' >Password</label>
             <div style={{ position: 'relative' }}>
               <input 
                 type={showPassword ? 'text' : 'password'} 

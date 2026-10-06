@@ -13,7 +13,8 @@ export default function Login() {
     e.preventDefault();
     setError('');
 
-    if (username === 'Shabir Ahmad' && password === '122011577') {
+    // trim() function اضافی سپیسز کو ختم کر دے گا تاکہ لاگ ان میں غلطی نہ ہو
+    if (username.trim() === 'Shabir Ahmad' && password.trim() === '122011577') {
       localStorage.setItem('userRole', 'admin');
       localStorage.setItem('isLoggedIn', 'true');
       navigate('/AdminDashboard', { replace: true });

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
@@ -7,17 +6,16 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
     setError('');
 
-    // trim() function اضافی سپیسز کو ختم کر دے گا تاکہ لاگ ان میں غلطی نہ ہو
     if (username.trim() === 'Shabir Ahmad' && password.trim() === '122011577') {
       localStorage.setItem('userRole', 'admin');
       localStorage.setItem('isLoggedIn', 'true');
-      navigate('/AdminDashboard', { replace: true });
+      // Direct hard redirect to bypass any router/protected route issues
+      window.location.href = '/admin';
     } else {
       setError('Invalid username or password');
     }

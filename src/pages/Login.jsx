@@ -7,8 +7,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+  const handleLoginClick = () => {
     setError('');
 
     if (username.trim() === 'Shabir Ahmad' && password.trim() === '122011577') {
@@ -25,7 +24,8 @@ export default function Login() {
       <div style={{ background: 'white', padding: '40px', borderRadius: '12px', width: '400px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#0b2522' }}>Admin Login</h2>
         {error && <p style={{ color: 'red', textAlign: 'center', marginBottom: '15px' }}>{error}</p>}
-        <form onSubmit={handleLogin}>
+        
+        <div>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Username</label>
             <input 
@@ -34,7 +34,6 @@ export default function Login() {
               onChange={(e) => setUsername(e.target.value)} 
               style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc', boxSizing: 'border-box' }}
               placeholder="Enter username"
-              required 
             />
           </div>
           <div style={{ marginBottom: '20px' }}>
@@ -46,7 +45,6 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)} 
                 style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc', boxSizing: 'border-box' }}
                 placeholder="Enter password"
-                required 
               />
               <button 
                 type="button" 
@@ -58,12 +56,13 @@ export default function Login() {
             </div>
           </div>
           <button 
-            type="submit" 
+            type="button" 
+            onClick={handleLoginClick}
             style={{ width: '100%', padding: '12px', background: '#0b2522', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
           >
             Sign in
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );

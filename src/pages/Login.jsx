@@ -38,7 +38,7 @@ export default function Login() {
             />
           </div>
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' >Password</label>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Password</label>
             <div style={{ position: 'relative' }}>
               <input 
                 type={showPassword ? 'text' : 'password'} 

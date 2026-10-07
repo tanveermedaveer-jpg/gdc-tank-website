@@ -79,7 +79,7 @@ export default function Navbar() {
               <div className="hidden min-w-0 flex-1 items-center justify-between gap-0.5 xl:flex 2xl:gap-1.5">
                 <Link 
                   to="/" 
-                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('home')}
                 </Link>
@@ -91,7 +91,7 @@ export default function Navbar() {
                   onMouseLeave={() => setAboutDropdown(false)}
                 >
                   <button 
-                    className={`flex items-center px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname.startsWith('/about') ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    className={`flex items-center px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname.startsWith('/about') ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                   >
                     {t('aboutUs')}
                     <ChevronDown className="ml-0.5 w-3 h-3" />
@@ -120,7 +120,7 @@ export default function Navbar() {
                   onMouseLeave={() => setAcademicsDropdown(false)}
                 >
                   <button 
-                    className={`flex items-center px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname.startsWith('/academics') ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    className={`flex items-center px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname.startsWith('/academics') ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                   >
                     {t('academics')}
                     <ChevronDown className="ml-0.5 w-3 h-3" />
@@ -128,31 +128,31 @@ export default function Navbar() {
                   {academicsDropdown && (
                     <div className="absolute left-0 mt-0 w-72 rounded-xl shadow-xl bg-white dark:bg-slate-800 ring-1 ring-black ring-opacity-5 z-50 p-2 border border-slate-100 dark:border-slate-700 transition-all duration-200">
                       <div>
-                        <div className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase px-3 py-1 tracking-wider select-none">
+                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase px-3 py-1 tracking-wider select-none">
                           {t('intermediateHSSC')}
                         </div>
                         <div className="space-y-0.5 mt-1">
                           <Link
                             to="/academics/pre-medical"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-350 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('fscPreMedical')}
                           </Link>
                           <Link
                             to="/academics/pre-engineering"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-350 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('fscPreEngineering')}
                           </Link>
                           <Link
                             to="/academics/ics"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-350 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('icsComputerScience')}
                           </Link>
                           <Link
                             to="/academics/fa"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-350 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('faArtsHumanities')}
                           </Link>
@@ -160,37 +160,37 @@ export default function Navbar() {
                       </div>
 
                       <div className="border-t border-slate-100 dark:border-slate-700 mt-2 pt-2">
-                        <div className="text-[10px] font-bold text-slate-450 dark:text-slate-500 uppercase px-3 py-1 tracking-wider select-none">
+                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase px-3 py-1 tracking-wider select-none">
                           {t('degreePrograms')}
                         </div>
                         <div className="space-y-0.5 mt-1">
                           <Link
                             to="/academics/bs-computer-science"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-350 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('bsComputerScience')}
                           </Link>
                           <Link
                             to="/academics/bs-chemistry"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-350 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('bsChemistry')}
                           </Link>
                           <Link
                             to="/academics/bs-physics"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-350 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('bsPhysics')}
                           </Link>
                           <Link
                             to="/academics/bs-english"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-350 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('bsEnglish')}
                           </Link>
                           <Link
                             to="/academics/bs-political-science"
-                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-355 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
+                            className="block px-3 py-1.5 text-[11px] font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 transition-all"
                           >
                             {t('bsPoliticalScience')}
                           </Link>
@@ -203,49 +203,49 @@ export default function Navbar() {
    
                 <Link 
                   to="/admission" 
-                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/admission' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/admission' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('admission')}
                 </Link>
    
                 <Link 
                   to="/departments" 
-                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/departments' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/departments' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('departments')}
                 </Link>
    
                 <Link 
                   to="/examination" 
-                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/examination' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/examination' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('examination')}
                 </Link>
    
                 <Link 
                   to="/faculty" 
-                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/faculty' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/faculty' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('faculty')}
                 </Link>
    
                 <Link 
                   to="/facilities" 
-                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/facilities' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/facilities' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('facilities')}
                 </Link>
    
                 <Link 
                   to="/gallery" 
-                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/gallery' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/gallery' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('gallery')}
                 </Link>
    
                 <Link 
                   to="/contact" 
-                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/contact' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-455 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                  className={`px-1 py-2 rounded-md text-[10px] 2xl:text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap ${location.pathname === '/contact' ? 'text-teal-700 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-500 rounded-b-none' : 'text-slate-700 dark:text-slate-300 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                 >
                   {t('contactUs')}
                 </Link>
@@ -276,11 +276,11 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Navigation Drawer */}
-        <div className={`xl:hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[100vh] border-t border-gray-150 dark:border-slate-800 bg-white dark:bg-slate-905 opacity-100 overflow-y-auto' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+        <div className={`xl:hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[100vh] border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 opacity-100 overflow-y-auto' : 'max-h-0 opacity-0 overflow-hidden'}`}>
           <div className="px-4 pt-2 pb-6 space-y-1">
             <Link 
               to="/" 
-              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-450'}`}
+              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-400'}`}
             >
               {t('home')}
             </Link>
@@ -331,49 +331,49 @@ export default function Navbar() {
 
             <Link 
               to="/admission" 
-              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/admission' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-450'}`}
+              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/admission' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-400'}`}
             >
               {t('admission')}
             </Link>
 
             <Link 
               to="/departments" 
-              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/departments' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-450'}`}
+              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/departments' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-400'}`}
             >
               {t('departments')}
             </Link>
 
             <Link 
               to="/examination" 
-              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/examination' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-450'}`}
+              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/examination' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-400'}`}
             >
               {t('examination')}
             </Link>
 
             <Link 
               to="/faculty" 
-              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/faculty' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-450'}`}
+              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/faculty' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-400'}`}
             >
               {t('faculty')}
             </Link>
 
             <Link 
               to="/facilities" 
-              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/facilities' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-450'}`}
+              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/facilities' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-400'}`}
             >
               {t('facilities')}
             </Link>
 
             <Link 
               to="/gallery" 
-              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/gallery' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-450'}`}
+              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/gallery' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-400'}`}
             >
               {t('gallery')}
             </Link>
 
             <Link 
               to="/contact" 
-              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/contact' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-450'}`}
+              className={`block px-3 py-2.5 rounded-md text-base font-semibold ${location.pathname === '/contact' ? 'bg-teal-50 dark:bg-slate-800 text-teal-800 dark:text-teal-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-teal-700 dark:hover:text-teal-400'}`}
             >
               {t('contactUs')}
             </Link>

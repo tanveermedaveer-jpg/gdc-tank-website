@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Phone, MapPin, Send, CheckCircle, Globe } from 'lucide-react';
 import campusImg from '../assets/campus.png';
-import logoImg from '../assets/logo.png';
 import { useLanguage } from '../context/LanguageContext';
 import {
   COLLEGE_ADDRESS,
@@ -91,7 +90,6 @@ export default function Contact() {
       <header className="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <img src={logoImg} alt="Logo" className="w-8 h-8 object-contain" />
             <span className="font-serif font-bold text-sm sm:text-base tracking-tight text-teal-300">
               {isUrdu ? 'کیپٹن اشفاق شہید ڈگری کالج' : 'Capt Ashfaq Shaheed College'}
             </span>

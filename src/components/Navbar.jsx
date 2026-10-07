@@ -12,6 +12,10 @@ export default function Navbar() {
   const [aboutDropdown, setAboutDropdown] = useState(false);
   const [academicsDropdown, setAcademicsDropdown] = useState(false);
 
+  // Mobile dropdown states ke liye alag se states
+  const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
+  const [mobileAcademicsOpen, setMobileAcademicsOpen] = useState(false);
+
   const aboutRef = useRef(null);
   const academicsRef = useRef(null);
 
@@ -34,6 +38,8 @@ export default function Navbar() {
     setIsOpen(false);
     setAboutDropdown(false);
     setAcademicsDropdown(false);
+    setMobileAboutOpen(false);
+    setMobileAcademicsOpen(false);
   }, [location.pathname]);
 
   return (
@@ -202,18 +208,43 @@ export default function Navbar() {
           <Link to="/" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('home')}
           </Link>
-          <div className="space-y-1 pl-3 border-l-2 border-slate-100">
-            <div className="text-xs font-bold text-slate-400 uppercase py-1">{t('aboutUs')}</div>
-            <Link to="/about/history" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">History & Background</Link>
-            <Link to="/about/vision" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">Vision & Mission</Link>
+
+          {/* Mobile About Us Dropdown */}
+          <div>
+            <button
+              onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700"
+            >
+              <span>{t('aboutUs')}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${mobileAboutOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {mobileAboutOpen && (
+              <div className="space-y-1 pl-6 pt-1 border-l-2 border-teal-100 ml-3">
+                <Link to="/about/history" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">History & Background</Link>
+                <Link to="/about/vision" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">Vision & Mission</Link>
+              </div>
+            )}
           </div>
-          <div className="space-y-1 pl-3 border-l-2 border-slate-100">
-            <div className="text-xs font-bold text-slate-400 uppercase py-1">{t('academics')}</div>
-            <Link to="/academics/pre-medical" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Medical</Link>
-            <Link to="/academics/pre-engineering" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Engineering</Link>
-            <Link to="/academics/ics" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">ICS Computer Science</Link>
-            <Link to="/academics/bs-computer-science" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">BS Computer Science</Link>
+
+          {/* Mobile Academics Dropdown */}
+          <div>
+            <button
+              onClick={() => setMobileAcademicsOpen(!mobileAcademicsOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700"
+            >
+              <span>{t('academics')}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${mobileAcademicsOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {mobileAcademicsOpen && (
+              <div className="space-y-1 pl-6 pt-1 border-l-2 border-teal-100 ml-3">
+                <Link to="/academics/pre-medical" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Medical</Link>
+                <Link to="/academics/pre-engineering" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Engineering</Link>
+                <Link to="/academics/ics" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">ICS Computer Science</Link>
+                <Link to="/academics/bs-computer-science" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">BS Computer Science</Link>
+              </div>
+            )}
           </div>
+
           <Link to="/admission" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('admission')}
           </Link>

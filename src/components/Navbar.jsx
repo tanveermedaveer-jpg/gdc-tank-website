@@ -1,33 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Phone, Globe } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
-import {
-  COLLEGE_PHONE,
-  resolveCollegePhone
-} from '../lib/contactDetails';
-import { subscribeLocalData } from '../lib/adminApi';
 
 export default function Navbar() {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, t } = useLanguage();
   const location = useLocation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [aboutDropdown, setAboutDropdown] = useState(false);
   const [academicsDropdown, setAcademicsDropdown] = useState(false);
-  const [collegePhone, setCollegePhone] = useState(COLLEGE_PHONE);
 
   const aboutRef = useRef(null);
   const academicsRef = useRef(null);
 
-  useEffect(() => {
-    return subscribeLocalData('settings', (settings) => {
-      setCollegePhone(resolveCollegePhone(settings.phone));
-    }, (error) => console.error('Unable to load phone:', error));
-  }, []);
-
-  // ڈراپ ڈاؤن کے باہر کلک کرنے پر بند کرنے کے لیے
+  // Dropdown ke bahar click karne par band karne ke liye
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (aboutRef.current && !aboutRef.current.contains(event.target)) {
@@ -41,7 +29,7 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  // پیج تبدیل ہونے پر مینو خود بخود بند ہو جائے
+  // Page tabdeel hone par menu khud ba khud band ho jaye
   useEffect(() => {
     setIsOpen(false);
     setAboutDropdown(false);
@@ -50,34 +38,11 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md border-b border-slate-200">
-      {/* انتہائی بلندی پر پروفیشنل ٹاپ بار (فون نمبر اور زبان کی تبدیلی کے لیے) */}
-      <div className="bg-blue-950 text-slate-200 text-xs py-1.5 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Phone className="w-3.5 h-3.5 text-teal-400" />
-            <span className="font-medium">{collegePhone}</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center gap-1.5 bg-blue-900 px-2.5 py-0.5 rounded border border-blue-800">
-              <Globe className="w-3 h-3 text-teal-400" />
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="bg-transparent text-white border-0 text-xs focus:outline-none cursor-pointer font-semibold"
-              >
-                <option value="en" className="bg-slate-900 text-white">English</option>
-                <option value="ur" className="bg-slate-900 text-white">اردو (Urdu)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* اصل نیویگیشن بار */}
+      {/* Asal Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* لوگو اور کالج کا نام */}
+          {/* Logo aur College ka Naam */}
           <Link to="/" className="flex items-center space-x-3 group">
             <img src={logoImg} alt="Logo" className="h-12 w-12 rounded-full object-cover border-2 border-teal-600 shadow-sm group-hover:scale-105 transition-transform" />
             <div className="flex flex-col">
@@ -90,8 +55,8 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* ڈیسک ٹاپ کے اہم لنکس */}
-          <nav className="hidden lg:flex items-center space-x-1">
+          {/* Desktop ke ahem Links (Spacing behtar ki gayi hai) */}
+          <nav className="hidden lg:flex items-center space-x-3">
             <Link
               to="/"
               className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
@@ -101,7 +66,7 @@ export default function Navbar() {
               {t('home')}
             </Link>
 
-            {/* About Us ڈراپ ڈاؤن */}
+            {/* About Us Dropdown */}
             <div className="relative" ref={aboutRef}>
               <button
                 onClick={() => {
@@ -132,7 +97,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Academics ڈراپ ڈاؤن */}
+            {/* Academics Dropdown */}
             <div className="relative" ref={academicsRef}>
               <button
                 onClick={() => {
@@ -209,7 +174,7 @@ export default function Navbar() {
             </Link>
           </nav>
 
-          {/* دائیں طرف اپلائی ناؤ بٹن */}
+          {/* Dahine taraf Apply Now Button */}
           <div className="hidden lg:flex items-center">
             <Link
               to="/apply"
@@ -219,7 +184,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* موبائل مینو بٹن */}
+          {/* Mobile Menu Button */}
           <div className="flex lg:hidden items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -231,7 +196,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* موبائل ورژن ڈراپ ڈاؤن */}
+      {/* Mobile Version Dropdown */}
       {isOpen && (
         <div className="lg:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-6 space-y-2 max-h-[80vh] overflow-y-auto">
           <Link to="/" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
@@ -261,7 +226,7 @@ export default function Navbar() {
           <Link to="/faculty" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('faculty')}
           </Link>
-          <Link to="/facilities" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/facilities" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:text-teal-700 hover:text-teal-700">
             {t('facilities')}
           </Link>
           <Link to="/gallery" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">

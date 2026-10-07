@@ -1,6 +1,8 @@
 import { Code, Atom, Beaker, Landmark, BookOpen, Dna } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
+import Navbar from '../components/Navbar.jsx';
+import Footer from '../components/Footer.jsx';
 
 export default function Departments() {
   const { t } = useLanguage();
@@ -12,7 +14,7 @@ export default function Departments() {
       name: isUrdu ? 'کمپیوٹر سائنس' : 'Computer Science',
       hod: isUrdu ? 'جناب محمد عمران (MCS, MS CS)' : 'Mr. Muhammad Imran (MCS, MS CS)',
       desc: isUrdu 
-        ? 'سافٹ ویئر انجینئرنگ، آئی ٹی نیٹ ورکنگ، ڈیٹا بیس مینجمنٹ، اور پروگرامنگ کے بنیادی اصولوں پر توجہ مرکوز کرتا ہے۔ یہ شعبہ 30 سے زائد کمپیوٹرز پر مشتمل لیبارٹری سے لیس ہے۔' 
+        ? 'سافٹ ویئر انجینئرنگ، آئی ٹی نیٹ ورکنگ، ڈیٹا بیس مینجमेंट، اور پروگرامنگ کے بنیادی اصولوں پر توجہ مرکوز کرتا ہے۔ یہ شعبہ 30 سے زائد کمپیوٹرز پر مشتمل لیبارٹری سے لیس ہے۔' 
         : 'Focuses on software engineering, IT networks, database management, and programming basics. Fully equipped with an air-conditioned laboratory containing 30+ network-linked PCs.',
       degree: isUrdu ? 'ICS، بی ایس کمپیوٹر سائنس' : 'ICS, BS Computer Science'
     },
@@ -64,60 +66,66 @@ export default function Departments() {
   ];
 
   return (
-    <div className="flex-grow">
-      {/* Banner */}
-      <section className="bg-slate-900 text-white py-16 relative">
-        <div className="absolute inset-0 z-0">
-          <img src={campusImg} alt="Campus" className="w-full h-full object-cover opacity-20" />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-950 to-teal-950 opacity-90"></div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif mb-4">
-            {isUrdu ? 'تعلیمی شعبہ جات' : 'Academic Departments'}
-          </h1>
-          <p className="text-teal-300 text-sm sm:text-base font-semibold max-w-xl mx-auto uppercase tracking-wider">
-            {isUrdu ? 'مخصوص مہارتوں اور سائنسی سخت کوشی کی آبیاری' : 'Nurturing Specialized Skills & Scientific Rigor'}
-          </p>
-        </div>
-      </section>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
 
-      {/* Intro */}
-      <section className="bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 font-serif">
-              {isUrdu ? 'ہمارا تعلیمی ڈھانچہ' : 'Our Academic Framework'}
-            </h2>
-            <p className="text-slate-500 text-sm sm:text-base mt-2">
-              {isUrdu 
-                ? 'ہمارے شعبہ جات ماہر تعلیمی عملے کے زیرِ نگرانی ہیں، جو طلباء کو بہترین کلاس روم تدریس اور تجربہ گاہوں کی تربیت فراہم کرتے ہیں۔'
-                : 'Our departments are guided by specialized academic staff, ensuring that students receive excellent classroom instruction, research guidance, and practical laboratory experience.'}
+      <div className="flex-grow">
+        {/* Banner */}
+        <section className="bg-slate-900 text-white py-16 relative">
+          <div className="absolute inset-0 z-0">
+            <img src={campusImg} alt="Campus" className="w-full h-full object-cover opacity-20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-950 to-teal-950 opacity-90"></div>
+          </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif mb-4">
+              {isUrdu ? 'تعلیمی شعبہ جات' : 'Academic Departments'}
+            </h1>
+            <p className="text-teal-300 text-sm sm:text-base font-semibold max-w-xl mx-auto uppercase tracking-wider">
+              {isUrdu ? 'مخصوص مہارتوں اور سائنسی سخت کوشی کی آبیاری' : 'Nurturing Specialized Skills & Scientific Rigor'}
             </p>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {depts.map((d, idx) => (
-              <div key={idx} className="bg-slate-50 border border-slate-100 rounded-2xl p-6 sm:p-8 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
-                <div>
-                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 mb-6">
-                    {d.icon}
+        {/* Intro */}
+        <section className="bg-white py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto text-center mb-16">
+              <h2 className="text-2xl sm:text-3xl font-bold text-blue-950 font-serif">
+                {isUrdu ? 'ہمارا تعلیمی ڈھانچہ' : 'Our Academic Framework'}
+              </h2>
+              <p className="text-slate-500 text-sm sm:text-base mt-2">
+                {isUrdu 
+                  ? 'ہمارے شعبہ جات ماہر تعلیمی عملے کے زیرِ نگرانی ہیں، جو طلباء کو بہترین کلاس روم تدریس اور تجربہ گاہوں کی تربیت فراہم کرتے ہیں۔'
+                  : 'Our departments are guided by specialized academic staff, ensuring that students receive excellent classroom instruction, research guidance, and practical laboratory experience.'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {depts.map((d, idx) => (
+                <div key={idx} className="bg-slate-50 border border-slate-100 rounded-2xl p-6 sm:p-8 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+                  <div>
+                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 mb-6">
+                      {d.icon}
+                    </div>
+                    <h3 className="font-serif font-bold text-xl text-slate-800 mb-2">{d.name}</h3>
+                    <div className="text-xs font-semibold text-teal-700 bg-teal-50 px-3 py-1 rounded-full w-max mb-4">
+                      {isUrdu ? 'صدر شعبہ:' : 'HOD:'} {d.hod}
+                    </div>
+                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-6">
+                      {d.desc}
+                    </p>
                   </div>
-                  <h3 className="font-serif font-bold text-xl text-slate-800 mb-2">{d.name}</h3>
-                  <div className="text-xs font-semibold text-teal-700 bg-teal-50 px-3 py-1 rounded-full w-max mb-4">
-                    {isUrdu ? 'صدر شعبہ:' : 'HOD:'} {d.hod}
+                  <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-500">
+                    <span>{isUrdu ? 'پروگرامز:' : 'Programs:'} <strong className="text-blue-900">{d.degree}</strong></span>
                   </div>
-                  <p className="text-slate-650 text-xs sm:text-sm leading-relaxed mb-6">
-                    {d.desc}
-                  </p>
                 </div>
-                <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-500">
-                  <span>{isUrdu ? 'پروگرامز:' : 'Programs:'} <strong className="text-blue-900">{d.degree}</strong></span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
+
+      <Footer />
     </div>
   );
 }

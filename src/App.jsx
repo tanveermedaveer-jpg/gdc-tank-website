@@ -40,11 +40,8 @@ export default function App() {
           <Route path="/about/history" element={<History />} />
           <Route path="/about/vision" element={<Vision />} />
 
-          {/* Academics Routes (سب کے لیے ProgramDetail لگا دیا ہے) */}
-          <Route path="/academics/pre-medical" element={<ProgramDetail />} />
-          <Route path="/academics/pre-engineering" element={<ProgramDetail />} />
-          <Route path="/academics/ics" element={<ProgramDetail />} />
-          <Route path="/academics/fa" element={<ProgramDetail />} />
+          {/* Academics Dynamic Route (سبھی پروگرامز کے لیے ایک ہی ڈائنامک راؤٹ) */}
+          <Route path="/academics/:programId" element={<ProgramDetail />} />
 
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />

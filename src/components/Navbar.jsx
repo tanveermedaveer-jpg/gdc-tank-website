@@ -135,6 +135,25 @@ export default function Navbar() {
                   <Link to="/academics/fa" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {t('faArtsHumanities')}
                   </Link>
+
+                  <div className="px-4 pt-3 pb-1 text-[10px] font-bold text-teal-700 uppercase tracking-wider whitespace-nowrap border-t border-slate-100 mt-2">
+                    {language === 'ur' ? 'بی ایس پروگرامز (BS Programs)' : 'BS PROGRAMS'}
+                  </div>
+                  <Link to="/academics/bs-computer-science" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                    BS Computer Science
+                  </Link>
+                  <Link to="/academics/bs-chemistry" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                    BS Chemistry
+                  </Link>
+                  <Link to="/academics/bs-physics" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                    BS Physics
+                  </Link>
+                  <Link to="/academics/bs-english" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                    BS English
+                  </Link>
+                  <Link to="/academics/bs-political-science" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                    BS Political Science
+                  </Link>
                 </div>
               )}
             </div>
@@ -220,11 +239,71 @@ export default function Navbar() {
             )}
           </div>
 
+          {/* Mobile Academics Dropdown */}
+          <div>
+            <button
+              onClick={() => setMobileAcademicsOpen(!mobileAcademicsOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700"
+            >
+              <span>{t('academics')}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${mobileAcademicsOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {mobileAcademicsOpen && (
+              <div className="space-y-1 pl-6 pt-1 border-l-2 border-teal-100 ml-3">
+                <Link to="/academics/pre-medical" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  {t('fscPreMedical')}
+                </Link>
+                <Link to="/academics/pre-engineering" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  {t('fscPreEngineering')}
+                </Link>
+                <Link to="/academics/ics" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  {t('icsComputerScience')}
+                </Link>
+                <Link to="/academics/fa" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  {t('faArtsHumanities')}
+                </Link>
+                <Link to="/academics/bs-computer-science" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  BS Computer Science
+                </Link>
+                <Link to="/academics/bs-chemistry" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  BS Chemistry
+                </Link>
+                <Link to="/academics/bs-physics" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  BS Physics
+                </Link>
+                <Link to="/academics/bs-english" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  BS English
+                </Link>
+                <Link to="/academics/bs-political-science" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">
+                  BS Political Science
+                </Link>
+              </div>
+            )}
+          </div>
+
           <Link to="/admission" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('admission')}
           </Link>
+          <Link to="/departments" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+            {t('departments')}
+          </Link>
+          <Link to="/examination" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+            {t('examination')}
+          </Link>
+          <Link to="/faculty" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+            {t('faculty')}
+          </Link>
+          <Link to="/facilities" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+            {t('facilities')}
+          </Link>
+          <Link to="/gallery" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+            {t('gallery')}
+          </Link>
           <Link to="/contact" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('contactUs')}
+          </Link>
+          <Link to="/apply" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-bold bg-teal-700 text-white text-center">
+            {language === 'ur' ? 'ابھی اپلائی کریں' : 'Apply Now'}
           </Link>
         </div>
       )}

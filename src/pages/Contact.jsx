@@ -385,7 +385,7 @@ export default function Contact() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-505">
           <p>&copy; {new Date().getFullYear()} Government Captain Ashfaq Shaheed Degree College, Tank. All rights reserved.</p>
           <div className="flex space-x-4 mt-2 sm:mt-0">
             <a href="/" className="hover:text-teal-300 transition-colors">Home</a>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, Phone, Globe } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
@@ -11,7 +11,6 @@ import { subscribeLocalData } from '../lib/adminApi';
 
 export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +27,7 @@ export default function Navbar() {
     }, (error) => console.error('Unable to load phone:', error));
   }, []);
 
-  // Close dropdowns on outside click
+  // ڈراپ ڈاؤن کے باہر کلک کرنے پر بند کرنے کے لیے
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (aboutRef.current && !aboutRef.current.contains(event.target)) {
@@ -42,7 +41,7 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  // Close mobile menu on route change
+  // پیج تبدیل ہونے پر مینو خود بخود بند ہو جائے
   useEffect(() => {
     setIsOpen(false);
     setAboutDropdown(false);
@@ -51,22 +50,20 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md border-b border-slate-200">
-      {/* Top bar for contact info & language */}
+      {/* انتہائی بلندی پر پروفیشنل ٹاپ بار (فون نمبر اور زبان کی تبدیلی کے لیے) */}
       <div className="bg-blue-950 text-slate-200 text-xs py-1.5 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <span className="flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-teal-400" />
-              <span>{collegePhone}</span>
-            </span>
+          <div className="flex items-center space-x-2">
+            <Phone className="w-3.5 h-3.5 text-teal-400" />
+            <span className="font-medium">{collegePhone}</span>
           </div>
           <div className="flex items-center space-x-3">
-            <div className="flex items-center gap-1 bg-blue-900/80 px-2 py-0.5 rounded border border-blue-800">
+            <div className="flex items-center gap-1.5 bg-blue-900 px-2.5 py-0.5 rounded border border-blue-800">
               <Globe className="w-3 h-3 text-teal-400" />
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="bg-transparent text-white border-0 text-xs focus:outline-none cursor-pointer font-medium"
+                className="bg-transparent text-white border-0 text-xs focus:outline-none cursor-pointer font-semibold"
               >
                 <option value="en" className="bg-slate-900 text-white">English</option>
                 <option value="ur" className="bg-slate-900 text-white">اردو (Urdu)</option>
@@ -76,11 +73,11 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Main Navbar */}
+      {/* اصل نیویگیشن بار */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* Logo & College Title */}
+          {/* لوگو اور کالج کا نام */}
           <Link to="/" className="flex items-center space-x-3 group">
             <img src={logoImg} alt="Logo" className="h-12 w-12 rounded-full object-cover border-2 border-teal-600 shadow-sm group-hover:scale-105 transition-transform" />
             <div className="flex flex-col">
@@ -93,8 +90,8 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+          {/* ڈیسک ٹاپ کے اہم لنکس */}
+          <nav className="hidden lg:flex items-center space-x-1">
             <Link
               to="/"
               className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
@@ -104,7 +101,7 @@ export default function Navbar() {
               {t('home')}
             </Link>
 
-            {/* About Us Dropdown */}
+            {/* About Us ڈراپ ڈاؤن */}
             <div className="relative" ref={aboutRef}>
               <button
                 onClick={() => {
@@ -118,7 +115,7 @@ export default function Navbar() {
               </button>
 
               {aboutDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-fadeIn">
+                <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
                   <Link
                     to="/about/history"
                     className="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors"
@@ -135,7 +132,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Academics Dropdown */}
+            {/* Academics ڈراپ ڈاؤن */}
             <div className="relative" ref={academicsRef}>
               <button
                 onClick={() => {
@@ -212,7 +209,7 @@ export default function Navbar() {
             </Link>
           </nav>
 
-          {/* Apply Now CTA button */}
+          {/* دائیں طرف اپلائی ناؤ بٹن */}
           <div className="hidden lg:flex items-center">
             <Link
               to="/apply"
@@ -222,7 +219,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile menu button */}
+          {/* موبائل مینو بٹن */}
           <div className="flex lg:hidden items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -234,7 +231,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu dropdown */}
+      {/* موبائل ورژن ڈراپ ڈاؤن */}
       {isOpen && (
         <div className="lg:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-6 space-y-2 max-h-[80vh] overflow-y-auto">
           <Link to="/" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">

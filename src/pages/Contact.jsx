@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone, MapPin, Send, CheckCircle } from 'lucide-react';
+import { Phone, MapPin, Send, CheckCircle, RefreshCw } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -12,7 +12,7 @@ import {
 import { subscribeLocalData } from '../lib/adminApi';
 
 export default function Contact() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isUrdu = t('home') === 'ہوم';
 
   const [formData, setFormData] = useState({
@@ -26,12 +26,24 @@ export default function Contact() {
 
   const [collegePhone, setCollegePhone] = useState(COLLEGE_PHONE);
   const [collegeAddress, setCollegeAddress] = useState(COLLEGE_ADDRESS);
+  const [contactError, setContactError] = useState('');
 
   useEffect(() => {
-    return subscribeLocalData('settings', (settings) => {
+    let isMounted = true;
+    const unsubscribe = subscribeLocalData('settings', (settings) => {
+      if (!isMounted) return;
       setCollegePhone(resolveCollegePhone(settings.phone));
       setCollegeAddress(resolveCollegeAddress(settings.address));
-    }, (error) => console.error('Unable to load local college contact details:', error));
+      setContactError('');
+    }, (error) => {
+      if (!isMounted) return;
+      console.error('Unable to load local college contact details:', error);
+      setContactError('Contact details could not be updated from local settings.');
+    });
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const handleSubmit = (e) => {
@@ -49,10 +61,14 @@ export default function Contact() {
       read: false
     };
 
-    const storedInquiries = localStorage.getItem('casdct_inquiries');
-    const inquiriesList = storedInquiries ? JSON.parse(storedInquiries) : [];
-    inquiriesList.push(newInquiry);
-    localStorage.setItem('casdct_inquiries', JSON.stringify(inquiriesList));
+    try {
+      const storedInquiries = localStorage.getItem('casdct_inquiries');
+      const inquiriesList = storedInquiries ? JSON.parse(storedInquiries) : [];
+      inquiriesList.push(newInquiry);
+      localStorage.setItem('casdct_inquiries', JSON.stringify(inquiriesList));
+    } catch (err) {
+      console.error('Failed to save inquiry to localStorage:', err);
+    }
 
     setTimeout(() => {
       setSubmitted(true);
@@ -88,6 +104,13 @@ export default function Contact() {
       {/* Main Grid */}
       <section className="bg-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {contactError && (
+            <div role="alert" className="mb-8 text-center text-sm font-semibold text-rose-700">
+              {contactError}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             
             {/* Left Column: Form */}
@@ -97,8 +120,8 @@ export default function Contact() {
               </h2>
               
               {submitted ? (
-                <div className="bg-teal-50 border border-teal-200 text-teal-855 p-6 rounded-xl text-center space-y-3">
-                  <CheckCircle className="w-12 h-12 text-teal-650 mx-auto" />
+                <div className="bg-teal-50 border border-teal-200 text-teal-900 p-6 rounded-xl text-center space-y-3">
+                  <CheckCircle className="w-12 h-12 text-teal-600 mx-auto" />
                   <h3 className="font-bold text-lg">{isUrdu ? 'شکریہ!' : 'Thank You!'}</h3>
                   <p className="text-sm">
                     {isUrdu 
@@ -167,7 +190,7 @@ export default function Contact() {
                         name="subject"
                         value={formData.subject}
                         onChange={handleChange}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-650"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all text-slate-700"
                       >
                         <option value="admission">{isUrdu ? 'داخلہ سے متعلق معلومات' : 'Admissions Inquiry'}</option>
                         <option value="examination">{isUrdu ? 'امتحانات اور نتائج' : 'Examinations & Results'}</option>
@@ -216,11 +239,11 @@ export default function Contact() {
 
                 <ul className="space-y-4 text-slate-650 text-sm">
                   <li className="flex items-start">
-                    <MapPin className="w-5 h-5 text-teal-655 mr-3 mt-0.5 flex-shrink-0" />
+                    <MapPin className="w-5 h-5 text-teal-600 mr-3 mt-0.5 flex-shrink-0" />
                     <span>{isUrdu ? COLLEGE_ADDRESS_URDU : collegeAddress}</span>
                   </li>
                   <li className="flex items-center">
-                    <Phone className="w-5 h-5 text-teal-655 mr-3 flex-shrink-0" />
+                    <Phone className="w-5 h-5 text-teal-600 mr-3 flex-shrink-0" />
                     <span>{collegePhone}</span>
                   </li>
                 </ul>

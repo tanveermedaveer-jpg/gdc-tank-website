@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,7 +7,6 @@ import { useLanguage } from '../context/LanguageContext';
 export default function Navbar() {
   const { language, t } = useLanguage();
   const location = useLocation();
-  const navigate = useNavigate(); // <-- پیج تبدیل کرنے کے لیے یہ بہت ضروری ہے
 
   const [isOpen, setIsOpen] = useState(false);
   const [aboutDropdown, setAboutDropdown] = useState(false);
@@ -88,24 +87,20 @@ export default function Navbar() {
 
               {aboutDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
-                  <button
-                    onClick={() => {
-                      setAboutDropdown(false);
-                      navigate('/about/history');
-                    }}
-                    className="w-full text-left block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap cursor-pointer"
+                  <Link
+                    to="/about/history"
+                    onClick={() => setAboutDropdown(false)}
+                    className="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap"
                   >
                     {language === 'ur' ? 'تاریخ اور پس منظر' : 'History & Background'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAboutDropdown(false);
-                      navigate('/about/vision');
-                    }}
-                    className="w-full text-left block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap cursor-pointer"
+                  </Link>
+                  <Link
+                    to="/about/vision"
+                    onClick={() => setAboutDropdown(false)}
+                    className="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap"
                   >
                     {language === 'ur' ? 'ویژن اور مشن' : 'Vision & Mission'}
-                  </button>
+                  </Link>
                 </div>
               )}
             </div>
@@ -139,26 +134,6 @@ export default function Navbar() {
                   </Link>
                   <Link to="/academics/fa" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {t('faArtsHumanities')}
-                  </Link>
-
-                  <div className="border-t border-slate-100 my-2"></div>
-                  <div className="px-4 py-1 text-[10px] font-bold text-teal-700 uppercase tracking-wider whitespace-nowrap">
-                    {language === 'ur' ? 'ڈگری پروگرامز (BS 4-YEAR)' : 'DEGREE PROGRAMS (BS 4-YEAR)'}
-                  </div>
-                  <Link to="/academics/bs-computer-science" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
-                    {t('bsComputerScience')}
-                  </Link>
-                  <Link to="/academics/bs-chemistry" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
-                    {language === 'ur' ? 'بی ایس کیمسٹری' : 'BS Chemistry'}
-                  </Link>
-                  <Link to="/academics/bs-physics" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
-                    {language === 'ur' ? 'بی ایس فزکس' : 'BS Physics'}
-                  </Link>
-                  <Link to="/academics/bs-english" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
-                    {language === 'ur' ? 'بی ایس انگلش' : 'BS English'}
-                  </Link>
-                  <Link to="/academics/bs-political-science" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
-                    {language === 'ur' ? 'بی ایس پولیٹیکل سائنس' : 'BS Political Science'}
                   </Link>
                 </div>
               )}
@@ -227,45 +202,20 @@ export default function Navbar() {
             </button>
             {mobileAboutOpen && (
               <div className="space-y-1 pl-6 pt-1 border-l-2 border-teal-100 ml-3">
-                <button 
-                  onClick={() => { 
-                    setIsOpen(false); 
-                    setMobileAboutOpen(false); 
-                    navigate('/about/history'); 
-                  }}
-                  className="w-full text-left block py-1.5 text-xs text-slate-600 hover:text-teal-700 cursor-pointer"
+                <Link 
+                  to="/about/history" 
+                  onClick={() => { setIsOpen(false); setMobileAboutOpen(false); }}
+                  className="block py-1.5 text-xs text-slate-600 hover:text-teal-700"
                 >
                   {language === 'ur' ? 'تاریخ اور پس منظر' : 'History & Background'}
-                </button>
-                <button 
-                  onClick={() => { 
-                    setIsOpen(false); 
-                    setMobileAboutOpen(false); 
-                    navigate('/about/vision'); 
-                  }}
-                  className="w-full text-left block py-1.5 text-xs text-slate-600 hover:text-teal-700 cursor-pointer"
+                </Link>
+                <Link 
+                  to="/about/vision" 
+                  onClick={() => { setIsOpen(false); setMobileAboutOpen(false); }}
+                  className="block py-1.5 text-xs text-slate-600 hover:text-teal-700"
                 >
                   {language === 'ur' ? 'ویژن اور مشن' : 'Vision & Mission'}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Academics Dropdown */}
-          <div>
-            <button
-              onClick={() => setMobileAcademicsOpen(!mobileAcademicsOpen)}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700"
-            >
-              <span>{t('academics')}</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${mobileAcademicsOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {mobileAcademicsOpen && (
-              <div className="space-y-1 pl-6 pt-1 border-l-2 border-teal-100 ml-3">
-                <Link to="/academics/pre-medical" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Medical</Link>
-                <Link to="/academics/pre-engineering" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Engineering</Link>
-                <Link to="/academics/ics" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">ICS Computer Science</Link>
-                <Link to="/academics/bs-computer-science" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">BS Computer Science</Link>
+                </Link>
               </div>
             )}
           </div>
@@ -273,33 +223,9 @@ export default function Navbar() {
           <Link to="/admission" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('admission')}
           </Link>
-          <Link to="/departments" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
-            {t('departments')}
-          </Link>
-          <Link to="/examination" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
-            {t('examination')}
-          </Link>
-          <Link to="/faculty" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
-            {t('faculty')}
-          </Link>
-          <Link to="/facilities" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
-            {t('facilities')}
-          </Link>
-          <Link to="/gallery" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
-            {t('gallery')}
-          </Link>
           <Link to="/contact" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('contactUs')}
           </Link>
-          <div className="pt-2">
-            <Link
-              to="/apply"
-              onClick={() => setIsOpen(false)}
-              className="block text-center bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl shadow text-xs uppercase tracking-wider"
-            >
-              {language === 'ur' ? 'ابھی اپلائی کریں' : 'Apply Now'}
-            </Link>
-          </div>
         </div>
       )}
     </header>

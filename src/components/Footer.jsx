@@ -32,7 +32,7 @@ export default function Footer() {
   return (
     <footer className="bg-slate-950 text-slate-300">
       {/* Top Banner section */}
-      <div className="bg-gradient-to-r from-blue-950 via-teal-900 to-blue-950 text-white py-8 border-b border-teal-850">
+      <div className="bg-gradient-to-r from-blue-950 via-teal-900 to-blue-950 text-white py-8 border-b border-teal-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div>
             <h3 className="text-xl font-bold font-serif">{t('home') === 'ہوم' ? 'کیا آپ اپنا تعلیمی سفر شروع کرنے کے لیے تیار ہیں؟' : 'Ready to start your academic journey?'}</h3>
@@ -108,61 +108,61 @@ export default function Footer() {
           <ul className="space-y-2 text-sm">
             <li>
               <Link to="/" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-650 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('home')}
               </Link>
             </li>
             <li>
               <Link to="/about/history" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-650 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('aboutUs')}
               </Link>
             </li>
             <li>
               <Link to="/academics" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-655 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('academics')}
               </Link>
             </li>
             <li>
               <Link to="/admission" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-650 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('admission')}
               </Link>
             </li>
             <li>
               <Link to="/departments" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-650 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('departments')}
               </Link>
             </li>
             <li>
               <Link to="/examination" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-650 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('examination')}
               </Link>
             </li>
             <li>
               <Link to="/faculty" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-650 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('faculty')}
               </Link>
             </li>
             <li>
               <Link to="/facilities" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-655 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('facilities')}
               </Link>
             </li>
             <li>
               <Link to="/gallery" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-655 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('gallery')}
               </Link>
             </li>
             <li>
               <Link to="/contact" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-655 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('contactUs')}
               </Link>
             </li>
@@ -177,37 +177,37 @@ export default function Footer() {
           <ul className="space-y-3.5 text-sm">
             <li>
               <Link to="/academics/pre-medical" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-600 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('fscPreMedical')}
               </Link>
             </li>
             <li>
               <Link to="/academics/pre-engineering" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-600 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('fscPreEngineering')}
               </Link>
             </li>
             <li>
               <Link to="/academics/ics" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-600 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('icsComputerScience')}
               </Link>
             </li>
             <li>
               <Link to="/academics/fa" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-600 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('faArtsHumanities')}
               </Link>
             </li>
             <li>
               <Link to="/academics/bs-computer-science" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-600 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('bsComputerScience')}
               </Link>
             </li>
             <li>
               <Link to="/academics/bs-programs" className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-600 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('home') === 'ہوم' ? 'بی ایس انگلش و نیچرل سائنسز' : 'BS English & Natural Sciences'}
               </Link>
             </li>
@@ -241,7 +241,7 @@ export default function Footer() {
       </div>
 
       {/* Bottom Copyright bar */}
-      <div className="bg-slate-980 py-6 border-t border-slate-900 text-center text-xs text-slate-500">
+      <div className="bg-slate-900 py-6 border-t border-slate-900 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
           <span>&copy; {currentYear} Captain Ashfaq Shaheed Degree College, Tank. {t('allRightsReserved')}</span>
           <span className="flex items-center space-x-4 flex-wrap justify-center">
@@ -288,24 +288,24 @@ export default function Footer() {
             </button>
             <div className="pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
               <h3 className="text-lg font-bold font-serif text-blue-950 dark:text-white">{t('privacyPolicy')}</h3>
-              <p className="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider mt-0.5">{t('gdcTank') === 'جی ڈی سی ٹانک' ? 'کالـج کیپٹن اشفاق شہید، ٹانک' : 'Captain Ashfaq Shaheed Degree College, Tank'}</p>
+              <p className="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider mt-0.5">{t('gdcTank') === 'جی ڈی سی ٹانک' ? 'کالج کیپٹن اشفاق شہید، ٹانک' : 'Captain Ashfaq Shaheed Degree College, Tank'}</p>
             </div>
             <div className="space-y-4 text-xs sm:text-sm leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-white uppercase text-[11px] tracking-wide mb-1">{t('gdcTank') === 'جی ڈی سی ٹانک' ? '1۔ طلباء کی معلومات کے تحفظ کے رہنما اصول' : '1. Student Data Privacy Guidelines'}</h4>
-                <p className="text-slate-600 dark:text-slate-350">
+                <p className="text-slate-600 dark:text-slate-400">
                   {t('gdcTank') === 'جی ڈی سی ٹانک' ? 'ہم آن لائن داخلہ فارم کی پروسیسنگ کے مقصد کے لیے ذاتی معلومات جمع کرتے ہیں اور ان معلومات کا مکمل تحفظ کیا جاتا ہے۔' : 'We collect personal and academic registration details solely for the purpose of online admission processing. All details are kept secure and confidential.'}
                 </p>
               </div>
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-white uppercase text-[11px] tracking-wide mb-1">{t('gdcTank') === 'جی ڈی سی ٹانک' ? '2۔ فارم کی حفاظت اور سیکیورٹی' : '2. Form Security'}</h4>
-                <p className="text-slate-600 dark:text-slate-350">
+                <p className="text-slate-600 dark:text-slate-400">
                   {t('gdcTank') === 'جی ڈی سی ٹانک' ? 'ہم طلباء کے فارم-بی / شناختی کارڈ نمبرز اور موبائل رابطوں کے تحفظ کے لیے بہترین اور محفوظ ترین سیکیورٹی نظام کا استعمال کرتے ہیں۔' : 'We use secure data practices to safeguard student Form-B / CNIC numbers, mobile contacts, and transcripts from unauthorized viewing or leakages.'}
                 </p>
               </div>
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-white uppercase text-[11px] tracking-wide mb-1">{t('gdcTank') === 'جی ڈی سی ٹانک' ? '3۔ ڈیٹا کے استعمال کی پالیسی' : '3. Usage Policies'}</h4>
-                <p className="text-slate-600 dark:text-slate-350">
+                <p className="text-slate-600 dark:text-slate-400">
                   {t('gdcTank') === 'جی ڈی سی ٹانک' ? 'جمع کرایا گیا ڈیٹا میرٹ لسٹ بنانے اور تعلیمی ریکارڈ کے لیے استعمال کیا جاتا ہے اور یہ معلومات صرف سرکاری محکموں جیسے BISE اور ایچ ای ڈی خیبر پختونخوا کے ساتھ شیئر کی جاتی ہیں۔' : 'Data submitted online is utilized only for registration lists, compilation of merit, and is shared strictly with official bodies such as BISE D.I. Khan and the Higher Education Department (HED) KP.'}
                 </p>
               </div>
@@ -339,19 +339,19 @@ export default function Footer() {
             <div className="space-y-4 text-xs sm:text-sm leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-white uppercase text-[11px] tracking-wide mb-1">{t('gdcTank') === 'جی ڈی سی ٹانک' ? '1۔ ویب سائٹ کا استعمال' : '1. Website Usage'}</h4>
-                <p className="text-slate-600 dark:text-slate-350">
+                <p className="text-slate-600 dark:text-slate-400">
                   {t('gdcTank') === 'جی ڈی سی ٹانک' ? 'یہ پورٹل طلباء، والدین اور اساتذہ کی سہولت کے لیے فراہم کیا گیا ہے۔ غلط یا غیر قانونی رسائی اور غلط ڈیٹا جمع کروانا سخت ممنوع ہے۔' : 'This portal is provided to facilitate applicants, parents, and faculty members of Govt. Degree College Tank. Malicious access, spam submissions, or trying to exploit form fields is strictly forbidden.'}
                 </p>
               </div>
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-white uppercase text-[11px] tracking-wide mb-1">{t('gdcTank') === 'جی ڈی سی ٹانک' ? '2۔ داخلہ فارم کی درستگی کے رہنما اصول' : '2. Admission Form Accuracy Guidelines'}</h4>
-                <p className="text-slate-600 dark:text-slate-350">
+                <p className="text-slate-600 dark:text-slate-400">
                   {t('gdcTank') === 'جی ڈی سی ٹانک' ? 'طلباء کو تعلیمی نمبرز، رول نمبرز اور بورڈ کی معلومات کو احتیاط سے درج کرنا چاہئے۔ غلط معلومات فراہم کرنے کی صورت میں درخواست فوری طور پر منسوخ کر دی جائے گی۔' : 'Students must double-check academic marks, roll numbers, and board specifications. Any false statement or intentional typo discovered in verification cancels the admission process instantly.'}
                 </p>
               </div>
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-white uppercase text-[11px] tracking-wide mb-1">{t('gdcTank') === 'جی ڈی سی ٹانک' ? '3۔ دستبرداری (ڈس کلیمر)' : '3. Disclaimers'}</h4>
-                <p className="text-slate-600 dark:text-slate-350">
+                <p className="text-slate-600 dark:text-slate-400">
                   {t('gdcTank') === 'جی ڈی سی ٹانک' ? 'ویب سائٹ پر دی گئی معلومات صرف رہنمائی کے لیے ہیں۔ کالج کے نوٹس بورڈ پر چسپاں کردہ اعلانات کو ہی حتمی حیثیت حاصل ہوگی۔' : 'Online notifications, schedules, and information on programs are for reference. The notices and circulars physically pinned on the college bulletin boards serve as the final authority.'}
                 </p>
               </div>

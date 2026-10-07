@@ -4,6 +4,8 @@ import { ClipboardList, ShieldCheck, CheckCircle2, DollarSign, FileText, Award, 
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
 import { subscribeMeritList } from '../lib/adminApi';
+import Navbar from '../components/Navbar.jsx';
+import Footer from '../components/Footer.jsx';
 
 export default function Admission() {
   const { t } = useLanguage();
@@ -95,254 +97,260 @@ export default function Admission() {
   ];
 
   return (
-    <div className="flex-grow">
-      {/* Banner */}
-      <section className="bg-slate-900 text-white py-16 relative">
-        <div className="absolute inset-0 z-0">
-          <img src={campusImg} alt="Campus" className="w-full h-full object-cover opacity-20" />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-950 to-teal-950 opacity-90"></div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif mb-4">
-            {isUrdu ? 'داخلہ 2026-27' : 'Admissions 2026-27'}
-          </h1>
-          <p className="text-teal-300 text-sm sm:text-base font-semibold max-w-xl mx-auto uppercase tracking-wider">
-            {isUrdu ? 'ٹانک شہر کے سب سے معتبر تعلیمی ادارے کا حصہ بنیں' : 'Join the Premier Educational Institution in Tank City'}
-          </p>
-        </div>
-      </section>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
 
-      {/* Intro and Guidelines */}
-      <section className="bg-white dark:bg-slate-950 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            
-            {/* Left Content */}
-            <div className="lg:col-span-8 space-y-8">
-              <div>
-                <h2 className="text-2xl font-bold text-blue-950 dark:text-white font-serif mb-4">
-                  {isUrdu ? 'داخلہ کے رہنما اصول' : 'Admission Guidelines'}
-                </h2>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm sm:text-base">
-                  {isUrdu 
-                    ? 'گورنمنٹ کیپٹن اشفاق شہید ڈگری کالج، ٹانک میں داخلے خالصتاً میرٹ کی بنیاد پر ہائر ایجوکیشن ڈیپارٹمنٹ (HED)، حکومتِ خیبر پختونخوا کی جاری کردہ پالیسی کے مطابق ہوتے ہیں۔'
-                    : 'Admissions to Captain Ashfaq Shaheed Degree College, Tank are strictly based on merit, conforming to the policy rules issued by the Higher Education Department (HED), Government of Khyber Pakhtunkhwa.'}
-                </p>
-              </div>
-
-              {/* Timeline Info */}
-              <div className="bg-teal-50 dark:bg-slate-900 border border-teal-150 dark:border-slate-800 rounded-2xl p-6 sm:p-8">
-                <h3 className="text-lg font-bold text-teal-950 dark:text-teal-300 font-serif mb-3 flex items-center">
-                  <ShieldCheck className="w-5 h-5 text-teal-700 dark:text-teal-400 mr-2" />
-                  {isUrdu ? 'داخلہ کا اہم شیڈول (خریف 2026)' : 'Key Admission Schedule (Fall 2026)'}
-                </h3>
-                <ul className="space-y-3.5 text-sm text-slate-700 dark:text-slate-300 mt-4">
-                  <li className="flex justify-between border-b border-teal-100 dark:border-slate-800 pb-2">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">{isUrdu ? 'آن لائن رجسٹریشن کا آغاز:' : 'Online Registrations Start:'}</span>
-                    <span className="font-bold text-teal-800 dark:text-teal-300">{isUrdu ? '20 اگست، 2026' : 'August 20, 2026'}</span>
-                  </li>
-                  <li className="flex justify-between border-b border-teal-100 dark:border-slate-800 pb-2">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">{isUrdu ? 'آن لائن درخواست جمع کرانے کی آخری تاریخ:' : 'Last Date to Submit Online Application:'}</span>
-                    <span className="font-bold text-teal-800 dark:text-teal-300">{isUrdu ? '10 ستمبر، 2026' : 'September 10, 2026'}</span>
-                  </li>
-                  <li className="flex justify-between border-b border-teal-100 dark:border-slate-800 pb-2">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">{isUrdu ? 'پہلی میرٹ لسٹ کا اجراء:' : 'First Merit List Display:'}</span>
-                    <span className="font-bold text-teal-800 dark:text-teal-300">{isUrdu ? '14 ستمبر، 2026' : 'September 14, 2026'}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">{isUrdu ? 'کلاسز کا باقاعدہ آغاز:' : 'Commencement of Classes:'}</span>
-                    <span className="font-bold text-teal-800 dark:text-teal-300">{isUrdu ? '20 ستمبر، 2026' : 'September 20, 2026'}</span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Steps grid */}
-              <div>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white font-serif mb-6 flex items-center">
-                  <ClipboardList className="w-5 h-5 text-teal-600 dark:text-teal-400 mr-2" />
-                  {isUrdu ? 'رجسٹریشن کا مرحلہ وار طریقہ کار' : 'Step-by-Step Registration Process'}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {steps.map((step, idx) => (
-                    <div key={idx} className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                      <div className="text-teal-750 dark:text-teal-400 font-extrabold text-lg mb-2">{step.num}. {step.title}</div>
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{step.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right Sidebar - Required Documents & Fees */}
-            <div className="lg:col-span-4 space-y-8">
-              
-              {/* Documents Checklist */}
-              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8">
-                <h3 className="text-lg font-bold text-blue-950 dark:text-white font-serif border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center">
-                  <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400 mr-2" />
-                  {isUrdu ? 'مطلوبہ دستاویزات' : 'Required Documents'}
-                </h3>
-                <ul className="space-y-3.5 mt-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  {documents.map((doc, idx) => (
-                    <li key={idx} className="flex items-start">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400 mr-2 mt-0.5 flex-shrink-0" />
-                      <span>{doc}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Fees Structure */}
-              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8">
-                <h3 className="text-lg font-bold text-blue-950 dark:text-white font-serif border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center">
-                  <DollarSign className="w-5 h-5 text-teal-600 dark:text-teal-400 mr-1.5" />
-                  {isUrdu ? 'فیس کا ڈھانچہ' : 'Fee Structure'}
-                </h3>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  {isUrdu 
-                    ? 'ایک سرکاری ادارہ ہونے کے ناطے، ہم انتہائی سبسڈی والی، برائے نام فیس وصول کرتے ہیں۔'
-                    : 'As a government institution, we offer highly subsidized, nominal education fees.'}
-                </p>
-                <div className="space-y-3 mt-4 text-sm">
-                  <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
-                    <span className="text-slate-600 dark:text-slate-400 font-medium">{isUrdu ? 'انٹرمیڈیٹ (F.Sc/ICS/FA)' : 'Intermediate (F.Sc/ICS/FA)'}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{isUrdu ? 'سالانہ ~3,500 روپے' : 'PKR ~3,500 / Year'}</span>
-                  </div>
-                  <div className="flex justify-between pb-1">
-                    <span className="text-slate-650 dark:text-slate-400 font-medium">{isUrdu ? 'بی ایس پروگرام (فی سمسٹر)' : 'BS Programs (Per Semester)'}</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{isUrdu ? 'فی سمسٹر ~8,000 روپے' : 'PKR ~8,000 / Sem'}</span>
-                  </div>
-                </div>
-                <div className="pt-6 border-t border-slate-200 dark:border-slate-800 mt-6">
-                  <Link 
-                    to="/apply" 
-                    className="w-full block text-center bg-gradient-to-r from-blue-900 to-teal-700 hover:from-blue-950 hover:to-teal-800 text-white font-bold py-3.5 rounded-xl shadow-md transition-colors text-sm"
-                  >
-                    {isUrdu ? 'آن لائن درخواست کا آغاز' : 'Start Online Application'}
-                  </Link>
-                </div>
-              </div>
-
-            </div>
-
+      <div className="flex-grow">
+        {/* Banner */}
+        <section className="bg-slate-900 text-white py-16 relative">
+          <div className="absolute inset-0 z-0">
+            <img src={campusImg} alt="Campus" className="w-full h-full object-cover opacity-20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-950 to-teal-950 opacity-90"></div>
           </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif mb-4">
+              {isUrdu ? 'داخلہ 2026-27' : 'Admissions 2026-27'}
+            </h1>
+            <p className="text-teal-300 text-sm sm:text-base font-semibold max-w-xl mx-auto uppercase tracking-wider">
+              {isUrdu ? 'ٹانک شہر کے سب سے معتبر تعلیمی ادارے کا حصہ بنیں' : 'Join the Premier Educational Institution in Tank City'}
+            </p>
+          </div>
+        </section>
 
-          {/* PUBLIC LIVE MERIT RANKING LIST (Strictly Controlled by Admin Publish Status) */}
-          {meritError ? (
-            <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center text-sm font-semibold text-rose-700">{meritError}</p>
-          ) : isLoadingMerit ? (
-            <p role="status" className="p-4 text-center text-sm text-slate-500">Loading current merit-list status…</p>
-          ) : isMeritListLive ? (
-            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-                    <Trophy className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
-                      {isUrdu ? 'لائیو میرٹ پاکستان رینکنگ لسٹ 2026' : 'Live Merit Ranking List (Fall 2026)'}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {isUrdu ? 'خالصتاً میرٹ نمبرات کی ترجیحی ترتیب میں لائیو درجہ بندی' : 'Candidates ranked in automatic descending order based on Merit Score'}
-                    </p>
-                  </div>
+        {/* Intro and Guidelines */}
+        <section className="bg-white dark:bg-slate-950 py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+              
+              {/* Left Content */}
+              <div className="lg:col-span-8 space-y-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-blue-950 dark:text-white font-serif mb-4">
+                    {isUrdu ? 'داخلہ کے رہنما اصول' : 'Admission Guidelines'}
+                  </h2>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm sm:text-base">
+                    {isUrdu 
+                      ? 'گورنمنٹ کیپٹن اشفاق شہید ڈگری کالج، ٹانک میں داخلے خالصتاً میرٹ کی بنیاد پر ہائر ایجوکیشن ڈیپارٹمنٹ (HED)، حکومتِ خیبر پختونخوا کی جاری کردہ پالیسی کے مطابق ہوتے ہیں۔'
+                      : 'Admissions to Captain Ashfaq Shaheed Degree College, Tank are strictly based on merit, conforming to the policy rules issued by the Higher Education Department (HED), Government of Khyber Pakhtunkhwa.'}
+                  </p>
                 </div>
 
-                {/* Filters */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input 
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search candidate name or ID..."
-                      className="bg-white dark:bg-slate-800 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700"
-                    />
+                {/* Timeline Info */}
+                <div className="bg-teal-50 dark:bg-slate-900 border border-teal-150 dark:border-slate-800 rounded-2xl p-6 sm:p-8">
+                  <h3 className="text-lg font-bold text-teal-950 dark:text-teal-300 font-serif mb-3 flex items-center">
+                    <ShieldCheck className="w-5 h-5 text-teal-700 dark:text-teal-400 mr-2" />
+                    {isUrdu ? 'داخلہ کا اہم شیڈول (خریف 2026)' : 'Key Admission Schedule (Fall 2026)'}
+                  </h3>
+                  <ul className="space-y-3.5 text-sm text-slate-700 dark:text-slate-300 mt-4">
+                    <li className="flex justify-between border-b border-teal-100 dark:border-slate-800 pb-2">
+                      <span className="font-semibold text-slate-600 dark:text-slate-400">{isUrdu ? 'آن لائن رجسٹریشن کا آغاز:' : 'Online Registrations Start:'}</span>
+                      <span className="font-bold text-teal-800 dark:text-teal-300">{isUrdu ? '20 اگست، 2026' : 'August 20, 2026'}</span>
+                    </li>
+                    <li className="flex justify-between border-b border-teal-100 dark:border-slate-800 pb-2">
+                      <span className="font-semibold text-slate-600 dark:text-slate-400">{isUrdu ? 'آن لائن درخواست جمع کرانے کی آخری تاریخ:' : 'Last Date to Submit Online Application:'}</span>
+                      <span className="font-bold text-teal-800 dark:text-teal-300">{isUrdu ? '10 ستمبر، 2026' : 'September 10, 2026'}</span>
+                    </li>
+                    <li className="flex justify-between border-b border-teal-100 dark:border-slate-800 pb-2">
+                      <span className="font-semibold text-slate-600 dark:text-slate-400">{isUrdu ? 'پہلی میرٹ لسٹ کا اجراء:' : 'First Merit List Display:'}</span>
+                      <span className="font-bold text-teal-800 dark:text-teal-300">{isUrdu ? '14 ستمبر، 2026' : 'September 14, 2026'}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="font-semibold text-slate-600 dark:text-slate-400">{isUrdu ? 'کلاسز کا باقاعدہ آغاز:' : 'Commencement of Classes:'}</span>
+                      <span className="font-bold text-teal-800 dark:text-teal-300">{isUrdu ? '20 ستمبر، 2026' : 'September 20, 2026'}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Steps grid */}
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white font-serif mb-6 flex items-center">
+                    <ClipboardList className="w-5 h-5 text-teal-600 dark:text-teal-400 mr-2" />
+                    {isUrdu ? 'رجسٹریشن کا مرحلہ وار طریقہ کار' : 'Step-by-Step Registration Process'}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {steps.map((step, idx) => (
+                      <div key={idx} className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="text-teal-750 dark:text-teal-400 font-extrabold text-lg mb-2">{step.num}. {step.title}</div>
+                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{step.desc}</p>
+                      </div>
+                    ))}
                   </div>
-                  <select
-                    value={selectedProgram}
-                    onChange={(e) => setSelectedProgram(e.target.value)}
-                    className="bg-white dark:bg-slate-800 text-xs sm:text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold"
-                  >
-                    <option value="All">All Programs</option>
-                    <option value="BS">BS Programs</option>
-                    <option value="FSc">FSc / Intermediate</option>
-                    <option value="Matric">Matric / SSC</option>
-                  </select>
                 </div>
               </div>
 
-              {/* Merit List Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                  <thead>
-                    <tr className="bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase font-bold text-[11px] tracking-wider">
-                      <th className="py-3 px-4">Merit Rank</th>
-                      <th className="py-3 px-4">Student ID</th>
-                      <th className="py-3 px-4">Applicant Name</th>
-                      <th className="py-3 px-4">Program</th>
-                      <th className="py-3 px-4">Marks Obtained</th>
-                      <th className="py-3 px-4">Merit Score %</th>
-                      <th className="py-3 px-4">Verification Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
-                    {publicMeritList.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="py-6 text-center text-slate-400">
-                          No registered candidates found matching your criteria.
-                        </td>
+              {/* Right Sidebar - Required Documents & Fees */}
+              <div className="lg:col-span-4 space-y-8">
+                
+                {/* Documents Checklist */}
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8">
+                  <h3 className="text-lg font-bold text-blue-950 dark:text-white font-serif border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center">
+                    <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400 mr-2" />
+                    {isUrdu ? 'مطلوبہ دستاویزات' : 'Required Documents'}
+                  </h3>
+                  <ul className="space-y-3.5 mt-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                    {documents.map((doc, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>{doc}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Fees Structure */}
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8">
+                  <h3 className="text-lg font-bold text-blue-950 dark:text-white font-serif border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center">
+                    <DollarSign className="w-5 h-5 text-teal-600 dark:text-teal-400 mr-1.5" />
+                    {isUrdu ? 'فیس کا ڈھانچہ' : 'Fee Structure'}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                    {isUrdu 
+                      ? 'ایک سرکاری ادارہ ہونے کے ناطے، ہم انتہائی سبسڈی والی، برائے نام فیس وصول کرتے ہیں۔'
+                      : 'As a government institution, we offer highly subsidized, nominal education fees.'}
+                  </p>
+                  <div className="space-y-3 mt-4 text-sm">
+                    <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                      <span className="text-slate-600 dark:text-slate-400 font-medium">{isUrdu ? 'انٹرمیڈیٹ (F.Sc/ICS/FA)' : 'Intermediate (F.Sc/ICS/FA)'}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{isUrdu ? 'سالانہ ~3,500 روپے' : 'PKR ~3,500 / Year'}</span>
+                    </div>
+                    <div className="flex justify-between pb-1">
+                      <span className="text-slate-650 dark:text-slate-400 font-medium">{isUrdu ? 'بی ایس پروگرام (فی سمسٹر)' : 'BS Programs (Per Semester)'}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{isUrdu ? 'فی سمسٹر ~8,000 روپے' : 'PKR ~8,000 / Sem'}</span>
+                    </div>
+                  </div>
+                  <div className="pt-6 border-t border-slate-200 dark:border-slate-800 mt-6">
+                    <Link 
+                      to="/apply" 
+                      className="w-full block text-center bg-gradient-to-r from-blue-900 to-teal-700 hover:from-blue-950 hover:to-teal-800 text-white font-bold py-3.5 rounded-xl shadow-md transition-colors text-sm"
+                    >
+                      {isUrdu ? 'آن لائن درخواست کا آغاز' : 'Start Online Application'}
+                    </Link>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* PUBLIC LIVE MERIT RANKING LIST (Strictly Controlled by Admin Publish Status) */}
+            {meritError ? (
+              <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center text-sm font-semibold text-rose-700">{meritError}</p>
+            ) : isLoadingMerit ? (
+              <p role="status" className="p-4 text-center text-sm text-slate-500">Loading current merit-list status…</p>
+            ) : isMeritListLive ? (
+              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                      <Trophy className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
+                        {isUrdu ? 'لائیو میرٹ پاکستان رینکنگ لسٹ 2026' : 'Live Merit Ranking List (Fall 2026)'}
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {isUrdu ? 'خالصتاً میرٹ نمبرات کی ترجیحی ترتیب میں لائیو درجہ بندی' : 'Candidates ranked in automatic descending order based on Merit Score'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Filters */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input 
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search candidate name or ID..."
+                        className="bg-white dark:bg-slate-800 text-xs sm:text-sm pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700"
+                      />
+                    </div>
+                    <select
+                      value={selectedProgram}
+                      onChange={(e) => setSelectedProgram(e.target.value)}
+                      className="bg-white dark:bg-slate-800 text-xs sm:text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold"
+                    >
+                      <option value="All">All Programs</option>
+                      <option value="BS">BS Programs</option>
+                      <option value="FSc">FSc / Intermediate</option>
+                      <option value="Matric">Matric / SSC</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Merit List Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                    <thead>
+                      <tr className="bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase font-bold text-[11px] tracking-wider">
+                        <th className="py-3 px-4">Merit Rank</th>
+                        <th className="py-3 px-4">Student ID</th>
+                        <th className="py-3 px-4">Applicant Name</th>
+                        <th className="py-3 px-4">Program</th>
+                        <th className="py-3 px-4">Marks Obtained</th>
+                        <th className="py-3 px-4">Merit Score %</th>
+                        <th className="py-3 px-4">Verification Status</th>
                       </tr>
-                    ) : (
-                      publicMeritList.map((st, index) => (
-                        <tr key={st.regId} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/40">
-                          <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-white">
-                            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs ${index === 0 ? 'bg-amber-400 text-slate-950 font-bold shadow' : index === 1 ? 'bg-slate-300 text-slate-900 font-bold' : index === 2 ? 'bg-amber-700 text-white font-bold' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                              #{index + 1}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 font-bold text-teal-700 dark:text-teal-400">{st.regId}</td>
-                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{st.fullName}</td>
-                          <td className="py-3.5 px-4">{st.program}</td>
-                          <td className="py-3.5 px-4">{st.marksText || `${st.matricMarks}/${st.matricTotal}`}</td>
-                          <td className="py-3.5 px-4">
-                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                              {st.meritPct}%
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${st.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                              {st.status === 'approved' ? 'Approved' : 'Pending Verification'}
-                            </span>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-medium">
+                      {publicMeritList.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-6 text-center text-slate-400">
+                            No registered candidates found matching your criteria.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        publicMeritList.map((st, index) => (
+                          <tr key={st.regId} className="hover:bg-slate-100/60 dark:hover:bg-slate-800/40">
+                            <td className="py-3.5 px-4 font-extrabold text-slate-900 dark:text-white">
+                              <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs ${index === 0 ? 'bg-amber-400 text-slate-950 font-bold shadow' : index === 1 ? 'bg-slate-300 text-slate-900 font-bold' : index === 2 ? 'bg-amber-700 text-white font-bold' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                                #{index + 1}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 font-bold text-teal-700 dark:text-teal-400">{st.regId}</td>
+                            <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{st.fullName}</td>
+                            <td className="py-3.5 px-4">{st.program}</td>
+                            <td className="py-3.5 px-4">{st.marksText || `${st.matricMarks}/${st.matricTotal}`}</td>
+                            <td className="py-3.5 px-4">
+                              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                {st.meritPct}%
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${st.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                {st.status === 'approved' ? 'Approved' : 'Pending Verification'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-3xl p-8 text-center space-y-3 shadow-sm">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-400 flex items-center justify-center mx-auto font-bold">
-                <Trophy className="w-6 h-6" />
+            ) : (
+              <div className="bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-400 flex items-center justify-center mx-auto font-bold">
+                  <Trophy className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
+                  {isUrdu ? 'میرٹ لسٹ جلد شائع کی جائے گی' : 'Merit List Will Be Announced Soon'}
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+                  {isUrdu 
+                    ? 'آن لائن داخلہ درخواستوں کی جانچ پڑتال جاری ہے۔ حتمی میرٹ لسٹ جلد یہاں آن لائن اور کالج نوٹس بورڈ پر شائع کی جائے گی۔' 
+                    : 'Admission applications are currently undergoing official document verification. The official merit list will be published here upon admin approval.'}
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
-                {isUrdu ? 'میرٹ لسٹ جلد شائع کی جائے گی' : 'Merit List Will Be Announced Soon'}
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-                {isUrdu 
-                  ? 'آن لائن داخلہ درخواستوں کی جانچ پڑتال جاری ہے۔ حتمی میرٹ لسٹ جلد یہاں آن لائن اور کالج نوٹس بورڈ پر شائع کی جائے گی۔' 
-                  : 'Admission applications are currently undergoing official document verification. The official merit list will be published here upon admin approval.'}
-              </p>
-            </div>
-          )}
+            )}
 
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
+
+      <Footer />
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop ke ahem Links (whitespace-nowrap ki wajah se saare naam ek hi line mein rahenge) */}
+          {/* Desktop ke ahem Links */}
           <nav className="hidden lg:flex items-center space-x-1 xl:space-x-1.5 text-xs font-semibold text-slate-700">
             <Link
               to="/"
@@ -89,12 +89,14 @@ export default function Navbar() {
                 <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
                   <Link
                     to="/about/history"
+                    onClick={() => setAboutDropdown(false)}
                     className="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap"
                   >
                     {language === 'ur' ? 'تاریخ اور پس منظر' : 'History & Background'}
                   </Link>
                   <Link
                     to="/about/vision"
+                    onClick={() => setAboutDropdown(false)}
                     className="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap"
                   >
                     {language === 'ur' ? 'ویژن اور مشن' : 'Vision & Mission'}
@@ -121,16 +123,16 @@ export default function Navbar() {
                   <div className="px-4 py-1 text-[10px] font-bold text-teal-700 uppercase tracking-wider whitespace-nowrap">
                     {language === 'ur' ? 'انٹرمیڈیٹ (HSSC)' : 'INTERMEDIATE (HSSC)'}
                   </div>
-                  <Link to="/academics/pre-medical" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/pre-medical" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {t('fscPreMedical')}
                   </Link>
-                  <Link to="/academics/pre-engineering" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/pre-engineering" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {t('fscPreEngineering')}
                   </Link>
-                  <Link to="/academics/ics" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/ics" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {t('icsComputerScience')}
                   </Link>
-                  <Link to="/academics/fa" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/fa" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {t('faArtsHumanities')}
                   </Link>
 
@@ -138,19 +140,19 @@ export default function Navbar() {
                   <div className="px-4 py-1 text-[10px] font-bold text-teal-700 uppercase tracking-wider whitespace-nowrap">
                     {language === 'ur' ? 'ڈگری پروگرامز (BS 4-YEAR)' : 'DEGREE PROGRAMS (BS 4-YEAR)'}
                   </div>
-                  <Link to="/academics/bs-computer-science" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/bs-computer-science" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {t('bsComputerScience')}
                   </Link>
-                  <Link to="/academics/bs-chemistry" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/bs-chemistry" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {language === 'ur' ? 'بی ایس کیمسٹری' : 'BS Chemistry'}
                   </Link>
-                  <Link to="/academics/bs-physics" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/bs-physics" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {language === 'ur' ? 'بی ایس فزکس' : 'BS Physics'}
                   </Link>
-                  <Link to="/academics/bs-english" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/bs-english" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {language === 'ur' ? 'بی ایس انگلش' : 'BS English'}
                   </Link>
-                  <Link to="/academics/bs-political-science" className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
+                  <Link to="/academics/bs-political-science" onClick={() => setAcademicsDropdown(false)} className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-teal-50 hover:text-teal-700 whitespace-nowrap">
                     {language === 'ur' ? 'بی ایس پولیٹیکل سائنس' : 'BS Political Science'}
                   </Link>
                 </div>
@@ -205,7 +207,7 @@ export default function Navbar() {
       {/* Mobile Version Dropdown */}
       {isOpen && (
         <div className="lg:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-6 space-y-2 max-h-[80vh] overflow-y-auto">
-          <Link to="/" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('home')}
           </Link>
 
@@ -220,8 +222,20 @@ export default function Navbar() {
             </button>
             {mobileAboutOpen && (
               <div className="space-y-1 pl-6 pt-1 border-l-2 border-teal-100 ml-3">
-                <Link to="/about/history" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">History & Background</Link>
-                <Link to="/about/vision" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">Vision & Mission</Link>
+                <Link 
+                  to="/about/history" 
+                  onClick={() => { setIsOpen(false); setMobileAboutOpen(false); }}
+                  className="block py-1.5 text-xs text-slate-600 hover:text-teal-700"
+                >
+                  {language === 'ur' ? 'تاریخ اور پس منظر' : 'History & Background'}
+                </Link>
+                <Link 
+                  to="/about/vision" 
+                  onClick={() => { setIsOpen(false); setMobileAboutOpen(false); }}
+                  className="block py-1.5 text-xs text-slate-600 hover:text-teal-700"
+                >
+                  {language === 'ur' ? 'ویژن اور مشن' : 'Vision & Mission'}
+                </Link>
               </div>
             )}
           </div>
@@ -237,38 +251,39 @@ export default function Navbar() {
             </button>
             {mobileAcademicsOpen && (
               <div className="space-y-1 pl-6 pt-1 border-l-2 border-teal-100 ml-3">
-                <Link to="/academics/pre-medical" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Medical</Link>
-                <Link to="/academics/pre-engineering" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Engineering</Link>
-                <Link to="/academics/ics" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">ICS Computer Science</Link>
-                <Link to="/academics/bs-computer-science" className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">BS Computer Science</Link>
+                <Link to="/academics/pre-medical" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Medical</Link>
+                <Link to="/academics/pre-engineering" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">F.Sc Pre-Engineering</Link>
+                <Link to="/academics/ics" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">ICS Computer Science</Link>
+                <Link to="/academics/bs-computer-science" onClick={() => { setIsOpen(false); setMobileAcademicsOpen(false); }} className="block py-1.5 text-xs text-slate-600 hover:text-teal-700">BS Computer Science</Link>
               </div>
             )}
           </div>
 
-          <Link to="/admission" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/admission" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('admission')}
           </Link>
-          <Link to="/departments" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/departments" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('departments')}
           </Link>
-          <Link to="/examination" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/examination" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('examination')}
           </Link>
-          <Link to="/faculty" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/faculty" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('faculty')}
           </Link>
-          <Link to="/facilities" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/facilities" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('facilities')}
           </Link>
-          <Link to="/gallery" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/gallery" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('gallery')}
           </Link>
-          <Link to="/contact" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
+          <Link to="/contact" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700">
             {t('contactUs')}
           </Link>
           <div className="pt-2">
             <Link
               to="/apply"
+              onClick={() => setIsOpen(false)}
               className="block text-center bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl shadow text-xs uppercase tracking-wider"
             >
               {language === 'ur' ? 'ابھی اپلائی کریں' : 'Apply Now'}

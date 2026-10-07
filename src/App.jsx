@@ -13,6 +13,19 @@ import Facilities from './pages/Facilities.jsx';
 import Faculty from './pages/Faculty.jsx';
 import Gallery from './pages/Gallery.jsx';
 
+import History from './pages/About/History.jsx';
+import Vision from './pages/About/Vision.jsx';
+
+import PreMedical from './pages/Academics/PreMedical.jsx';
+import PreEngineering from './pages/Academics/PreEngineering.jsx';
+import ICS from './pages/Academics/ICS.jsx';
+import FA from './pages/Academics/FA.jsx';
+import BSComputerScience from './pages/Academics/BSComputerScience.jsx';
+import BSChemistry from './pages/Academics/BSChemistry.jsx';
+import BSPhysics from './pages/Academics/BSPhysics.jsx';
+import BSEnglish from './pages/Academics/BSEnglish.jsx';
+import BSPoliticalScience from './pages/Academics/BSPoliticalScience.jsx';
+
 export default function App() {
   return (
     <Router>
@@ -20,6 +33,20 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<AdminDashboard />} />
+
+          <Route path="/about/history" element={<History />} />
+          <Route path="/about/vision" element={<Vision />} />
+
+          <Route path="/academics/pre-medical" element={<PreMedical />} />
+          <Route path="/academics/pre-engineering" element={<PreEngineering />} />
+          <Route path="/academics/ics" element={<ICS />} />
+          <Route path="/academics/fa" element={<FA />} />
+          <Route path="/academics/bs-computer-science" element={<BSComputerScience />} />
+          <Route path="/academics/bs-chemistry" element={<BSChemistry />} />
+          <Route path="/academics/bs-physics" element={<BSPhysics />} />
+          <Route path="/academics/bs-english" element={<BSEnglish />} />
+          <Route path="/academics/bs-political-science" element={<BSPoliticalScience />} />
+
           <Route path="/admission" element={<Admission />} />
           <Route path="/departments" element={<Departments />} />
           <Route path="/examination" element={<Examination />} />

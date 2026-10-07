@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Phone, MapPin, Send, CheckCircle, Globe } from 'lucide-react';
 import campusImg from '../assets/campus.png';
+import logoImg from '../assets/logo.png';
 import { useLanguage } from '../context/LanguageContext';
 import {
   COLLEGE_ADDRESS,
@@ -49,7 +50,6 @@ export default function Contact() {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Save message to inquiries in localStorage
     const newInquiry = {
       id: Date.now(),
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
@@ -86,27 +86,45 @@ export default function Contact() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       
-      {/* 1. COMPACT NAVBAR */}
-      <header className="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      {/* FULL NAVBAR (MATCHING OTHER PAGES) */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <span className="font-serif font-bold text-sm sm:text-base tracking-tight text-teal-300">
-              {isUrdu ? 'کیپٹن اشفاق شہید ڈگری کالج' : 'Capt Ashfaq Shaheed College'}
-            </span>
+            <img src={logoImg} alt="Logo" className="w-10 h-10 object-contain" />
+            <div>
+              <span className="font-serif font-bold text-sm sm:text-base tracking-tight text-blue-950 block">
+                {isUrdu ? 'کیپٹن اشفاق شہید ڈگری کالج' : 'Captain Ashfaq Shaheed'}
+              </span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                {isUrdu ? 'ڈگری کالج ٹانک' : 'Degree College, Tank'}
+              </span>
+            </div>
           </div>
-          <nav className="hidden md:flex items-center space-x-6 text-xs font-semibold uppercase tracking-wider">
-            <a href="/" className="hover:text-teal-300 transition-colors">{isUrdu ? 'ہوم' : 'Home'}</a>
-            <a href="/about" className="hover:text-teal-300 transition-colors">{isUrdu ? 'تعارف' : 'About'}</a>
-            <a href="/contact" className="text-teal-300 font-bold">{isUrdu ? 'رابطہ' : 'Contact'}</a>
+          
+          <nav className="hidden lg:flex items-center space-x-6 text-xs font-semibold uppercase tracking-wider text-slate-700">
+            <a href="/" className="hover:text-teal-700 transition-colors">{isUrdu ? 'ہوم' : 'Home'}</a>
+            <a href="/about" className="hover:text-teal-700 transition-colors">{isUrdu ? 'تعارف' : 'About Us'}</a>
+            <a href="/academics" className="hover:text-teal-700 transition-colors">{isUrdu ? 'تعلیم' : 'Academics'}</a>
+            <a href="/admission" className="hover:text-teal-700 transition-colors">{isUrdu ? 'داخلہ' : 'Admission'}</a>
+            <a href="/departments" className="hover:text-teal-700 transition-colors">{isUrdu ? 'شعبہ جات' : 'Departments'}</a>
+            <a href="/examination" className="hover:text-teal-700 transition-colors">{isUrdu ? 'امتحانات' : 'Examination'}</a>
+            <a href="/faculty" className="hover:text-teal-700 transition-colors">{isUrdu ? 'فیکلٹی' : 'Faculty'}</a>
+            <a href="/facilities" className="hover:text-teal-700 transition-colors">{isUrdu ? 'سولیٹیز' : 'Facilities'}</a>
+            <a href="/gallery" className="hover:text-teal-700 transition-colors">{isUrdu ? 'گیلری' : 'Gallery'}</a>
+            <a href="/contact" className="text-teal-700 font-bold border-b-2 border-teal-700 pb-1">{isUrdu ? 'رابطہ' : 'Contact Us'}</a>
           </nav>
-          <div className="flex items-center space-x-2">
+
+          <div className="flex items-center space-x-3">
             <button 
               onClick={() => setLanguage(isUrdu ? 'en' : 'ur')}
-              className="bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 px-3 py-1 rounded-md text-xs font-semibold flex items-center transition-colors"
+              className="bg-slate-100 hover:bg-slate-200 text-teal-800 border border-teal-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center transition-colors"
             >
               <Globe className="w-3.5 h-3.5 mr-1" />
               {isUrdu ? 'English' : 'اردو'}
             </button>
+            <a href="/admission" className="hidden sm:inline-block bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors">
+              {isUrdu ? 'آن لائن अप्लाई کریں' : 'Apply Now'}
+            </a>
           </div>
         </div>
       </header>
@@ -142,7 +160,7 @@ export default function Contact() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               
               {/* Left Column: Form */}
-              <div className="lg:col-span-7 bg-slate-50 border border-slate-100 rounded-2xl p-6 sm:p-8">
+              <div className="lg:col-span-7 bg-slate-50 border border-slate-100 rounded-2xl p-6 sm:p-8 shadow-sm">
                 <h2 className="text-xl font-bold text-blue-950 font-serif mb-5">
                   {isUrdu ? 'ہمیں پیغام بھیجیں' : 'Send us a Message'}
                 </h2>
@@ -260,12 +278,12 @@ export default function Contact() {
               <div className="lg:col-span-5 space-y-6">
                 
                 {/* College Details */}
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
                   <h3 className="text-base font-bold text-blue-950 font-serif border-b border-slate-200 pb-2.5">
                     {isUrdu ? 'کیمپس ایڈریس کی تفصیلات' : 'Campus Address Details'}
                   </h3>
 
-                  <ul className="space-y-3 text-slate-650 text-xs">
+                  <ul className="space-y-3 text-slate-600 text-xs">
                     <li className="flex items-start">
                       <MapPin className="w-4 h-4 text-teal-600 mr-2.5 mt-0.5 flex-shrink-0" />
                       <span>{isUrdu ? COLLEGE_ADDRESS_URDU : collegeAddress}</span>
@@ -313,15 +331,65 @@ export default function Contact() {
         </section>
       </main>
 
-      {/* 2. COMPACT FOOTER */}
-      <footer className="bg-slate-950 text-slate-400 py-6 text-xs border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-          <p>
-            &copy; {new Date().getFullYear()} Government Captain Ashfaq Shaheed Degree College, Tank. All rights reserved.
-          </p>
-          <div className="flex space-x-4 text-[11px]">
-            <a href="/" className="hover:text-teal-300 transition-colors">{isUrdu ? 'ہوم' : 'Home'}</a>
-            <a href="/contact" className="hover:text-teal-300 transition-colors">{isUrdu ? 'رابطہ' : 'Contact'}</a>
+      {/* FULL PROFESSIONAL FOOTER (MATCHING OTHER PAGES) */}
+      <footer className="bg-slate-950 text-slate-400 pt-12 pb-6 border-t border-slate-800 text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <img src={logoImg} alt="Logo" className="w-10 h-10 object-contain" />
+              <div>
+                <span className="font-serif font-bold text-sm text-white block">Captain Ashfaq Shaheed</span>
+                <span className="text-[10px] text-teal-400 uppercase tracking-wider block">Degree College, Tank</span>
+              </div>
+            </div>
+            <p className="text-slate-400 text-[11px] leading-relaxed">
+              Established to provide quality education in the historic region of Tank. Named in memory of Captain Ashfaq Shaheed to inspire generations toward academic excellence, discipline, and patriotism.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Quick Links</h4>
+            <ul className="space-y-2 text-[11px]">
+              <li><a href="/" className="hover:text-teal-300 transition-colors">Home</a></li>
+              <li><a href="/about" className="hover:text-teal-300 transition-colors">About Us</a></li>
+              <li><a href="/academics" className="hover:text-teal-300 transition-colors">Academics</a></li>
+              <li><a href="/admission" className="hover:text-teal-300 transition-colors">Admission</a></li>
+              <li><a href="/departments" className="hover:text-teal-300 transition-colors">Departments</a></li>
+              <li><a href="/contact" className="hover:text-teal-300 transition-colors">Contact Us</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Offered Programs</h4>
+            <ul className="space-y-2 text-[11px]">
+              <li><a href="/academics" className="hover:text-teal-300 transition-colors">F.Sc Pre-Medical</a></li>
+              <li><a href="/academics" className="hover:text-teal-300 transition-colors">F.Sc Pre-Engineering</a></li>
+              <li><a href="/academics" className="hover:text-teal-300 transition-colors">ICS (Computer Science)</a></li>
+              <li><a href="/academics" className="hover:text-teal-300 transition-colors">F.A (Arts & Humanities)</a></li>
+              <li><a href="/academics" className="hover:text-teal-300 transition-colors">BS Computer Science</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">Contact Info</h4>
+            <ul className="space-y-2.5 text-[11px]">
+              <li className="flex items-start">
+                <MapPin className="w-4 h-4 text-teal-400 mr-2 flex-shrink-0 mt-0.5" />
+                <span>Main Bannu Road, Opposite Polytechnic Institute, District Tank</span>
+              </li>
+              <li className="flex items-center">
+                <Phone className="w-4 h-4 text-teal-400 mr-2 flex-shrink-0" />
+                <span>+92 306 5927447</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500">
+          <p>&copy; {new Date().getFullYear()} Government Captain Ashfaq Shaheed Degree College, Tank. All rights reserved.</p>
+          <div className="flex space-x-4 mt-2 sm:mt-0">
+            <a href="/" className="hover:text-teal-300 transition-colors">Home</a>
+            <a href="/contact" className="hover:text-teal-300 transition-colors">Contact</a>
           </div>
         </div>
       </footer>

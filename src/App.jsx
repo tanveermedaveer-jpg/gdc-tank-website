@@ -13,9 +13,12 @@ import Facilities from './pages/Facilities.jsx';
 import Faculty from './pages/Faculty.jsx';
 import Gallery from './pages/Gallery.jsx';
 
-// یہ دو فائلیں مسنگ تھیں، ان کا پاتھ آپ کے فولڈر اسٹرکچر کے مطابق ہے:
+// About Pages
 import History from './pages/About/History.jsx';
 import Vision from './pages/About/Vision.jsx';
+
+// Academics Dynamic Page
+import ProgramDetail from './pages/Academics/ProgramDetail.jsx';
 
 export default function App() {
   return (
@@ -33,9 +36,15 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/apply" element={<ApplyNow />} />
 
-          {/* یہ دونوں روٹس اباؤٹ اس کے بٹنوں کے لیے لازمی ہیں */}
+          {/* About Routes */}
           <Route path="/about/history" element={<History />} />
           <Route path="/about/vision" element={<Vision />} />
+
+          {/* Academics Routes (سب کے لیے ProgramDetail لگا دیا ہے) */}
+          <Route path="/academics/pre-medical" element={<ProgramDetail />} />
+          <Route path="/academics/pre-engineering" element={<ProgramDetail />} />
+          <Route path="/academics/ics" element={<ProgramDetail />} />
+          <Route path="/academics/fa" element={<ProgramDetail />} />
 
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />

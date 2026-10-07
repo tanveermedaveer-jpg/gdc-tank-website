@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Phone, MapPin, Send, CheckCircle, Mail, Globe, Heart } from 'lucide-react';
+import { Phone, MapPin, Send, CheckCircle, Globe } from 'lucide-react';
 import campusImg from '../assets/campus.png';
+import logoImg from '../assets/logo.png';
 import { useLanguage } from '../context/LanguageContext';
 import {
   COLLEGE_ADDRESS,
@@ -86,20 +87,39 @@ export default function Contact() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       
-      {/* 1. COMPACT NAVBAR */}
+      {/* FULL NAVBAR WITH LOGO */}
       <header className="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <span className="font-serif font-bold text-sm sm:text-base tracking-tight text-teal-300">
-              {isUrdu ? 'کیپٹن اشفاق شہید ڈگری کالج' : 'Capt Ashfaq Shaheed College'}
-            </span>
-          </div>
-          <nav className="hidden md:flex items-center space-x-6 text-xs font-semibold uppercase tracking-wider">
-            <a href="/" className="hover:text-teal-300 transition-colors">{isUrdu ? 'ہوم' : 'Home'}</a>
-            <a href="/about" className="hover:text-teal-300 transition-colors">{isUrdu ? 'تعارف' : 'About'}</a>
-            <a href="/contact" className="text-teal-300 font-bold">{isUrdu ? 'رابطہ' : 'Contact'}</a>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          
+          {/* Logo & Title */}
+          <a href="/" className="flex items-center space-x-3">
+            <img src={logoImg} alt="College Logo" className="h-12 w-12 object-contain" />
+            <div className="hidden sm:block">
+              <span className="font-serif font-bold text-sm md:text-base tracking-tight text-white block">
+                Captain Ashfaq Shaheed
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-teal-400 block font-semibold">
+                Degree College, Tank
+              </span>
+            </div>
+          </a>
+
+          {/* Navigation Links */}
+          <nav className="hidden lg:flex items-center space-x-5 text-xs font-semibold uppercase tracking-wider">
+            <a href="/" className="hover:text-teal-300 transition-colors">Home</a>
+            <a href="/about" className="hover:text-teal-300 transition-colors">About Us</a>
+            <a href="/academics" className="hover:text-teal-300 transition-colors">Academics</a>
+            <a href="/admission" className="hover:text-teal-300 transition-colors">Admission</a>
+            <a href="/departments" className="hover:text-teal-300 transition-colors">Departments</a>
+            <a href="/examination" className="hover:text-teal-300 transition-colors">Examination</a>
+            <a href="/faculty" className="hover:text-teal-300 transition-colors">Faculty</a>
+            <a href="/facilities" className="hover:text-teal-300 transition-colors">Facilities</a>
+            <a href="/gallery" className="hover:text-teal-300 transition-colors">Gallery</a>
+            <a href="/contact" className="text-teal-300 font-bold border-b-2 border-teal-400 pb-0.5">Contact Us</a>
           </nav>
-          <div className="flex items-center space-x-2">
+
+          {/* Right Actions */}
+          <div className="flex items-center space-x-3">
             <button 
               onClick={() => setLanguage(isUrdu ? 'en' : 'ur')}
               className="bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 px-3 py-1 rounded-md text-xs font-semibold flex items-center transition-colors"
@@ -107,7 +127,14 @@ export default function Contact() {
               <Globe className="w-3.5 h-3.5 mr-1" />
               {isUrdu ? 'English' : 'اردو'}
             </button>
+            <a 
+              href="/admission" 
+              className="hidden sm:inline-block bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg text-xs tracking-wider uppercase shadow-md transition-colors"
+            >
+              Apply Now
+            </a>
           </div>
+
         </div>
       </header>
 
@@ -313,7 +340,7 @@ export default function Contact() {
         </section>
       </main>
 
-      {/* 2. COMPACT FOOTER */}
+      {/* FOOTER */}
       <footer className="bg-slate-950 text-slate-400 py-6 text-xs border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <p>

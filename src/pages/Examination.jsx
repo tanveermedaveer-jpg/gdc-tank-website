@@ -146,7 +146,7 @@ export default function Examination() {
             <div className="lg:col-span-4 space-y-6">
               
               {/* Warnings and alerts */}
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-amber-905">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-amber-900">
                 <h4 className="font-bold font-serif flex items-center text-amber-950 mb-2">
                   <ShieldAlert className="w-5 h-5 mr-2 text-amber-700" />
                   {t('importantNote')}
@@ -163,7 +163,7 @@ export default function Examination() {
               {/* Published circulars */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
                 <h3 className="text-lg font-bold text-blue-950 font-serif border-b border-slate-200 pb-3 flex items-center">
-                  <FileText className="w-5 h-5 text-teal-650 mr-2" />
+                  <FileText className="w-5 h-5 text-teal-600 mr-2" />
                   {t('circularDownloads')}
                 </h3>
                 <div className="mt-4 space-y-4">
@@ -212,7 +212,7 @@ export default function Examination() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`${language === 'ur' ? 'سرکلر کھولیں' : 'Open circular'}: ${circular.title}`}
-                          className="bg-teal-50 group-hover:bg-teal-650 group-hover:text-white p-2 rounded-lg text-teal-700 transition-colors shrink-0"
+                          className="bg-teal-50 group-hover:bg-teal-600 group-hover:text-white p-2 rounded-lg text-teal-700 transition-colors shrink-0"
                         >
                           <Download className="w-4 h-4" />
                         </a>

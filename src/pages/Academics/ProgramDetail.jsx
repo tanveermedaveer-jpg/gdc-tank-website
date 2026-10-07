@@ -101,27 +101,6 @@ export default function ProgramDetail() {
         'Journalism and Media Studies'
       ]
     },
-    'bs-programs': {
-      title: 'BS Degree Programs',
-      level: 'Undergraduate (Bachelor of Science - Honors)',
-      duration: '4 Years (8 Semesters, Semester System)',
-      eligibility: 'Intermediate (F.Sc, ICS, FA, I.Com) with minimum 45% marks. Subject to department merit cutoff.',
-      description: 'Affiliated with Gomal University, our BS 4-Year degree programs replace the traditional 2-year BA/BSc degrees. We offer specialized majors with a modern semester system, complete with research thesis options in the final year.',
-      subjects: [
-        'BS Computer Science (BS CS)',
-        'BS Chemistry',
-        'BS Physics',
-        'BS English',
-        'BS Political Science'
-      ],
-      careers: [
-        'Subject Lecturers (Education Department)',
-        'Software Engineers & Web Developers',
-        'Scientific Researchers & Lab Supervisors',
-        'Content Writers & Corporate Public Officers',
-        'Government sector officer posts (Scale-17)'
-      ]
-    },
     'bs-computer-science': {
       title: 'BS Computer Science',
       level: 'Undergraduate (BS - Honors)',
@@ -328,27 +307,6 @@ export default function ProgramDetail() {
         'صحافت اور میڈیا اسٹڈیز'
       ]
     },
-    'bs-programs': {
-      title: 'بی ایس ڈگری پروگرامز',
-      level: 'انڈرگریجویٹ (بیچلر آف سائنس - آنرز)',
-      duration: '4 سال (8 سمسٹر، سمسٹر نظام)',
-      eligibility: 'کم از کم 45 فیصد نمبروں کے ساتھ انٹرمیڈیٹ (F.Sc، ICS، FA)۔ میرٹ کے مطابق داخلہ۔',
-      description: 'گومل یونیورسٹی سے منسلک، ہمارے بی ایس 4-سالہ ڈگری پروگرامز روایتی 2-سالہ بی اے/بی ایس سی ڈگریوں کی جگہ لیتے ہیں۔ ہم جدید سمسٹر سسٹم اور ریسرچ تھیسس کے اختیارات کے ساتھ پروگرام پیش کرتے ہیں۔',
-      subjects: [
-        'بی ایس کمپیوٹر سائنس (BS CS)',
-        'بی ایس کیمسٹری',
-        'بی ایس فزکس',
-        'بی ایس انگلش',
-        'بی ایس پولیٹیکل سائنس'
-      ],
-      careers: [
-        'مضمون کے لیکچرار (محکمہ تعلیم)',
-        'سافٹ ویئر انجینئرز اور ویب ڈویلپرز',
-        'سائنسی محققین اور لیبارٹری سپروائزرز',
-        'کونٹینٹ رائٹرز اور پبلک ریلیشنز افسران',
-        'سرکاری شعبے کے افسران کی آسامیاں (اسکیل-17)'
-      ]
-    },
     'bs-computer-science': {
       title: 'بی ایس کمپیوٹر سائنس',
       level: 'انڈرگریجویٹ (بی ایس - آنرز)',
@@ -421,7 +379,7 @@ export default function ProgramDetail() {
       level: 'انڈرگریجویٹ (بی ایس - آنرز)',
       duration: '4 سال (8 سمسٹر)',
       eligibility: 'کم از کم 45 فیصد نمبروں کے ساتھ انٹرمیڈیٹ (F.Sc, ICS, FA, I.Com)۔',
-      description: 'بی ایس انگلش پروگرام کلاسک اور عصری انگریزی ادب کے ساتھ ساتھ نحو (syntax)، صوتیات (phonetics)، اور لاگو لسانیات (applied linguistics) کا ایک جامع مطالعہ پیش کرتا ہے، گومل یونیورسٹی سے الحاق شدہ۔',
+      description: 'بی ایس انگلش پروگرام کلاسک اور عصری انگریزی ادب کے ساتھ ساتھ نحو (syntax)، صوتیات (phonetics)، اور لاگو لسانیات (applied linguistics) کا ایک جامع مطالعہ پیش کرتا ہے، گومل یونیورسٹی سے الحاق شدہ ہے۔',
       subjects: [
         'انگریزی ادب اور شاعری کا تعارف',
         'انگریزی ادب کی تاریخ اور ڈرامہ',

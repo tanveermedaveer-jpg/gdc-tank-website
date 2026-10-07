@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import logoImg from '../assets/logo.jpg';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,6 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 export default function Navbar() {
   const { language, t } = useLanguage();
   const location = useLocation();
+  const navigate = useNavigate(); // <-- پیج تبدیل کرنے کے لیے یہ بہت ضروری ہے
 
   const [isOpen, setIsOpen] = useState(false);
   const [aboutDropdown, setAboutDropdown] = useState(false);
@@ -87,20 +88,24 @@ export default function Navbar() {
 
               {aboutDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
-                  <Link
-                    to="/about/history"
-                    onClick={() => setAboutDropdown(false)}
-                    className="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap"
+                  <button
+                    onClick={() => {
+                      setAboutDropdown(false);
+                      navigate('/about/history');
+                    }}
+                    className="w-full text-left block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap cursor-pointer"
                   >
                     {language === 'ur' ? 'تاریخ اور پس منظر' : 'History & Background'}
-                  </Link>
-                  <Link
-                    to="/about/vision"
-                    onClick={() => setAboutDropdown(false)}
-                    className="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap"
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAboutDropdown(false);
+                      navigate('/about/vision');
+                    }}
+                    className="w-full text-left block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors whitespace-nowrap cursor-pointer"
                   >
                     {language === 'ur' ? 'ویژن اور مشن' : 'Vision & Mission'}
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>
@@ -222,20 +227,26 @@ export default function Navbar() {
             </button>
             {mobileAboutOpen && (
               <div className="space-y-1 pl-6 pt-1 border-l-2 border-teal-100 ml-3">
-                <Link 
-                  to="/about/history" 
-                  onClick={() => { setIsOpen(false); setMobileAboutOpen(false); }}
-                  className="block py-1.5 text-xs text-slate-600 hover:text-teal-700"
+                <button 
+                  onClick={() => { 
+                    setIsOpen(false); 
+                    setMobileAboutOpen(false); 
+                    navigate('/about/history'); 
+                  }}
+                  className="w-full text-left block py-1.5 text-xs text-slate-600 hover:text-teal-700 cursor-pointer"
                 >
                   {language === 'ur' ? 'تاریخ اور پس منظر' : 'History & Background'}
-                </Link>
-                <Link 
-                  to="/about/vision" 
-                  onClick={() => { setIsOpen(false); setMobileAboutOpen(false); }}
-                  className="block py-1.5 text-xs text-slate-600 hover:text-teal-700"
+                </button>
+                <button 
+                  onClick={() => { 
+                    setIsOpen(false); 
+                    setMobileAboutOpen(false); 
+                    navigate('/about/vision'); 
+                  }}
+                  className="w-full text-left block py-1.5 text-xs text-slate-600 hover:text-teal-700 cursor-pointer"
                 >
                   {language === 'ur' ? 'ویژن اور مشن' : 'Vision & Mission'}
-                </Link>
+                </button>
               </div>
             )}
           </div>

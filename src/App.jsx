@@ -2,30 +2,32 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
 
-// اہم صفحات کی امپورٹ (یقینی بنائیں کہ یہ فائلز آپ کے 'src/pages/' فولڈر میں موجود ہوں)
-import Home from './pages/Home';
-import AdminDashboard from './pages/AdminDashboard';
-import History from './pages/about/History'; // اگر آپ کا فولڈر سٹرکچر مختلف ہے تو پاتھ چیک کر لیں
-import Vision from './pages/about/Vision';
-import Admission from './pages/Admission';
-import Departments from './pages/Departments';
-import Examination from './pages/Examination';
-import Faculty from './pages/Faculty';
-import Facilities from './pages/Facilities';
-import Gallery from './pages/Gallery';
-import Contact from './pages/Contact';
-import Apply from './pages/Apply';
+// آپ کے فولڈر سٹرکچر کے مطابق درست امپورٹس
+import Home from './pages/Home.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import Admission from './pages/Admission.jsx';
+import ApplyNow from './pages/ApplyNow.jsx'; // یہاں فائل کا نام ApplyNow ہے
+import Contact from './pages/Contact.jsx';
+import Departments from './pages/Departments.jsx';
+import Examination from './pages/Examination.jsx';
+import Facilities from './pages/Facilities.jsx';
+import Faculty from './pages/Faculty.jsx';
+import Gallery from './pages/Gallery.jsx';
 
-// اکیڈمک پروگرامز کے صفحات
-import PreMedical from './pages/academics/PreMedical';
-import PreEngineering from './pages/academics/PreEngineering';
-import ICS from './pages/academics/ICS';
-import FA from './pages/academics/FA';
-import BSComputerScience from './pages/academics/BSComputerScience';
-import BSChemistry from './pages/academics/BSChemistry';
-import BSPhysics from './pages/academics/BSPhysics';
-import BSEnglish from './pages/academics/BSEnglish';
-import BSPoliticalScience from './pages/academics/BSPoliticalScience';
+// اباؤٹ (About) فولڈر کے صفحات
+import History from './pages/About/History.jsx';
+import Vision from './pages/About/Vision.jsx';
+
+// اکیڈمک (Academics) فولڈر کے صفحات
+import PreMedical from './pages/Academics/PreMedical.jsx';
+import PreEngineering from './pages/Academics/PreEngineering.jsx';
+import ICS from './pages/Academics/ICS.jsx';
+import FA from './pages/Academics/FA.jsx';
+import BSComputerScience from './pages/Academics/BSComputerScience.jsx';
+import BSChemistry from './pages/Academics/BSChemistry.jsx';
+import BSPhysics from './pages/Academics/BSPhysics.jsx';
+import BSEnglish from './pages/Academics/BSEnglish.jsx';
+import BSPoliticalScience from './pages/Academics/BSPoliticalScience.jsx';
 
 export default function App() {
   return (
@@ -54,12 +56,12 @@ export default function App() {
           {/* کالج کے دیگر اہم سیکشنز */}
           <Route path="/admission" element={<Admission />} />
           <Route path="/departments" element={<Departments />} />
-          <Route path="/examination" element={<Examination />} ./>
+          <Route path="/examination" element={<Examination />} />
           <Route path="/faculty" element={<Faculty />} />
           <Route path="/facilities" element={<Facilities />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/apply" element={<Apply />} />
+          <Route path="/apply" element={<ApplyNow />} /> {/* یہاں راستے کا نام /apply ہے جو ApplyNow کو کھولے گا */}
 
           {/* ری ڈائریکٹس */}
           <Route path="/login" element={<Navigate to="/" replace />} />

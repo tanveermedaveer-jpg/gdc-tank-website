@@ -1,42 +1,52 @@
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
-import campusImg from '../../assets/campus.png'; // آپ کے پاتھ کے مطابق (اگر ضرورت ہو)
-import { useLanguage } from '../../context/LanguageContext';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LanguageProvider } from './context/LanguageContext';
 
-export default function History() {
-  const { t } = useLanguage();
+import Home from './pages/Home.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import Admission from './pages/Admission.jsx';
+import ApplyNow from './pages/ApplyNow.jsx';
+import Contact from './pages/Contact.jsx';
+import Departments from './pages/Departments.jsx';
+import Examination from './pages/Examination.jsx';
+import Facilities from './pages/Facilities.jsx';
+import Faculty from './pages/Faculty.jsx';
+import Gallery from './pages/Gallery.jsx';
 
+// About Pages
+import History from './pages/About/History.jsx';
+import Vision from './pages/About/Vision.jsx';
+
+// Academics Dynamic Page
+import ProgramDetail from './pages/Academics/ProgramDetail.jsx';
+
+export default function App() {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* 1. اوپر نیویگیشن بار */}
-      <Navbar />
+    <Router>
+      <LanguageProvider>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admission" element={<Admission />} />
+          <Route path="/departments" element={<Departments />} />
+          <Route path="/examination" element={<Examination />} />
+          <Route path="/faculty" element={<Faculty />} />
+          <Route path="/facilities" element={<Facilities />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/apply" element={<ApplyNow />} />
 
-      {/* 2. صفحہ کا اصل مواد (Main Content) */}
-      <div className="flex-grow">
-        {/* Banner */}
-        <section className="bg-slate-900 text-white py-16 relative">
-          <div className="absolute inset-0 z-0">
-            <img src={campusImg} alt="Campus" className="w-full h-full object-cover opacity-20" />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-950 to-teal-950 opacity-90"></div>
-          </div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif mb-4">
-              {t('historyAndBackground') || 'History & Background'}
-            </h1>
-          </div>
-        </section>
+          {/* About Routes */}
+          <Route path="/about/history" element={<History />} />
+          <Route path="/about/vision" element={<Vision />} />
 
-        {/* Details Section */}
-        <section className="bg-white py-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-slate-700 leading-relaxed space-y-4">
-            {/* آپ کا جو بھی ہسٹری کا پرانا مواد (content) ہے وہ یہاں رہے گا */}
-            <p>یہاں آپ کی کالج کی ہسٹری کا مواد موجود ہوگا۔</p>
-          </div>
-        </section>
-      </div>
+          {/* Academics Dynamic Route */}
+          <Route path="/academics/:programId" element={<ProgramDetail />} />
 
-      {/* 3. نیچے فوٹر */}
-      <Footer />
-    </div>
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </LanguageProvider>
+    </Router>
   );
 }

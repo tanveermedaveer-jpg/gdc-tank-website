@@ -13,6 +13,10 @@ import Facilities from './pages/Facilities.jsx';
 import Faculty from './pages/Faculty.jsx';
 import Gallery from './pages/Gallery.jsx';
 
+// یہ دو فائلیں مسنگ تھیں، ان کا پاتھ آپ کے فولڈر اسٹرکچر کے مطابق ہے:
+import History from './pages/About/History.jsx';
+import Vision from './pages/About/Vision.jsx';
+
 export default function App() {
   return (
     <Router>
@@ -28,6 +32,10 @@ export default function App() {
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/apply" element={<ApplyNow />} />
+
+          {/* یہ دونوں روٹس اباؤٹ اس کے بٹنوں کے لیے لازمی ہیں */}
+          <Route path="/about/history" element={<History />} />
+          <Route path="/about/vision" element={<Vision />} />
 
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />

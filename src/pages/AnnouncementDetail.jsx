@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Bell, Calendar, ArrowLeft } from 'lucide-react';
 
@@ -12,11 +12,15 @@ export default function AnnouncementDetail() {
     { id: 4, title: 'HED KP scholarships application deadline extended to Sept 10', date: 'AUG 10', description: 'Higher Education Department KP has extended the scholarship application deadline. Students are advised to submit their verified documents to the scholarship cell before the closing date.' }
   ];
 
+  const [announcement, setAnnouncement] = useState(defaultAnnouncements[0]);
+
   useEffect(() => {
     window.scrollTo(0, 0);
+    const found = defaultAnnouncements.find(item => String(item.id) === String(id));
+    if (found) {
+      setAnnouncement(found);
+    }
   }, [id]);
-
-  const announcement = defaultAnnouncements.find(item => String(item.id) === String(id)) || defaultAnnouncements[0];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 py-12 transition-colors">

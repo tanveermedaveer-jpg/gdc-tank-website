@@ -157,7 +157,7 @@ export default function Home() {
                 </h2>
                 <div className="text-slate-650 dark:text-slate-350 space-y-4 leading-relaxed text-base whitespace-pre-wrap">
                   {t('home') === 'ہوم' 
-                    ? "کیپٹن اشفاق شہید ڈگری کالج ٹانک میں آپ کو خوش آمدید کہنا ہمارے لیے انتہائی اعزاز کی بات ہے۔ یہ کالج جنوبی خیبر پختونخوا میں اعلیٰ اور معياری تعلیم کے فروغ کے لیے کوشاں ہے۔"
+                    ? "کیپٹن اشفاق شہید ڈگری کالج ٹانک میں آپ کو خوش آمدید کہنا ہمارے لیے انتہائی اعزاز کی بات ہے۔ یہ کالج جنوبی خیبر پختونخوا میں اعلیٰ اور معیاری تعلیم کے فروغ کے لیے کوشاں ہے۔"
                     : principalMessage}
                 </div>
                 <div className="mt-8 flex items-center space-x-3">
@@ -188,7 +188,7 @@ export default function Home() {
                   </div>
                   <div className="mt-6 space-y-5">
                     {homeContent.notices.map((notice) => (
-                      <div key={notice.id} className="flex gap-4 group cursor-pointer border-b border-slate-50 dark:border-slate-800/60 pb-4 last:border-0 last:pb-0">
+                      <Link key={notice.id} to="/examination" className="flex gap-4 group cursor-pointer border-b border-slate-50 dark:border-slate-800/60 pb-4 last:border-0 last:pb-0 block">
                         <div className="flex-shrink-0 bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-50 dark:group-hover:bg-slate-700 text-slate-600 dark:text-slate-400 group-hover:text-teal-700 dark:group-hover:text-teal-350 w-24 h-16 rounded-xl flex flex-col items-center justify-center transition-colors">
                           <Calendar className="w-4 h-4 mb-1" />
                           <span className="text-[10px] font-bold uppercase tracking-wider text-center">
@@ -201,7 +201,7 @@ export default function Home() {
                           </h4>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('noticeClickHint')}</p>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -434,20 +434,6 @@ export default function Home() {
                   </h3>
                   <p className="text-sm text-slate-600 dark:text-slate-350 leading-relaxed">
                     {t('disciplineDesc')}
-                  </p>
-                </div>
-              </ScrollReveal>
-
-              <ScrollReveal delay={150}>
-                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 sm:p-8 hover:scale-[1.03] hover:shadow-lg transition-all duration-300 transform will-change-transform h-full">
-                  <div className="w-12 h-12 bg-teal-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-teal-655 dark:text-teal-455 mb-6 font-bold text-xl">
-                    06
-                  </div>
-                  <h3 className="font-serif font-bold text-lg text-slate-800 dark:text-slate-150 mb-3">
-                    {t('hostelTitle')}
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-350 leading-relaxed">
-                    {t('hostelDesc')}
                   </p>
                 </div>
               </ScrollReveal>

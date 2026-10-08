@@ -175,44 +175,44 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Column 3: Academic Programs */}
+        {/* Column 3: Academic Programs (Fixed Links) */}
         <div>
           <h4 className="text-white font-bold text-lg mb-6 relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-teal-600 font-serif">
             {t('offeredPrograms') || 'Offered Programs'}
           </h4>
           <ul className="space-y-3.5 text-sm">
             <li>
-              <Link to="/academics" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
+              <Link to="/academics/pre-medical" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
                 <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('fscPreMedical') || 'F.Sc Pre-Medical'}
               </Link>
             </li>
             <li>
-              <Link to="/academics" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
+              <Link to="/academics/pre-engineering" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
                 <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('fscPreEngineering') || 'F.Sc Pre-Engineering'}
               </Link>
             </li>
             <li>
-              <Link to="/academics" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
+              <Link to="/academics/ics" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
                 <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('icsComputerScience') || 'ICS (Computer Science)'}
               </Link>
             </li>
             <li>
-              <Link to="/academics" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
+              <Link to="/academics/fa" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
                 <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('faArtsHumanities') || 'F.A (Arts & Humanities)'}
               </Link>
             </li>
             <li>
-              <Link to="/academics" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
+              <Link to="/academics/bs-computer-science" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
                 <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('bsComputerScience') || 'BS Computer Science'}
               </Link>
             </li>
             <li>
-              <Link to="/academics" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
+              <Link to="/academics/bs-english" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
                 <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
                 {t('home') === 'ہوم' ? 'بی ایس انگلش و نیچرل سائنسز' : 'BS English & Natural Sciences'}
               </Link>

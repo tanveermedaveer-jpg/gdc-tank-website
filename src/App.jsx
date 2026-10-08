@@ -12,7 +12,8 @@ import Examination from './pages/Examination.jsx';
 import Facilities from './pages/Facilities.jsx';
 import Faculty from './pages/Faculty.jsx';
 import Gallery from './pages/Gallery.jsx';
-import BSPrograms from './pages/BSPrograms.jsx'; // <--- يہين نئی فائل امپورٹ کی ہے
+import BSPrograms from './pages/BSPrograms.jsx';
+import AllAnnouncements from './pages/AllAnnouncements.jsx'; // <--- نوٹس بورڈ کا نیا صفحہ امپورٹ کر دیا
 
 // About Pages
 import History from './pages/About/History.jsx';
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/apply" element={<ApplyNow />} />
+          <Route path="/announcements" element={<AllAnnouncements />} /> {/* <--- نوٹس بورڈ کا روٹ ایڈ کر دیا */}
 
           {/* About Routes */}
           <Route path="/about/history" element={<History />} />
@@ -54,7 +56,7 @@ export default function App() {
 
           {/* Academics Routes */}
           <Route path="/academics" element={<AcademicsList />} />
-          <Route path="/academics/bs-programs" element={<BSPrograms />} /> {/* <--- يہين روٹ ایڈ کیا ہے */}
+          <Route path="/academics/bs-programs" element={<BSPrograms />} />
           <Route path="/academics/:programId" element={<ProgramDetail />} />
 
           <Route path="/login" element={<Navigate to="/" replace />} />

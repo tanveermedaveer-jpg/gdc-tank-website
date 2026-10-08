@@ -20,6 +20,11 @@ import Facilities from './pages/Facilities';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 
+// Additional Pages for Navbar & Dropdown Links (History, Vision, Examination, etc.)
+import History from './pages/History';
+import Vision from './pages/Vision';
+import Examination from './pages/Examination';
+
 export default function App() {
   return (
     <LanguageProvider>
@@ -28,14 +33,19 @@ export default function App() {
           {/* Main Website Pages */}
           <Route path="/" element={<Home />} />
           <Route path="/announcements" element={<AllAnnouncements />} />
-          
-          {/* Dynamic Route for Each Announcement Button */}
           <Route path="/announcements/:id" element={<AnnouncementDetail />} />
+
+          {/* About Us Dropdown Routes */}
+          <Route path="/about/history" element={<History />} />
+          <Route path="/about/vision" element={<Vision />} />
 
           {/* Academics & Program Details Routes */}
           <Route path="/academics" element={<BSPrograms />} />
           <Route path="/academics/bs-programs" element={<BSPrograms />} />
           <Route path="/academics/:programId" element={<BSPrograms />} />
+
+          {/* Examination Route */}
+          <Route path="/examination" element={<Examination />} />
 
           {/* Other Main Sections */}
           <Route path="/admission" element={<Admissions />} />

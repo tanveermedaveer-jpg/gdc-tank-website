@@ -8,7 +8,7 @@ import AnnouncementDetail from './pages/AnnouncementDetail';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Acamedics & other pages
+// Academics & other pages
 import Admissions from './pages/Admission';
 import BSPrograms from './pages/BSPrograms';
 import Departments from './pages/Departments';

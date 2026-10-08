@@ -95,13 +95,16 @@ export default function Home() {
                 >
                   {t('applyOnline')}
                 </Link>
-                <Link 
-                  to="/academics" 
-                  onClick={() => window.scrollTo(0, 0)}
-                  className="bg-slate-800/80 hover:bg-slate-800 text-white border border-slate-700 font-bold px-8 py-3.5 rounded-full text-center transition-all duration-200 w-full sm:w-auto"
+                {/* Fixed Explore Programs Button */}
+                <button 
+                  onClick={() => {
+                    window.scrollTo(0, 0);
+                    navigate('/academics');
+                  }}
+                  className="bg-slate-800/80 hover:bg-slate-800 text-white border border-slate-700 font-bold px-8 py-3.5 rounded-full text-center transition-all duration-200 w-full sm:w-auto cursor-pointer"
                 >
                   {t('explorePrograms')}
-                </Link>
+                </button>
                 <Link 
                   to="/contact" 
                   onClick={() => window.scrollTo(0, 0)}
@@ -353,13 +356,16 @@ export default function Home() {
                       {t('bsProgramsDesc')}
                     </p>
                   </div>
-                  <Link 
-                    to="/academics/bs-programs"
-                    onClick={() => window.scrollTo(0, 0)}
-                    className="w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 rounded-xl text-xs transition-colors block border border-transparent"
+                  {/* Fixed Explore Majors Button */}
+                  <button 
+                    onClick={() => {
+                      window.scrollTo(0, 0);
+                      navigate('/academics/bs-programs');
+                    }}
+                    className="w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 rounded-xl text-xs transition-colors block border border-transparent cursor-pointer"
                   >
                     {t('exploreMajors')}
-                  </Link>
+                  </button>
                 </div>
               </ScrollReveal>
             </div>

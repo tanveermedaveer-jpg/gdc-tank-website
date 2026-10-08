@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Bell, Calendar, ArrowLeft } from 'lucide-react';
-import { subscribeLocalData } from '../lib/adminApi';
 
 export default function AnnouncementDetail() {
   const { id } = useParams();
@@ -13,38 +12,11 @@ export default function AnnouncementDetail() {
     { id: 4, title: 'HED KP scholarships application deadline extended to Sept 10', date: 'AUG 10', description: 'Higher Education Department KP has extended the scholarship application deadline. Students are advised to submit their verified documents to the scholarship cell before the closing date.' }
   ];
 
-  const [announcement, setAnnouncement] = useState(null);
-
   useEffect(() => {
     window.scrollTo(0, 0);
-    const found = defaultAnnouncements.find(item => String(item.id) === String(id));
-    if (found) setAnnouncement(found);
-
-    const unsubscribe = subscribeLocalData('announcements', (data) => {
-      if (data && data.length > 0) {
-        const match = data.find(item => String(item.id) === String(id));
-        if (match) setAnnouncement(match);
-      }
-    }, () => {});
-
-    return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
-    };
   }, [id]);
 
-  if (!announcement) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-        <div className="text-center bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-md w-full">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Announcement Not Found</h2>
-          <p className="text-sm text-slate-500 mb-6">The circular you are looking for does not exist or has been removed.</p>
-          <Link to="/" className="inline-flex items-center text-xs font-bold uppercase tracking-wider bg-teal-700 text-white px-5 py-2.5 rounded-xl">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const announcement = defaultAnnouncements.find(item => String(item.id) === String(id)) || defaultAnnouncements[0];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 py-12 transition-colors">
@@ -87,7 +59,7 @@ export default function AnnouncementDetail() {
           {/* Content Description */}
           <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed space-y-4">
             <p className="whitespace-pre-line">
-              {announcement.description || announcement.content || 'Detailed instructions and complete guidelines regarding this announcement can be obtained from the college administration office during working hours.'}
+              {announcement.description}
             </p>
           </div>
 

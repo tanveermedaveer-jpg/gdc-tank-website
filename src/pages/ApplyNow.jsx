@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const ApplyPage = () => {
   const navigate = useNavigate();
@@ -40,41 +42,8 @@ const ApplyPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
       
-      {/* Navbar matching Image 3 */}
-      <header className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-            <img src="/logo.png" alt="College Logo" className="h-12 w-12 object-contain" />
-            <div>
-              <h1 className="text-base font-bold text-gray-900 leading-tight">Captain Ashfaq Shaheed</h1>
-              <p className="text-xs text-teal-700 font-bold tracking-wider">DEGREE COLLEGE, TANK</p>
-            </div>
-          </div>
-          
-          <nav className="hidden xl:flex items-center space-x-4 text-xs font-semibold text-gray-700">
-            <Link to="/" className="hover:text-teal-600 transition-colors">Home</Link>
-            <div className="relative group cursor-pointer py-2">
-              <span className="hover:text-teal-600 flex items-center">About Us <span className="ml-1 text-[10px]">▼</span></span>
-            </div>
-            <div className="relative group cursor-pointer py-2">
-              <span className="hover:text-teal-600 flex items-center">Academics <span className="ml-1 text-[10px]">▼</span></span>
-            </div>
-            <Link to="/admission" className="hover:text-teal-600 transition-colors">Admission</Link>
-            <Link to="/departments" className="hover:text-teal-600 transition-colors">Departments</Link>
-            <Link to="/examination" className="hover:text-teal-600 transition-colors">Examination</Link>
-            <Link to="/faculty" className="hover:text-teal-600 transition-colors">Faculty</Link>
-            <Link to="/facilities" className="hover:text-teal-600 transition-colors">Facilities</Link>
-            <Link to="/gallery" className="hover:text-teal-600 transition-colors">Gallery</Link>
-            <Link to="/contact" className="hover:text-teal-600 transition-colors">Contact Us</Link>
-          </nav>
-
-          <div>
-            <Link to="/apply" className="bg-[#009688] hover:bg-teal-700 text-white text-xs font-bold px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-md transition-all">
-              APPLY NOW
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* 1. Navbar Component */}
+      <Navbar />
 
       {/* Top Banner */}
       <div className="bg-[#0b1b3d] text-white py-12 text-center relative shadow-inner">
@@ -86,7 +55,7 @@ const ApplyPage = () => {
         </div>
       </div>
 
-      {/* Main Content & Form */}
+      {/* Main Content & Registration Form */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-grow">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
@@ -251,6 +220,31 @@ const ApplyPage = () => {
                 </div>
               </div>
 
+              {/* Document Uploads */}
+              <div>
+                <span className="text-xs font-bold text-gray-600 tracking-wider uppercase block mb-4">
+                  STEP 4: REQUIRED DOCUMENTS SCAN UPLOADS
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
+                    <span className="block text-xs font-semibold text-gray-700 mb-1">PASSPORT SIZE PHOTOGRAPH *</span>
+                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required />
+                  </div>
+                  <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
+                    <span className="block text-xs font-semibold text-gray-700 mb-1">MATRIC DMC / CERTIFICATE *</span>
+                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required />
+                  </div>
+                  <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
+                    <span className="block text-xs font-semibold text-gray-700 mb-1">INTERMEDIATE DMC (If applicable)</span>
+                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" />
+                  </div>
+                  <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
+                    <span className="block text-xs font-semibold text-gray-700 mb-1">STUDENT CNIC / B-FORM & FATHER CNIC *</span>
+                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required />
+                  </div>
+                </div>
+              </div>
+
               {/* Submit Button */}
               <div className="pt-4">
                 <button type="submit" className="w-full bg-[#009688] hover:bg-teal-700 text-white font-semibold py-4 rounded-xl shadow-md transition duration-200 text-sm tracking-wide uppercase">
@@ -297,84 +291,8 @@ const ApplyPage = () => {
         </div>
       </main>
 
-      {/* Footer matching Image 3 with Social Icons & Language Dropdown */}
-      <footer className="bg-[#0b1b3d] text-white pt-12 pb-6 mt-12 border-t border-teal-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-gray-800">
-            {/* Col 1 */}
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
-                <div>
-                  <h3 className="text-xs font-bold leading-tight">Captain Ashfaq Shaheed</h3>
-                  <p className="text-[10px] text-teal-400 font-bold">DEGREE COLLEGE, TANK</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                Established to provide quality education in the historic region of Tank. Named in memory of Captain Ashfaq Shaheed to inspire generations toward academic excellence, discipline, and patriotism.
-              </p>
-              {/* Social Media Icons */}
-              <div className="flex space-x-3 pt-2">
-                <a href="#" className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs hover:opacity-80">f</a>
-                <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-xs hover:opacity-80">𝕏</a>
-                <a href="#" className="w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center text-white text-xs hover:opacity-80">📸</a>
-              </div>
-            </div>
-
-            {/* Col 2 */}
-            <div>
-              <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-xs text-gray-300">
-                <li><Link to="/" className="hover:text-teal-400 transition-colors">Home</Link></li>
-                <li><Link to="/about" className="hover:text-teal-400 transition-colors">About Us</Link></li>
-                <li><Link to="/academics" className="hover:text-teal-400 transition-colors">Academics</Link></li>
-                <li><Link to="/admission" className="hover:text-teal-400 transition-colors">Admission</Link></li>
-                <li><Link to="/departments" className="hover:text-teal-400 transition-colors">Departments</Link></li>
-                <li><Link to="/examination" className="hover:text-teal-400 transition-colors">Examination</Link></li>
-                <li><Link to="/faculty" className="hover:text-teal-400 transition-colors">Faculty</Link></li>
-                <li><Link to="/facilities" className="hover:text-teal-400 transition-colors">Facilities</Link></li>
-                <li><Link to="/gallery" className="hover:text-teal-400 transition-colors">Gallery</Link></li>
-                <li><Link to="/contact" className="hover:text-teal-400 transition-colors">Contact Us</Link></li>
-              </ul>
-            </div>
-
-            {/* Col 3 */}
-            <div>
-              <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider mb-4">Offered Programs</h4>
-              <ul className="space-y-2 text-xs text-gray-300">
-                <li>F.Sc Pre-Medical</li>
-                <li>F.Sc Pre-Engineering</li>
-                <li>ICS (Computer Science)</li>
-                <li>F.A (Arts & Humanities)</li>
-                <li>BS Computer Science</li>
-                <li>BS English & Natural Sciences</li>
-              </ul>
-            </div>
-
-            {/* Col 4 */}
-            <div>
-              <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider mb-4">Contact Info</h4>
-              <p className="text-xs text-gray-300 mb-2">Main Bannu Road, Opposite Polytechnic Institute, District Tank</p>
-              <p className="text-xs font-bold text-teal-400 mb-2">+92 306 5927447</p>
-              <p className="text-[11px] text-gray-400 leading-normal">AFFILIATED WITH:<br />BISE Dera Ismail Khan / Gomal University</p>
-            </div>
-          </div>
-
-          <div className="pt-6 flex flex-col md:flex-row items-center justify-between text-xs text-gray-400">
-            <p>© 2026 Captain Ashfaq Shaheed Degree College Tank. All Rights Reserved.</p>
-            <div className="flex items-center space-x-6 mt-3 md:mt-0">
-              <span className="hover:underline cursor-pointer">Privacy Policy</span>
-              <span className="hover:underline cursor-pointer">Terms of Use</span>
-              <div className="bg-gray-800 text-gray-300 px-3 py-1 rounded text-xs flex items-center space-x-1 cursor-pointer">
-                <span>🌐 English</span>
-                <span>▼</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </footer>
+      {/* 2. Footer Component */}
+      <Footer />
 
     </div>
   );

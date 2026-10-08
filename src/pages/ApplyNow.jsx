@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 
 const ApplyPage = () => {
   const navigate = useNavigate();
@@ -30,7 +28,7 @@ const ApplyPage = () => {
     intermediateBoard: 'BISE DI Khan',
   });
 
-  const [language, setLanguage] = useState('en'); // 'en' for English, 'ur' for Urdu
+  const [language, setLanguage] = useState('en');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -41,10 +39,8 @@ const ApplyPage = () => {
     alert(`Application Submitted! ${language === 'ur' ? 'درخواست کامیابی سے جمع ہو گئی!' : ''}`);
   };
 
-  // Check for Intermediate
   const isIntermediate = formData.programType.includes('Intermediate');
 
-  // Language Translations Object
   const t = {
     en: {
       title: "Online Admission Application Portal",
@@ -74,6 +70,7 @@ const ApplyPage = () => {
       mobile: "ACTIVE MOBILE NUMBER *",
       whatsapp: "WHATSAPP NUMBER",
       domicile: "DOMICILE DISTRICT *",
+      domicilePlaceholder: "e.g. D.I. Khan",
       address: "POSTAL / RESIDENTIAL ADDRESS *",
       step3: "STEP 3: ACADEMIC BACKGROUND",
       matricRecord: "MATRICULATION RECORD (Required)",
@@ -123,6 +120,7 @@ const ApplyPage = () => {
       mobile: "فعال موبائل نمبر *",
       whatsapp: "واٹس ایپ نمبر",
       domicile: "ڈومیسائل ضلع *",
+      domicilePlaceholder: "مثلا ڈیرہ اسماعیل خان",
       address: "پوسٹل / رہائشی پتہ *",
       step3: "مرحلہ 3: تعلیمی پس منظر",
       matricRecord: "میٹرک کا ریکارڈ (لازمی)",
@@ -146,14 +144,11 @@ const ApplyPage = () => {
     }
   };
 
-  const x = t[language]; // Alias for easier access
+  const x = t[language];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
       
-      {/* 1. Navbar Component */}
-      <Navbar />
-
       {/* Top Banner */}
       <div className="bg-[#0b1b3d] text-white py-12 text-center relative shadow-inner">
         <div className="max-w-4xl mx-auto px-4">
@@ -283,7 +278,7 @@ const ApplyPage = () => {
                 </div>
               </div>
 
-              {/* Academic Records (Conditional) */}
+              {/* Academic Records */}
               <div>
                 <span className="text-xs font-bold text-gray-600 tracking-wider uppercase block mb-4">
                   {x.step3}
@@ -313,7 +308,7 @@ const ApplyPage = () => {
                   </div>
 
                   {!isIntermediate && (
-                    <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-200 animate-fadeIn">
+                    <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-200">
                       <span className="text-xs font-bold text-teal-900 block mb-2">{x.intermediateRecord}</span>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div>
@@ -375,10 +370,10 @@ const ApplyPage = () => {
             </form>
           </div>
 
-          {/* Guidelines & Language Button Sidebar */}
+          {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             
-            {/* Language Toggle Button (Integrated into Sidebar) */}
+            {/* Language Toggle Button */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-bold text-gray-900">{language === 'ur' ? 'زبان / Language' : 'Language / زبان'}</h4>
@@ -427,9 +422,6 @@ const ApplyPage = () => {
 
         </div>
       </main>
-
-      {/* 2. Footer Component */}
-      <Footer />
 
     </div>
   );

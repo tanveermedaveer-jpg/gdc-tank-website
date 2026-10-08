@@ -175,49 +175,70 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Column 3: Academic Programs (Fixed Links) */}
+        {/* Column 3: Offered Programs (Categorized cleanly to save vertical space) */}
         <div>
           <h4 className="text-white font-bold text-lg mb-6 relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-12 after:h-0.5 after:bg-teal-600 font-serif">
             {t('offeredPrograms') || 'Offered Programs'}
           </h4>
-          <ul className="space-y-3.5 text-sm">
-            <li>
-              <Link to="/academics/pre-medical" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                {t('fscPreMedical') || 'F.Sc Pre-Medical'}
-              </Link>
-            </li>
-            <li>
-              <Link to="/academics/pre-engineering" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                {t('fscPreEngineering') || 'F.Sc Pre-Engineering'}
-              </Link>
-            </li>
-            <li>
-              <Link to="/academics/ics" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                {t('icsComputerScience') || 'ICS (Computer Science)'}
-              </Link>
-            </li>
-            <li>
-              <Link to="/academics/fa" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                {t('faArtsHumanities') || 'F.A (Arts & Humanities)'}
-              </Link>
-            </li>
-            <li>
-              <Link to="/academics/bs-computer-science" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                {t('bsComputerScience') || 'BS Computer Science'}
-              </Link>
-            </li>
-            <li>
-              <Link to="/academics/bs-english" onClick={handleLinkClick} className="flex items-center hover:text-teal-400 transition-colors group">
-                <ChevronRight className="w-4 h-4 mr-1 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                {t('home') === 'ہوم' ? 'بی ایس انگلش و نیچرل سائنسز' : 'BS English & Natural Sciences'}
-              </Link>
-            </li>
-          </ul>
+          
+          {/* Intermediate Section */}
+          <div className="mb-4">
+            <h5 className="text-teal-400 text-xs font-bold uppercase tracking-wider mb-2">Intermediate (HSSC)</h5>
+            <ul className="space-y-1.5 text-xs">
+              <li>
+                <Link to="/academics/pre-medical" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> F.Sc Pre-Medical
+                </Link>
+              </li>
+              <li>
+                <Link to="/academics/pre-engineering" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> F.Sc Pre-Engineering
+                </Link>
+              </li>
+              <li>
+                <Link to="/academics/ics" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> ICS (Computer Science)
+                </Link>
+              </li>
+              <li>
+                <Link to="/academics/fa" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> F.A (Arts & Humanities)
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* BS Programs Section */}
+          <div>
+            <h5 className="text-teal-400 text-xs font-bold uppercase tracking-wider mb-2">BS Programs</h5>
+            <ul className="space-y-1.5 text-xs">
+              <li>
+                <Link to="/academics/bs-computer-science" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> BS Computer Science
+                </Link>
+              </li>
+              <li>
+                <Link to="/academics/bs-chemistry" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> BS Chemistry
+                </Link>
+              </li>
+              <li>
+                <Link to="/academics/bs-physics" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> BS Physics
+                </Link>
+              </li>
+              <li>
+                <Link to="/academics/bs-english" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> BS English
+                </Link>
+              </li>
+              <li>
+                <Link to="/academics/bs-political-science" onClick={handleLinkClick} className="flex items-center hover:text-teal-300 transition-colors group">
+                  <span className="text-teal-500 mr-1.5">›</span> BS Political Science
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {/* Column 4: Contact Details */}

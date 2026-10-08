@@ -34,15 +34,13 @@ const ApplyPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Yahan aap Firebase Firestore ya backend submission logic add karenge
-    // taake yeh data admin dashboard par merit list ke liye show ho sake.
     alert('Application Submitted Successfully! Your data has been sent to the Admin Dashboard.');
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
       
-      {/* Complete Professional Navigation Bar matching Image 2 */}
+      {/* Navigation Bar */}
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
@@ -84,7 +82,7 @@ const ApplyPage = () => {
         </div>
       </div>
 
-      {/* Main Content Layout with Professional Form & Sidebar */}
+      {/* Main Content Form Layout */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-grow">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
@@ -126,7 +124,7 @@ const ApplyPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">STUDY GROUP</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">STUDY GROUP *</label>
                     <select name="studyGroup" value={formData.studyGroup} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
                       <option>Pre-Medical</option>
                       <option>Pre-Engineering</option>
@@ -135,7 +133,7 @@ const ApplyPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">SHIFT</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">SHIFT *</label>
                     <select name="shift" value={formData.shift} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
                       <option>Morning</option>
                       <option>Evening</option>
@@ -152,11 +150,11 @@ const ApplyPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">STUDENT'S FULL NAME (BLOCK LETTERS) *</label>
-                    <input type="text" name="studentName" placeholder="e.g. MUHAMMAD ALI" value={formData.studentName} onChange={handleChange} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none uppercase" required />
+                    <input type="text" name="studentName" placeholder="Enter your full name" value={formData.studentName} onChange={handleChange} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none uppercase" required />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">FATHER'S NAME (BLOCK LETTERS) *</label>
-                    <input type="text" name="fatherName" placeholder="e.g. AHMAD KHAN" value={formData.fatherName} onChange={handleChange} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none uppercase" required />
+                    <input type="text" name="fatherName" placeholder="Enter father's name" value={formData.fatherName} onChange={handleChange} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none uppercase" required />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">DATE OF BIRTH *</label>
@@ -171,7 +169,7 @@ const ApplyPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">STUDENT CNIC / B-FORM *</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">STUDENT CNIC / B-FORM NUMBER *</label>
                     <input type="text" name="cnic" placeholder="12101-1234567-1" value={formData.cnic} onChange={handleChange} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none" required />
                   </div>
                   <div>
@@ -188,10 +186,10 @@ const ApplyPage = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">DOMICILE DISTRICT *</label>
-                    <input type="text" name="domicile" placeholder="e.g. Tank / DI Khan" value={formData.domicile} onChange={handleChange} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none" required />
+                    <input type="text" name="domicile" placeholder="Enter your domicile district" value={formData.domicile} onChange={handleChange} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none" required />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">POSTAL ADDRESS *</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">POSTAL / RESIDENTIAL ADDRESS *</label>
                     <input type="text" name="address" placeholder="House No, Street, Area, City" value={formData.address} onChange={handleChange} className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none" required />
                   </div>
                 </div>
@@ -212,16 +210,16 @@ const ApplyPage = () => {
                         <input type="number" name="matricMarks" placeholder="e.g. 850" value={formData.matricMarks} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" required />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">TOTAL MARKS</label>
-                        <input type="number" name="matricTotal" value={formData.matricTotal} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
+                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">TOTAL MARKS *</label>
+                        <input type="number" name="matricTotal" placeholder="1100" value={formData.matricTotal} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" required />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">PASSING YEAR</label>
-                        <input type="text" name="matricYear" value={formData.matricYear} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
+                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">PASSING YEAR *</label>
+                        <input type="text" name="matricYear" placeholder="2025" value={formData.matricYear} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" required />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">BOARD</label>
-                        <input type="text" name="matricBoard" value={formData.matricBoard} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
+                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">BOARD *</label>
+                        <input type="text" name="matricBoard" placeholder="BISE DI Khan" value={formData.matricBoard} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" required />
                       </div>
                     </div>
                   </div>
@@ -231,19 +229,19 @@ const ApplyPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <div>
                         <label className="block text-[11px] font-semibold text-gray-600 mb-1">OBTAINED MARKS</label>
-                        <input type="number" name="intermediateMarks" placeholder="e.g. 750 (or 1st Year marks)" value={formData.intermediateMarks} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
+                        <input type="number" name="intermediateMarks" placeholder="e.g. 750" value={formData.intermediateMarks} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
                       </div>
                       <div>
                         <label className="block text-[11px] font-semibold text-gray-600 mb-1">TOTAL MARKS</label>
-                        <input type="number" name="intermediateTotal" value={formData.intermediateTotal} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
+                        <input type="number" name="intermediateTotal" placeholder="1100" value={formData.intermediateTotal} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
                       </div>
                       <div>
                         <label className="block text-[11px] font-semibold text-gray-600 mb-1">PASSING YEAR</label>
-                        <input type="text" name="intermediateYear" value={formData.intermediateYear} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
+                        <input type="text" name="intermediateYear" placeholder="2026" value={formData.intermediateYear} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
                       </div>
                       <div>
                         <label className="block text-[11px] font-semibold text-gray-600 mb-1">BOARD</label>
-                        <input type="text" name="intermediateBoard" value={formData.intermediateBoard} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
+                        <input type="text" name="intermediateBoard" placeholder="BISE DI Khan" value={formData.intermediateBoard} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
                       </div>
                     </div>
                   </div>
@@ -257,20 +255,20 @@ const ApplyPage = () => {
                 </span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
-                    <span className="block text-xs font-semibold text-gray-700 mb-1">PASSPORT SIZE PHOTOGRAPH</span>
-                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" />
+                    <span className="block text-xs font-semibold text-gray-700 mb-1">PASSPORT SIZE PHOTOGRAPH *</span>
+                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required />
                   </div>
                   <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
-                    <span className="block text-xs font-semibold text-gray-700 mb-1">MATRIC DMC / CERTIFICATE</span>
-                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" />
+                    <span className="block text-xs font-semibold text-gray-700 mb-1">MATRIC DMC / CERTIFICATE *</span>
+                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required />
                   </div>
                   <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
                     <span className="block text-xs font-semibold text-gray-700 mb-1">INTERMEDIATE DMC (If applicable)</span>
                     <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" />
                   </div>
                   <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
-                    <span className="block text-xs font-semibold text-gray-700 mb-1">STUDENT CNIC / B-FORM / FATHER CNIC</span>
-                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" />
+                    <span className="block text-xs font-semibold text-gray-700 mb-1">STUDENT CNIC / B-FORM & FATHER CNIC *</span>
+                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required />
                   </div>
                 </div>
               </div>
@@ -278,7 +276,7 @@ const ApplyPage = () => {
               {/* Submit Button */}
               <div className="pt-4">
                 <button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-4 rounded-xl shadow-md transition duration-200 text-sm tracking-wide uppercase">
-                  Submit Application for Merit List
+                  Submit Admission Application
                 </button>
               </div>
 
@@ -290,27 +288,27 @@ const ApplyPage = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-28">
               <div className="flex items-center space-x-2 text-teal-700 font-bold text-sm mb-4">
                 <span>🛡️</span>
-                <span>Admission Policy & Rules</span>
+                <span>Admission Guidelines</span>
               </div>
               
               <ul className="space-y-4 text-xs text-gray-600">
                 <li className="flex items-start space-x-3">
                   <span className="bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded text-[11px]">1</span>
-                  <span>Data submitted here will directly sync with the Admin Dashboard for official merit calculation.</span>
+                  <span>Ensure all personal and academic records match your original board documents.</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <span className="bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded text-[11px]">2</span>
-                  <span>Ensure marks entered match your official board documents to avoid form rejection during verification.</span>
+                  <span>Merit is calculated automatically based on your entered marks and total marks.</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <span className="bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded text-[11px]">3</span>
-                  <span>Both Intermediate and BS applicants must keep their application serial number safe.</span>
+                  <span>Keep your generated Student ID secure for future merit list checks and status updates.</span>
                 </li>
               </ul>
 
               <div className="mt-6 pt-6 border-t border-gray-100 bg-teal-50/50 p-4 rounded-xl">
-                <h4 className="text-xs font-bold text-gray-900 mb-1">COLLEGE ADMISSION DESK</h4>
-                <p className="text-[11px] text-gray-500 mb-2">For technical queries or support, call us:</p>
+                <h4 className="text-xs font-bold text-gray-900 mb-1">NEED HELP?</h4>
+                <p className="text-[11px] text-gray-500 mb-2">Contact college administration desk or call us at:</p>
                 <a href="tel:+923065927447" className="text-xs font-bold text-teal-700 hover:underline">
                   +92 306 5927447
                 </a>
@@ -321,7 +319,7 @@ const ApplyPage = () => {
         </div>
       </main>
 
-      {/* Complete Professional Footer matching Image 2 */}
+      {/* Footer */}
       <footer className="bg-[#0b1b3d] text-white pt-12 pb-6 mt-12 border-t border-teal-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           

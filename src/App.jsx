@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
+import ScrollToTop from './ScrollToTop.jsx'; // Scroll to top component import kiya
 
 import Home from './pages/Home.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
@@ -24,6 +25,7 @@ import ProgramDetail from './pages/Academics/ProgramDetail.jsx';
 export default function App() {
   return (
     <Router>
+      <ScrollToTop /> {/* Yeh har route change par page ko top par le jayega */}
       <LanguageProvider>
         <Routes>
           <Route path="/" element={<Home />} />

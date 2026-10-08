@@ -17,7 +17,8 @@ import Gallery from './pages/Gallery.jsx';
 import History from './pages/About/History.jsx';
 import Vision from './pages/About/Vision.jsx';
 
-// Academics Dynamic Page
+// Academics Pages
+import AcademicsList from './pages/Academics/AcademicsList.jsx';
 import ProgramDetail from './pages/Academics/ProgramDetail.jsx';
 
 export default function App() {
@@ -40,8 +41,8 @@ export default function App() {
           <Route path="/about/history" element={<History />} />
           <Route path="/about/vision" element={<Vision />} />
 
-          {/* Academics Routes (Fix for Explore Programs Button) */}
-          <Route path="/academics" element={<ProgramDetail />} />
+          {/* Academics Routes */}
+          <Route path="/academics" element={<AcademicsList />} />
           <Route path="/academics/:programId" element={<ProgramDetail />} />
 
           <Route path="/login" element={<Navigate to="/" replace />} />

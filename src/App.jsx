@@ -1,70 +1,90 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-// Language Context Provider (زبان کے لیے ضروری)
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import { LanguageProvider } from './context/LanguageContext';
+import NewsTicker from './components/NewsTicker';
 
-// Pages & Components imports
-import Home from './pages/Home';
-import AllAnnouncements from './pages/AllAnnouncements';
-import AnnouncementDetail from './pages/AnnouncementDetail';
-import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Available pages import
-import Admissions from './pages/Admission';
-import BSPrograms from './pages/BSPrograms';
+// Page Imports
+import Home from './pages/Home';
+import History from './pages/About/History';
+import Vision from './pages/About/Vision';
+import ProgramDetail from './pages/Academics/ProgramDetail';
+import Admission from './pages/Admission';
 import Departments from './pages/Departments';
+import Examination from './pages/Examination';
 import Faculty from './pages/Faculty';
 import Facilities from './pages/Facilities';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
-import Examination from './pages/Examination';
 import ApplyNow from './pages/ApplyNow';
+import AdminDashboard from './pages/AdminDashboard';
 
-// About folder pages (جیسا کہ آپ کے فولڈر اسٹرکچر میں موجود ہیں)
-import History from './pages/About/History'; // اگر فولڈر میں ہے، ورنہ صرف './pages/History'
-import Vision from './pages/About/Vision';   // اگر فولڈر میں ہے، ورنہ صرف './pages/Vision'
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('casdct_dark_mode') === 'true';
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('casdct_dark_mode', 'true');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('casdct_dark_mode', 'false');
+    }
+  }, [darkMode]);
+
+  return (
+    <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : ''}`}>
+      {/* News Ticker - Hidden on Admin Dashboard */}
+      {!isAdminRoute && <NewsTicker />}
+
+      {/* Navigation - Hidden on Admin Dashboard */}
+      {!isAdminRoute && <Navbar />}
+
+      {/* Main Content Area */}
+      <main className="flex-grow flex flex-col">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about/history" element={<History />} />
+          <Route path="/about/vision" element={<Vision />} />
+          <Route path="/academics" element={<ProgramDetail />} />
+          <Route path="/academics/:programId" element={<ProgramDetail />} />
+          <Route path="/admission" element={<Admission />} />
+          <Route path="/departments" element={<Departments />} />
+          <Route path="/examination" element={<Examination />} />
+          <Route path="/faculty" element={<Faculty />} />
+          <Route path="/facilities" element={<Facilities />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/apply" element={<ApplyNow />} />
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
+          
+          {/* Fallback routing */}
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </main>
+
+      {/* Footer - Hidden on Admin Dashboard */}
+      {!isAdminRoute && <Footer />}
+    </div>
+  );
+}
 
 export default function App() {
   return (
     <LanguageProvider>
       <Router>
-        <Routes>
-          {/* Main Website Pages */}
-          <Route path="/" element={<Home />} />
-          <Route path="/announcements" element={<AllAnnouncements />} />
-          <Route path="/announcements/:id" element={<AnnouncementDetail />} />
-
-          {/* About Us Dropdown Routes */}
-          <Route path="/about/history" element={<History />} />
-          <Route path="/about/vision" element={<Vision />} />
-
-          {/* Academics & Program Details Routes */}
-          <Route path="/academics" element={<BSPrograms />} />
-          <Route path="/academics/bs-programs" element={<BSPrograms />} />
-          <Route path="/academics/:programId" element={<BSPrograms />} />
-
-          {/* Other Navbar Sections */}
-          <Route path="/examination" element={<Examination />} />
-          <Route path="/admission" element={<Admissions />} />
-          <Route path="/apply-now" element={<ApplyNow />} />
-          <Route path="/departments" element={<Departments />} />
-          <Route path="/faculty" element={<Faculty />} />
-          <Route path="/facilities" element={<Facilities />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/contact" element={<Contact />} />
-
-          {/* Admin Dashboard */}
-          <Route 
-            path="/admin" 
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
+        <ScrollToTop />
+        <AppContent />
       </Router>
     </LanguageProvider>
   );

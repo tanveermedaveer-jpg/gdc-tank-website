@@ -40,7 +40,8 @@ export default function App() {
           <Route path="/about/history" element={<History />} />
           <Route path="/about/vision" element={<Vision />} />
 
-          {/* Academics Dynamic Route */}
+          {/* Academics Routes (Fix for Explore Programs Button) */}
+          <Route path="/academics" element={<ProgramDetail />} />
           <Route path="/academics/:programId" element={<ProgramDetail />} />
 
           <Route path="/login" element={<Navigate to="/" replace />} />

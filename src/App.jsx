@@ -8,16 +8,14 @@ import AnnouncementDetail from './pages/AnnouncementDetail';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Academics & other pages
+// Available pages import
 import Admissions from './pages/Admission';
 import BSPrograms from './pages/BSPrograms';
 import Departments from './pages/Departments';
-import Examination from './pages/Examination';
 import Faculty from './pages/Faculty';
 import Facilities from './pages/Facilities';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
-import About from './pages/About';
 
 export default function App() {
   return (
@@ -34,12 +32,10 @@ export default function App() {
         <Route path="/admission" element={<Admissions />} />
         <Route path="/academics/bs-programs" element={<BSPrograms />} />
         <Route path="/departments" element={<Departments />} />
-        <Route path="/examination" element={<Examination />} />
         <Route path="/faculty" element={<Faculty />} />
         <Route path="/facilities" element={<Facilities />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/about" element={<About />} />
 
         {/* Admin Dashboard */}
         <Route 

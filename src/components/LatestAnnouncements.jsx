@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Calendar, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import AnnouncementModal from './AnnouncementModal';
 import { subscribeLocalData } from '../lib/adminApi';
 
 export default function LatestAnnouncements() {
@@ -12,15 +11,12 @@ export default function LatestAnnouncements() {
     { id: 4, title: 'HED KP scholarships application deadline extended to Sept 10', date: 'AUG 10', description: 'Higher Education Department KP has extended the scholarship application deadline. Students are advised to submit their verified documents to the scholarship cell before the closing date.' }
   ]);
 
-  const [selectedNotice, setSelectedNotice] = useState(null);
-
-  // Sync with Admin panel live local storage
   useEffect(() => {
     const unsubscribe = subscribeLocalData('announcements', (data) => {
       if (data && data.length > 0) {
         setAnnouncements(data);
       }
-    }, (err) => console.log('Home notices default state active'));
+    }, () => {});
     
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
@@ -43,13 +39,13 @@ export default function LatestAnnouncements() {
         </span>
       </div>
 
-      {/* Announcements List */}
+      {/* Announcements List - Har button ab apne alag id wale page par jayega */}
       <div className="space-y-3.5">
         {announcements.slice(0, 4).map((item, index) => (
-          <div
+          <Link
             key={item.id || index}
-            onClick={() => setSelectedNotice(item)}
-            className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-teal-500/60 dark:hover:border-teal-500/60 transition-all duration-200 cursor-pointer"
+            to={`/announcements/${item.id || index + 1}`}
+            className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-teal-500/60 dark:hover:border-teal-500/60 transition-all duration-200 block"
           >
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-teal-700 dark:text-teal-400 shadow-sm border border-slate-100 dark:border-slate-800 font-bold text-xs uppercase flex-shrink-0">
@@ -68,7 +64,7 @@ export default function LatestAnnouncements() {
             <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center text-slate-400 group-hover:bg-teal-700 group-hover:text-white transition-all flex-shrink-0 ml-2 shadow-sm border border-slate-100 dark:border-slate-800">
               <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -82,12 +78,6 @@ export default function LatestAnnouncements() {
           <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
-
-      {/* Modal Popup Component */}
-      <AnnouncementModal 
-        announcement={selectedNotice} 
-        onClose={() => setSelectedNotice(null)} 
-      />
 
     </div>
   );

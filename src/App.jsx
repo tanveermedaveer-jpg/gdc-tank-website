@@ -19,11 +19,12 @@ import Faculty from './pages/Faculty';
 import Facilities from './pages/Facilities';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
-
-// Additional Pages for Navbar & Dropdown Links (History, Vision, Examination, etc.)
-import History from './pages/History';
-import Vision from './pages/Vision';
 import Examination from './pages/Examination';
+import ApplyNow from './pages/ApplyNow';
+
+// About folder pages (جیسا کہ آپ کے فولڈر اسٹرکچر میں موجود ہیں)
+import History from './pages/About/History'; // اگر فولڈر میں ہے، ورنہ صرف './pages/History'
+import Vision from './pages/About/Vision';   // اگر فولڈر میں ہے، ورنہ صرف './pages/Vision'
 
 export default function App() {
   return (
@@ -44,11 +45,10 @@ export default function App() {
           <Route path="/academics/bs-programs" element={<BSPrograms />} />
           <Route path="/academics/:programId" element={<BSPrograms />} />
 
-          {/* Examination Route */}
+          {/* Other Navbar Sections */}
           <Route path="/examination" element={<Examination />} />
-
-          {/* Other Main Sections */}
           <Route path="/admission" element={<Admissions />} />
+          <Route path="/apply-now" element={<ApplyNow />} />
           <Route path="/departments" element={<Departments />} />
           <Route path="/faculty" element={<Faculty />} />
           <Route path="/facilities" element={<Facilities />} />

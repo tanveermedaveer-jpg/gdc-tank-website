@@ -1,68 +1,56 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { LanguageProvider } from './context/LanguageContext';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-import Home from './pages/Home.jsx';
-import AdminDashboard from './pages/AdminDashboard.jsx';
-import Admission from './pages/Admission.jsx';
-import ApplyNow from './pages/ApplyNow.jsx';
-import Contact from './pages/Contact.jsx';
-import Departments from './pages/Departments.jsx';
-import Examination from './pages/Examination.jsx';
-import Facilities from './pages/Facilities.jsx';
-import Faculty from './pages/Faculty.jsx';
-import Gallery from './pages/Gallery.jsx';
-import BSPrograms from './pages/BSPrograms.jsx';
-import AllAnnouncements from './pages/AllAnnouncements.jsx'; // <--- نوٹس بورڈ کا نیا صفحہ امپورٹ کر دیا
+// Pages & Components imports
+import Home from './pages/Home';
+import AllAnnouncements from './pages/AllAnnouncements';
+import AnnouncementDetail from './pages/AnnouncementDetail';
+import AdminDashboard from './pages/AdminDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
-// About Pages
-import History from './pages/About/History.jsx';
-import Vision from './pages/About/Vision.jsx';
-
-// Academics Pages
-import AcademicsList from './pages/Academics/AcademicsList.jsx';
-import ProgramDetail from './pages/Academics/ProgramDetail.jsx';
-
-// Scroll to top helper component
-function ScrollToTopOnNavigate() {
-  const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-  return null;
-}
+// Acamedics & other pages
+import Admissions from './pages/Admission';
+import BSPrograms from './pages/BSPrograms';
+import Departments from './pages/Departments';
+import Examination from './pages/Examination';
+import Faculty from './pages/Faculty';
+import Facilities from './pages/Facilities';
+import Gallery from './pages/Gallery';
+import Contact from './pages/Contact';
+import About from './pages/About';
 
 export default function App() {
   return (
     <Router>
-      <ScrollToTopOnNavigate />
-      <LanguageProvider>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admission" element={<Admission />} />
-          <Route path="/departments" element={<Departments />} />
-          <Route path="/examination" element={<Examination />} />
-          <Route path="/faculty" element={<Faculty />} />
-          <Route path="/facilities" element={<Facilities />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/apply" element={<ApplyNow />} />
-          <Route path="/announcements" element={<AllAnnouncements />} /> {/* <--- نوٹس بورڈ کا روٹ ایڈ کر دیا */}
+      <Routes>
+        {/* Main Website Pages */}
+        <Route path="/" element={<Home />} />
+        <Route path="/announcements" element={<AllAnnouncements />} />
+        
+        {/* Dynamic Route for Each Announcement Button */}
+        <Route path="/announcements/:id" element={<AnnouncementDetail />} />
 
-          {/* About Routes */}
-          <Route path="/about/history" element={<History />} />
-          <Route path="/about/vision" element={<Vision />} />
+        {/* Other Main Sections */}
+        <Route path="/admission" element={<Admissions />} />
+        <Route path="/academics/bs-programs" element={<BSPrograms />} />
+        <Route path="/departments" element={<Departments />} />
+        <Route path="/examination" element={<Examination />} />
+        <Route path="/faculty" element={<Faculty />} />
+        <Route path="/facilities" element={<Facilities />} />
+        <Route path="/gallery" element={<Gallery />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/about" element={<About />} />
 
-          {/* Academics Routes */}
-          <Route path="/academics" element={<AcademicsList />} />
-          <Route path="/academics/bs-programs" element={<BSPrograms />} />
-          <Route path="/academics/:programId" element={<ProgramDetail />} />
-
-          <Route path="/login" element={<Navigate to="/" replace />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </LanguageProvider>
+        {/* Admin Dashboard */}
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
     </Router>
   );
 }

@@ -36,6 +36,7 @@ export default function App() {
           <Route path="/admission" element={<Admissions />} />
           <Route path="/academics" element={<BSPrograms />} />
           <Route path="/academics/bs-programs" element={<BSPrograms />} />
+          <Route path="/academics/:programId" element={<BSPrograms />} />
           <Route path="/departments" element={<Departments />} />
           <Route path="/faculty" element={<Faculty />} />
           <Route path="/facilities" element={<Facilities />} />

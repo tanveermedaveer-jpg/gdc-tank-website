@@ -36,8 +36,12 @@ const ApplyPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Application Submitted Successfully! Your data has been sent to the Admin Dashboard.');
+    alert(`Application Submitted Successfully for ${formData.programType} (${formData.program})! Data sent to Admin Dashboard.`);
+    // Yahan aap Firebase ya backend ka code add kar sakte hain
   };
+
+  // Check karne ke liye ke aaya user ne Intermediate select kiya hai ya BS
+  const isIntermediate = formData.programType.includes('Intermediate');
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between font-sans">
@@ -78,21 +82,39 @@ const ApplyPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">PROGRAM LEVEL *</label>
-                    <select name="programType" value={formData.programType} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                      <option>BS Program (4-Year)</option>
-                      <option>Intermediate Program (F.Sc / F.A / ICS)</option>
+                    <select 
+                      name="programType" 
+                      value={formData.programType} 
+                      onChange={handleChange} 
+                      className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                    >
+                      <option value="BS Program (4-Year)">BS Program (4-Year)</option>
+                      <option value="Intermediate Program (F.Sc / F.A / ICS)">Intermediate Program (F.Sc / F.A / ICS)</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">DESIRED DISCIPLINE / MAJOR *</label>
-                    <select name="program" value={formData.program} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                      <option>BS Computer Science</option>
-                      <option>BS English</option>
-                      <option>BS Zoology / Botany</option>
-                      <option>F.Sc Pre-Medical</option>
-                      <option>F.Sc Pre-Engineering</option>
-                      <option>ICS (Computer Science)</option>
-                      <option>F.A (Arts & Humanities)</option>
+                    <select 
+                      name="program" 
+                      value={formData.program} 
+                      onChange={handleChange} 
+                      className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                    >
+                      {isIntermediate ? (
+                        <>
+                          <option>F.Sc Pre-Medical</option>
+                          <option>F.Sc Pre-Engineering</option>
+                          <option>ICS (Computer Science)</option>
+                          <option>F.A (Arts & Humanities)</option>
+                        </>
+                      ) : (
+                        <>
+                          <option>BS Computer Science</option>
+                          <option>BS English</option>
+                          <option>BS Zoology / Botany</option>
+                          <option>BS Mathematics</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div>
@@ -167,15 +189,16 @@ const ApplyPage = () => {
                 </div>
               </div>
 
-              {/* Academic Records */}
+              {/* Academic Records (Conditional based on Program Level) */}
               <div>
                 <span className="text-xs font-bold text-gray-600 tracking-wider uppercase block mb-4">
-                  STEP 3: ACADEMIC BACKGROUND (MATRIC & INTERMEDIATE)
+                  STEP 3: ACADEMIC BACKGROUND
                 </span>
                 
                 <div className="space-y-4">
+                  {/* Matriculation Record (Always Required) */}
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                    <span className="text-xs font-bold text-teal-800 block mb-2">MATRICULATION RECORD</span>
+                    <span className="text-xs font-bold text-teal-800 block mb-2">MATRICULATION RECORD (Required)</span>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <div>
                         <label className="block text-[11px] font-semibold text-gray-600 mb-1">OBTAINED MARKS *</label>
@@ -196,27 +219,30 @@ const ApplyPage = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                    <span className="text-xs font-bold text-teal-800 block mb-2">INTERMEDIATE RECORD (Required for BS Programs)</span>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">OBTAINED MARKS</label>
-                        <input type="number" name="intermediateMarks" placeholder="e.g. 750" value={formData.intermediateMarks} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">TOTAL MARKS</label>
-                        <input type="number" name="intermediateTotal" placeholder="1100" value={formData.intermediateTotal} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">PASSING YEAR</label>
-                        <input type="text" name="intermediateYear" placeholder="2026" value={formData.intermediateYear} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-semibold text-gray-600 mb-1">BOARD</label>
-                        <input type="text" name="intermediateBoard" placeholder="BISE DI Khan" value={formData.intermediateBoard} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" />
+                  {/* Intermediate Record (Only shown if BS Program is selected) */}
+                  {!isIntermediate && (
+                    <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-200 animate-fadeIn">
+                      <span className="text-xs font-bold text-teal-900 block mb-2">INTERMEDIATE RECORD (Required for BS Programs)</span>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">OBTAINED MARKS *</label>
+                          <input type="number" name="intermediateMarks" placeholder="e.g. 750" value={formData.intermediateMarks} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" required={!isIntermediate} />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">TOTAL MARKS *</label>
+                          <input type="number" name="intermediateTotal" placeholder="1100" value={formData.intermediateTotal} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" required={!isIntermediate} />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">PASSING YEAR *</label>
+                          <input type="text" name="intermediateYear" placeholder="2026" value={formData.intermediateYear} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" required={!isIntermediate} />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">BOARD *</label>
+                          <input type="text" name="intermediateBoard" placeholder="BISE DI Khan" value={formData.intermediateBoard} onChange={handleChange} className="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm outline-none" required={!isIntermediate} />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -234,10 +260,12 @@ const ApplyPage = () => {
                     <span className="block text-xs font-semibold text-gray-700 mb-1">MATRIC DMC / CERTIFICATE *</span>
                     <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required />
                   </div>
-                  <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
-                    <span className="block text-xs font-semibold text-gray-700 mb-1">INTERMEDIATE DMC (If applicable)</span>
-                    <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" />
-                  </div>
+                  {!isIntermediate && (
+                    <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
+                      <span className="block text-xs font-semibold text-gray-700 mb-1">INTERMEDIATE DMC *</span>
+                      <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required={!isIntermediate} />
+                    </div>
+                  )}
                   <div className="border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50">
                     <span className="block text-xs font-semibold text-gray-700 mb-1">STUDENT CNIC / B-FORM & FATHER CNIC *</span>
                     <input type="file" className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700" required />

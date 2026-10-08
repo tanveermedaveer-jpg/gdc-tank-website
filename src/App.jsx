@@ -32,8 +32,9 @@ export default function App() {
           {/* Dynamic Route for Each Announcement Button */}
           <Route path="/announcements/:id" element={<AnnouncementDetail />} />
 
-          {/* Other Main Sections */}
+          {/* Other Main Sections & Academics Routes */}
           <Route path="/admission" element={<Admissions />} />
+          <Route path="/academics" element={<BSPrograms />} />
           <Route path="/academics/bs-programs" element={<BSPrograms />} />
           <Route path="/departments" element={<Departments />} />
           <Route path="/faculty" element={<Faculty />} />

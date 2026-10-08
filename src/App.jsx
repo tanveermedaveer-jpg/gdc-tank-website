@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+// Language Context Provider (زبان کے لیے ضروری)
+import { LanguageProvider } from './context/LanguageContext';
+
 // Pages & Components imports
 import Home from './pages/Home';
 import AllAnnouncements from './pages/AllAnnouncements';
@@ -19,34 +22,36 @@ import Contact from './pages/Contact';
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Main Website Pages */}
-        <Route path="/" element={<Home />} />
-        <Route path="/announcements" element={<AllAnnouncements />} />
-        
-        {/* Dynamic Route for Each Announcement Button */}
-        <Route path="/announcements/:id" element={<AnnouncementDetail />} />
+    <LanguageProvider>
+      <Router>
+        <Routes>
+          {/* Main Website Pages */}
+          <Route path="/" element={<Home />} />
+          <Route path="/announcements" element={<AllAnnouncements />} />
+          
+          {/* Dynamic Route for Each Announcement Button */}
+          <Route path="/announcements/:id" element={<AnnouncementDetail />} />
 
-        {/* Other Main Sections */}
-        <Route path="/admission" element={<Admissions />} />
-        <Route path="/academics/bs-programs" element={<BSPrograms />} />
-        <Route path="/departments" element={<Departments />} />
-        <Route path="/faculty" element={<Faculty />} />
-        <Route path="/facilities" element={<Facilities />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/contact" element={<Contact />} />
+          {/* Other Main Sections */}
+          <Route path="/admission" element={<Admissions />} />
+          <Route path="/academics/bs-programs" element={<BSPrograms />} />
+          <Route path="/departments" element={<Departments />} />
+          <Route path="/faculty" element={<Faculty />} />
+          <Route path="/facilities" element={<Facilities />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/contact" element={<Contact />} />
 
-        {/* Admin Dashboard */}
-        <Route 
-          path="/admin" 
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
-      </Routes>
-    </Router>
+          {/* Admin Dashboard */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </Router>
+    </LanguageProvider>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Calendar, ArrowRight, BookOpen, Award, Users, CheckCircle, Bell } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import principalImg from '../assets/principal.jpg';
@@ -16,12 +16,17 @@ const DEFAULT_PRINCIPAL_MESSAGE = 'It is a matter of great pride and privilege t
 
 export default function Home() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [homeContent, setHomeContent] = useState(DEFAULT_HOME_CONTENT);
   const [principalName, setPrincipalName] = useState('Prof. Shabir Ahmad');
   const [principalImage, setPrincipalImage] = useState(principalImg);
   const [principalMessage, setPrincipalMessage] = useState(DEFAULT_PRINCIPAL_MESSAGE);
   const [admissionPhone, setAdmissionPhone] = useState(COLLEGE_PHONE);
   const admissionEmail = 'admissions@casdct.edu.pk';
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeHomeContent((content) => {
@@ -85,18 +90,21 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full">
                 <Link 
                   to="/admission" 
+                  onClick={() => window.scrollTo(0, 0)}
                   className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold px-8 py-3.5 rounded-full shadow-lg hover:shadow-xl text-center transition-all duration-200 w-full sm:w-auto"
                 >
                   {t('applyOnline')}
                 </Link>
                 <Link 
                   to="/academics" 
+                  onClick={() => window.scrollTo(0, 0)}
                   className="bg-slate-800/80 hover:bg-slate-800 text-white border border-slate-700 font-bold px-8 py-3.5 rounded-full text-center transition-all duration-200 w-full sm:w-auto"
                 >
                   {t('explorePrograms')}
                 </Link>
                 <Link 
                   to="/contact" 
+                  onClick={() => window.scrollTo(0, 0)}
                   className="bg-teal-500/80 hover:bg-teal-500 text-white border border-teal-400/40 font-bold px-8 py-3.5 rounded-full text-center transition-all duration-200 w-full sm:w-auto"
                 >
                   {t('contactUs')}
@@ -188,7 +196,7 @@ export default function Home() {
                   </div>
                   <div className="mt-6 space-y-5">
                     {homeContent.notices.map((notice) => (
-                      <Link key={notice.id} to="/examination" className="flex gap-4 group cursor-pointer border-b border-slate-50 dark:border-slate-800/60 pb-4 last:border-0 last:pb-0 block">
+                      <Link key={notice.id} to="/examination" onClick={() => window.scrollTo(0, 0)} className="flex gap-4 group cursor-pointer border-b border-slate-50 dark:border-slate-800/60 pb-4 last:border-0 last:pb-0 block">
                         <div className="flex-shrink-0 bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-50 dark:group-hover:bg-slate-700 text-slate-600 dark:text-slate-400 group-hover:text-teal-700 dark:group-hover:text-teal-350 w-24 h-16 rounded-xl flex flex-col items-center justify-center transition-colors">
                           <Calendar className="w-4 h-4 mb-1" />
                           <span className="text-[10px] font-bold uppercase tracking-wider text-center">
@@ -206,7 +214,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800 mt-6 text-right">
-                  <Link to="/examination" className="text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-bold text-sm inline-flex items-center group">
+                  <Link to="/examination" onClick={() => window.scrollTo(0, 0)} className="text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-bold text-sm inline-flex items-center group">
                     {t('viewAllAnnouncements')}
                     <ArrowRight className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" />
                   </Link>
@@ -233,6 +241,7 @@ export default function Home() {
                 <div className="pt-8">
                   <Link 
                     to="/admission" 
+                    onClick={() => window.scrollTo(0, 0)}
                     className="w-full block text-center bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 rounded-xl transition-colors shadow-md"
                   >
                     {t('admissionProcessDetails')}
@@ -270,6 +279,7 @@ export default function Home() {
                   </div>
                   <Link 
                     to="/academics/pre-medical"
+                    onClick={() => window.scrollTo(0, 0)}
                     className="w-full text-center bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 text-slate-700 dark:text-slate-300 font-bold py-2 rounded-xl text-xs transition-colors border border-slate-150 dark:border-slate-700/80 hover:border-transparent block"
                   >
                     {t('viewDetails')}
@@ -288,6 +298,7 @@ export default function Home() {
                   </div>
                   <Link 
                     to="/academics/pre-engineering"
+                    onClick={() => window.scrollTo(0, 0)}
                     className="w-full text-center bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 text-slate-700 dark:text-slate-300 font-bold py-2 rounded-xl text-xs transition-colors border border-slate-150 dark:border-slate-700/80 hover:border-transparent block"
                   >
                     {t('viewDetails')}
@@ -306,6 +317,7 @@ export default function Home() {
                   </div>
                   <Link 
                     to="/academics/ics"
+                    onClick={() => window.scrollTo(0, 0)}
                     className="w-full text-center bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 text-slate-700 dark:text-slate-300 font-bold py-2 rounded-xl text-xs transition-colors border border-slate-150 dark:border-slate-700/80 hover:border-transparent block"
                   >
                     {t('viewDetails')}
@@ -324,6 +336,7 @@ export default function Home() {
                   </div>
                   <Link 
                     to="/academics/fa"
+                    onClick={() => window.scrollTo(0, 0)}
                     className="w-full text-center bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-slate-700 hover:text-teal-700 dark:hover:text-teal-400 text-slate-700 dark:text-slate-300 font-bold py-2 rounded-xl text-xs transition-colors border border-slate-150 dark:border-slate-700/80 hover:border-transparent block"
                   >
                     {t('viewDetails')}
@@ -342,6 +355,7 @@ export default function Home() {
                   </div>
                   <Link 
                     to="/academics/bs-programs"
+                    onClick={() => window.scrollTo(0, 0)}
                     className="w-full text-center bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 rounded-xl text-xs transition-colors block border border-transparent"
                   >
                     {t('exploreMajors')}

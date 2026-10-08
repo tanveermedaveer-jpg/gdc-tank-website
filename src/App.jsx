@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
 
 import Home from './pages/Home.jsx';
@@ -21,9 +21,19 @@ import Vision from './pages/About/Vision.jsx';
 import AcademicsList from './pages/Academics/AcademicsList.jsx';
 import ProgramDetail from './pages/Academics/ProgramDetail.jsx';
 
+// Scroll to top helper component
+function ScrollToTopOnNavigate() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <Router>
+      <ScrollToTopOnNavigate />
       <LanguageProvider>
         <Routes>
           <Route path="/" element={<Home />} />

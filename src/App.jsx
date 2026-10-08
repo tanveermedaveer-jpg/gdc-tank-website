@@ -20,12 +20,6 @@ import Facilities from './pages/Facilities';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 
-// Academics Specific Pages (اگر یہ فائلیں موجود ہیں)
-import PreMedical from './pages/PreMedical';
-import PreEngineering from './pages/PreEngineering';
-import ICS from './pages/ICS';
-import FA from './pages/FA';
-
 export default function App() {
   return (
     <LanguageProvider>
@@ -38,13 +32,10 @@ export default function App() {
           {/* Dynamic Route for Each Announcement Button */}
           <Route path="/announcements/:id" element={<AnnouncementDetail />} />
 
-          {/* Academics Individual Routes */}
+          {/* Academics & Program Details Routes */}
           <Route path="/academics" element={<BSPrograms />} />
           <Route path="/academics/bs-programs" element={<BSPrograms />} />
-          <Route path="/academics/pre-medical" element={<PreMedical />} />
-          <Route path="/academics/pre-engineering" element={<PreEngineering />} />
-          <Route path="/academics/ics" element={<ICS />} />
-          <Route path="/academics/fa" element={<FA />} />
+          <Route path="/academics/:programId" element={<BSPrograms />} />
 
           {/* Other Main Sections */}
           <Route path="/admission" element={<Admissions />} />

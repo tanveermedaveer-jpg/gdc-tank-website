@@ -7,8 +7,8 @@ import { DEFAULT_HOME_CONTENT } from './siteContentDefaults';
 
 const SESSION_MARKER_KEY = 'casdct_admin_session_active';
 const SESSION_USERNAME_KEY = 'casdct_local_admin_username';
-const DEFAULT_ADMIN_USERNAME = 'Professor Salim Khan';
-const DEFAULT_ADMIN_PASSWORD = '122011577';
+const DEFAULT_ADMIN_USERNAME = 'Shabir Ahmad';
+const DEFAULT_ADMIN_PASSWORD = '1271573';
 
 const DEFAULT_SETTINGS = {
   principal_name: 'Prof. Shabir Ahmad',
@@ -74,7 +74,7 @@ const saveAdmission = async (payload, file) => {
   const program = typeof record.program === 'string' ? record.program.trim() : '';
   const phone = typeof record.phone === 'string' ? record.phone.trim() : '';
   if (!fullName || !program || !phone) throw new Error('Complete the required name, program, and phone fields.');
-  
+   
   const regId = `STU-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const admission = {
     ...record,
@@ -154,7 +154,7 @@ const handlePublicAction = async (action, payload, file) => {
 
 const handleAdminAction = async (action, payload, file) => {
   if (!hasAdminSession()) throw new Error('Admin session expired.');
-  
+   
   if (action === 'admin.bootstrap') {
     const admissions = await getAdmissions();
     const settings = await getSettings();
@@ -171,7 +171,7 @@ const handleAdminAction = async (action, payload, file) => {
   }
   if (action === 'admin.settings.save') return await saveSettings(payload);
   if (action === 'admin.homeContent.save') return await saveHomeContent(payload.homeContent);
-  
+   
   return {};
 };
 
@@ -200,7 +200,6 @@ export const subscribeHomeContent = (onContent) => {
 };
 
 export const subscribeMeritList = (onMeritList) => {
-  // Simple listener for admissions and settings
   const unsubSettings = onSnapshot(doc(db, 'portal', 'settings'), async (settingsSnap) => {
     const settings = settingsSnap.exists() ? settingsSnap.data() : DEFAULT_SETTINGS;
     const admissions = await getAdmissions();

@@ -36,7 +36,29 @@ const ApplyPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert(`Application Submitted! ${language === 'ur' ? 'درخواست کامیابی سے جمع ہو گئی!' : ''}`);
+    
+    // Automation: Generate a unique applicant/student ID
+    const studentId = 'CASDCT-' + Math.floor(100000 + Math.random() * 900000);
+    
+    // Save application to local storage / admin portal sync
+    const existingApplications = JSON.parse(localStorage.getItem('admissions_list') || '[]');
+    const newApplication = {
+      id: studentId,
+      ...formData,
+      appliedAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('admissions_list', JSON.stringify([newApplication, ...existingApplications]));
+
+    // Success notification with Student ID
+    if (language === 'ur') {
+      alert(`مبارک ہو! آپ کی داخلہ درخواست کامیابی سے جمع ہو گئی ہے۔\nآپ کی اسٹوڈنٹ آئی ڈی (Student ID): ${studentId}\nبراہ کرم اسے میرٹ لسٹ کے لیے محفوظ رکھیں۔`);
+    } else {
+      alert(`Application Submitted Successfully!\nYour Student ID: ${studentId}\nPlease keep this ID safe for merit list status updates.`);
+    }
+
+    // Redirect back to home or refresh
+    navigate('/');
   };
 
   const isIntermediate = formData.programType.includes('Intermediate');

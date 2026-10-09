@@ -13,7 +13,7 @@ import Home from './pages/Home';
 import History from './pages/About/History';
 import Vision from './pages/About/Vision';
 import ProgramDetail from './pages/Academics/ProgramDetail';
-import BSPrograms from './pages/BSPrograms'; // <--- صحیح پاتھ یہاں سیٹ کر دیا گیا ہے
+import BSPrograms from './pages/BSPrograms';
 import Admission from './pages/Admission';
 import Departments from './pages/Departments';
 import Examination from './pages/Examination';
@@ -23,6 +23,10 @@ import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import ApplyNow from './pages/ApplyNow';
 import AdminDashboard from './pages/AdminDashboard';
+
+// --- نئے صفحات جو یہاں امپورٹ کیے گئے ہیں ---
+import AnnouncementDetail from './pages/AnnouncementDetail';
+import AllAnnouncements from './pages/AllAnnouncements';
 
 function AppContent() {
   const location = useLocation();
@@ -57,7 +61,7 @@ function AppContent() {
           <Route path="/about/history" element={<History />} />
           <Route path="/about/vision" element={<Vision />} />
           <Route path="/academics" element={<ProgramDetail />} />
-          <Route path="/academics/bs-programs" element={<BSPrograms />} /> {/* <--- یہ اب بالکل ٹھیک کام کرے گا */}
+          <Route path="/academics/bs-programs" element={<BSPrograms />} />
           <Route path="/academics/:programId" element={<ProgramDetail />} />
           <Route path="/admission" element={<Admission />} />
           <Route path="/departments" element={<Departments />} />
@@ -67,6 +71,11 @@ function AppContent() {
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/apply" element={<ApplyNow />} />
+
+          {/* --- یہ دو اہم روٹس (Routes) یہاں جوڑے گئے ہیں --- */}
+          <Route path="/announcement/:id" element={<AnnouncementDetail />} />
+          <Route path="/all-announcements" element={<AllAnnouncements />} />
+
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
           

@@ -424,7 +424,7 @@ export default function ProgramDetail() {
   const currentProgram = programData[programId] || programData['pre-medical'];
 
   return (
-    <div className="flex-grow">
+    <div className="w-full">
       {/* Banner */}
       <section className="bg-slate-900 text-white py-16 relative">
         <div className="absolute inset-0 z-0">

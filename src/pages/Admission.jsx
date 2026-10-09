@@ -4,8 +4,6 @@ import { ClipboardList, ShieldCheck, CheckCircle2, DollarSign, FileText, Award, 
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
 import { subscribeMeritList } from '../lib/adminApi';
-import Navbar from '../components/Navbar.jsx';
-import Footer from '../components/Footer.jsx';
 
 export default function Admission() {
   const { t } = useLanguage();
@@ -98,8 +96,6 @@ export default function Admission() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
-
       <div className="flex-grow">
         {/* Banner */}
         <section className="bg-slate-900 text-white py-16 relative">
@@ -349,8 +345,6 @@ export default function Admission() {
           </div>
         </section>
       </div>
-
-      <Footer />
     </div>
   );
 }

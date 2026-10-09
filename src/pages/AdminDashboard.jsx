@@ -2309,10 +2309,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </form>
             </>
           )}
-      {isSavingHomeContent ? 'Saving Notices...' : 'Save & Publish Notices'}
-    </button>
-  </form>
-</div>
           {/* ---------------- HELP & SUPPORT TAB ---------------- */}
           {activeTab === 'help' && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">

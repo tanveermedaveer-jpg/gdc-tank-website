@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import { LanguageProvider } from './context/LanguageContext';
+import NewsTicker from './components/NewsTicker';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -23,6 +26,7 @@ import AdminDashboard from './pages/AdminDashboard';
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isHomeRoute = location.pathname === '/';
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('casdct_dark_mode') === 'true';
@@ -40,6 +44,12 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : ''}`}>
+      {/* News Ticker - Admin aur Home ke ilawa sabhi jagah dikhega */}
+      {!isAdminRoute && !isHomeRoute && <NewsTicker />}
+
+      {/* Navbar - Sirf Home aur Admin ke ilawa baaki sabhi pages par aayega taake double navbar ka masla na ho */}
+      {!isAdminRoute && !isHomeRoute && <Navbar />}
+
       {/* Main Content Area */}
       <main className="flex-grow flex flex-col">
         <Routes>
@@ -63,6 +73,9 @@ function AppContent() {
           <Route path="*" element={<Home />} />
         </Routes>
       </main>
+
+      {/* Footer - Sirf Home aur Admin ke ilawa baaki sabhi inner pages par aayega */}
+      {!isAdminRoute && !isHomeRoute && <Footer />}
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, User, ArrowLeft } from 'lucide-react';
+import { Lock, User, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -12,7 +13,7 @@ export default function Login() {
     e.preventDefault();
     
     // LocalStorage se updated admin credentials check honge, 
-    // agar wahan nahi honge toh aap ka default username aur password use hoga.
+    // warna aap ka default username aur password use hoga.
     const savedAdminUser = localStorage.getItem('admin_username') || 'Shabir Ahmad';
     const savedAdminPass = localStorage.getItem('admin_password') || '122011577';
 
@@ -21,7 +22,7 @@ export default function Login() {
       localStorage.setItem('userRole', 'admin');
       navigate('/admin');
     } else {
-      setError('Ghalat username ya password! Barah-e-karam dobara koshish karein.');
+      setError('غلط یوزر نام یا پاسورڈ! براہ کرم دوبارہ کوشش کریں۔');
     }
   };
 
@@ -50,7 +51,7 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">Username</label>
             <div className="relative">
@@ -59,9 +60,11 @@ export default function Login() {
               </span>
               <input 
                 type="text" 
+                name="admin_username_field"
                 placeholder="Enter admin username" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                autoComplete="off"
                 className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-teal-500"
                 required 
               />
@@ -75,13 +78,22 @@ export default function Login() {
                 <Lock className="w-4 h-4" />
               </span>
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"}
+                name="admin_password_field"
                 placeholder="Enter password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-teal-500"
+                autoComplete="new-password"
+                className="w-full pl-10 pr-12 py-3 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-teal-500"
                 required 
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

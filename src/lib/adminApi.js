@@ -74,7 +74,7 @@ const saveAdmission = async (payload, file) => {
   const program = typeof record.program === 'string' ? record.program.trim() : '';
   const phone = typeof record.phone === 'string' ? record.phone.trim() : '';
   if (!fullName || !program || !phone) throw new Error('Complete the required name, program, and phone fields.');
-   
+  
   const regId = `STU-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const admission = {
     ...record,
@@ -154,7 +154,7 @@ const handlePublicAction = async (action, payload, file) => {
 
 const handleAdminAction = async (action, payload, file) => {
   if (!hasAdminSession()) throw new Error('Admin session expired.');
-   
+  
   if (action === 'admin.bootstrap') {
     const admissions = await getAdmissions();
     const settings = await getSettings();
@@ -171,7 +171,7 @@ const handleAdminAction = async (action, payload, file) => {
   }
   if (action === 'admin.settings.save') return await saveSettings(payload);
   if (action === 'admin.homeContent.save') return await saveHomeContent(payload.homeContent);
-   
+  
   return {};
 };
 
@@ -187,7 +187,14 @@ export const adminFileRequest = (action, payload, file) => request(action, paylo
 export const publicRequest = (action, payload) => request(action, payload);
 export const publicFileRequest = (action, payload, file) => request(action, payload, file);
 
-// --- SUBSCRIPTIONS FOR LIVE SYNC ---
+// --- COMPATIBILITY EXPORTS FOR OTHER COMPONENTS ---
+export const subscribeLocalData = (key, onData) => {
+  if (key === 'homeContent') return subscribeHomeContent(onData);
+  return () => {};
+};
+
+export const getLocalFileUrl = async (path) => '';
+
 export const subscribeHomeContent = (onContent) => {
   const docRef = doc(db, 'portal', 'homeContent');
   return onSnapshot(docRef, (docSnap) => {

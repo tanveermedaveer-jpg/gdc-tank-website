@@ -26,6 +26,7 @@ import AdminDashboard from './pages/AdminDashboard';
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isHomeRoute = location.pathname === '/';
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('casdct_dark_mode') === 'true';
@@ -43,11 +44,11 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : ''}`}>
-      {/* News Ticker - Hidden on Admin Dashboard */}
-      {!isAdminRoute && <NewsTicker />}
+      {/* News Ticker - Hidden on Admin Dashboard and Home */}
+      {!isAdminRoute && !isHomeRoute && <NewsTicker />}
 
-      {/* Navigation - Hidden on Admin Dashboard */}
-      {!isAdminRoute && <Navbar />}
+      {/* Navigation - Hidden on Admin Dashboard and Home (Home has its own Navbar) */}
+      {!isAdminRoute && !isHomeRoute && <Navbar />}
 
       {/* Main Content Area */}
       <main className="flex-grow flex flex-col">
@@ -73,8 +74,8 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* Footer - Hidden on Admin Dashboard */}
-      {!isAdminRoute && <Footer />}
+      {/* Footer - Hidden on Admin Dashboard and Home (Home manages its footer inside Home.jsx) */}
+      {!isAdminRoute && !isHomeRoute && <Footer />}
     </div>
   );
 }

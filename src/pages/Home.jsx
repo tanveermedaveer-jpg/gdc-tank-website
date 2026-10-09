@@ -9,8 +9,6 @@ import AnimatedCounter from '../components/AnimatedCounter';
 import { COLLEGE_PHONE, resolveCollegePhone } from '../lib/contactDetails';
 import { subscribeHomeContent, subscribeLocalData } from '../lib/adminApi';
 import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 
 const DEFAULT_PRINCIPAL_MESSAGE = 'It is a matter of great pride and privilege to welcome you to Captain Ashfaq Shaheed Degree College, Tank. This college stands as a beacon of learning in South KP, committed to delivering high-quality intermediate and undergraduate education to our youth.\n\nOur primary goal is to nurture academic curiosity, foster critical thinking, and build a strong sense of responsibility. Naming our college in honor of the martyred military officer, Captain Ashfaq Shaheed, reminds us daily of the virtues of discipline, sacrifice, and duty to our homeland.\n\nWe are proud of our qualified faculty, well-equipped science and computer labs, and a spacious green campus that supports learning. I invite you to join us and become part of a legacy that strives for excellence in every field of life.';
 
@@ -61,7 +59,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
       <div className="flex-grow">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-slate-900 text-white min-h-[85vh] flex items-center justify-center text-center">
@@ -457,7 +454,6 @@ export default function Home() {
           </div>
         </section>
       </div>
-      <Footer />
     </div>
   );
 }

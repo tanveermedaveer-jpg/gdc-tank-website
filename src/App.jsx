@@ -13,7 +13,7 @@ import Home from './pages/Home';
 import History from './pages/About/History';
 import Vision from './pages/About/Vision';
 import ProgramDetail from './pages/Academics/ProgramDetail';
-import BSPrograms from './pages/Academics/BSPrograms'; // <--- یہ یہاں امپورٹ کر لیا گیا ہے
+import BSPrograms from './pages/BSPrograms'; // <--- صحیح پاتھ یہاں سیٹ کر دیا گیا ہے
 import Admission from './pages/Admission';
 import Departments from './pages/Departments';
 import Examination from './pages/Examination';
@@ -57,7 +57,7 @@ function AppContent() {
           <Route path="/about/history" element={<History />} />
           <Route path="/about/vision" element={<Vision />} />
           <Route path="/academics" element={<ProgramDetail />} />
-          <Route path="/academics/bs-programs" element={<BSPrograms />} /> {/* <--- یہ نیا اور درست روٹ ایڈ کر دیا گیا ہے */}
+          <Route path="/academics/bs-programs" element={<BSPrograms />} /> {/* <--- یہ اب بالکل ٹھیک کام کرے گا */}
           <Route path="/academics/:programId" element={<ProgramDetail />} />
           <Route path="/admission" element={<Admission />} />
           <Route path="/departments" element={<Departments />} />

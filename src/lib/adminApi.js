@@ -1,6 +1,6 @@
 import { db } from './firebase';
 import { 
-  collection, doc, getDoc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot 
+  collection, doc, getDoc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where 
 } from 'firebase/firestore';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from './contactDetails';
 import { DEFAULT_HOME_CONTENT } from './siteContentDefaults';
@@ -46,7 +46,7 @@ export const signInAdmin = (username, password) => {
 export const verifyAdminSession = () => hasAdminSession();
 export const signOutAdmin = () => clearAdminSession();
 
-// --- FIRESTORE CRUD HELPERS ---
+// --- FIRESTORE HELPERS ---
 
 export const getStoredHomeContent = async () => {
   try {
@@ -190,15 +190,37 @@ export const adminFileRequest = (action, payload, file) => request(action, paylo
 export const publicRequest = (action, payload) => request(action, payload);
 export const publicFileRequest = (action, payload, file) => request(action, payload, file);
 
-// --- COMPATIBILITY EXPORTS FOR OTHER COMPONENTS ---
-export const subscribeLocalData = (key, onData) => {
-  if (key === 'homeContent') return subscribeHomeContent(onData);
-  return () => {};
+// --- FIRESTORE LIVE SUBSCRIPTIONS FOR DASHBOARD ---
+export const subscribeLocalData = (key, onData, onError) => {
+  if (key === 'homeContent') {
+    return subscribeHomeContent(onData, onError);
+  }
+  if (key === 'settings') {
+    const docRef = doc(db, 'portal', 'settings');
+    return onSnapshot(docRef, (docSnap) => {
+      onData(docSnap.exists() ? docSnap.data() : DEFAULT_SETTINGS);
+    }, (err) => onError?.(err));
+  }
+  
+  // For collections like admissions, faculty, gallery, circulars
+  try {
+    const colRef = collection(db, key);
+    return onSnapshot(colRef, (snapshot) => {
+      const list = [];
+      snapshot.forEach((docSnap) => {
+        list.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      onData(list);
+    }, (err) => onError?.(err));
+  } catch (err) {
+    onError?.(err);
+    return () => {};
+  }
 };
 
 export const getLocalFileUrl = async (path) => '';
 
-export const subscribeHomeContent = (onContent) => {
+export const subscribeHomeContent = (onContent, onError) => {
   const docRef = doc(db, 'portal', 'homeContent');
   return onSnapshot(docRef, (docSnap) => {
     if (docSnap.exists()) {
@@ -206,19 +228,20 @@ export const subscribeHomeContent = (onContent) => {
     } else {
       onContent(DEFAULT_HOME_CONTENT);
     }
-  });
+  }, (err) => onError?.(err));
 };
 
-export const subscribeApprovedGallery = (onItems) => {
-  onItems([]);
-  return () => {};
+export const subscribeApprovedGallery = (onItems, onError) => {
+  return subscribeLocalData('gallery', (items) => {
+    onItems(items.filter(i => i.status === 'approved'));
+  }, onError);
 };
 
 export const subscribeLocalChanges = (keys, onChange) => {
   return () => {};
 };
 
-export const subscribeMeritList = (onMeritList) => {
+export const subscribeMeritList = (onMeritList, onError) => {
   const unsubSettings = onSnapshot(doc(db, 'portal', 'settings'), async (settingsSnap) => {
     const settings = settingsSnap.exists() ? settingsSnap.data() : DEFAULT_SETTINGS;
     const admissions = await getAdmissions();
@@ -227,6 +250,6 @@ export const subscribeMeritList = (onMeritList) => {
       published,
       admissions: published ? admissions.filter(r => r.status === 'approved') : []
     });
-  });
+  }, (err) => onError?.(err));
   return unsubSettings;
 };

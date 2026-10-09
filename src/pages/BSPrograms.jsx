@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { GraduationCap, BookOpen, Clock, Award, CheckCircle, ArrowRight } from 'lucide-react';
 
 export default function BSPrograms() {
@@ -49,7 +47,6 @@ export default function BSPrograms() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <Navbar />
       
       {/* Header Banner */}
       <div className="bg-slate-900 text-white py-16 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
@@ -133,7 +130,6 @@ export default function BSPrograms() {
         </div>
       </div>
 
-      <Footer />
     </div>
   );
 }

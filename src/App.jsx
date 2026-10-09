@@ -26,7 +26,6 @@ import AdminDashboard from './pages/AdminDashboard';
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const isHomeRoute = location.pathname === '/';
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('casdct_dark_mode') === 'true';
@@ -44,11 +43,11 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : ''}`}>
-      {/* News Ticker - Sirf Admin aur Home ke ilawa sabhi jagah aayega */}
-      {!isAdminRoute && !isHomeRoute && <NewsTicker />}
+      {/* News Ticker - Sirf Admin ke ilawa sabhi jagah aayega */}
+      {!isAdminRoute && <NewsTicker />}
 
-      {/* Global Navbar - Sirf Home aur Admin ke ilawa baaki sabhi pages par ek hi daفا aayega */}
-      {!isAdminRoute && !isHomeRoute && <Navbar />}
+      {/* Global Navbar - Har page par sirf ek hi dafa aayega */}
+      {!isAdminRoute && <Navbar />}
 
       {/* Main Content Area */}
       <main className="flex-grow flex flex-col">
@@ -74,8 +73,8 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* Global Footer - Sirf Home aur Admin ke ilawa baaki sabhi pages par aayega */}
-      {!isAdminRoute && !isHomeRoute && <Footer />}
+      {/* Global Footer - Har page par aayega */}
+      {!isAdminRoute && <Footer />}
     </div>
   );
 }

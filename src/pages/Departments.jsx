@@ -1,8 +1,6 @@
 import { Code, Atom, Beaker, Landmark, BookOpen, Dna } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
-import Navbar from '../components/Navbar.jsx';
-import Footer from '../components/Footer.jsx';
 
 export default function Departments() {
   const { t } = useLanguage();
@@ -14,7 +12,7 @@ export default function Departments() {
       name: isUrdu ? 'کمپیوٹر سائنس' : 'Computer Science',
       hod: isUrdu ? 'جناب محمد عمران (MCS, MS CS)' : 'Mr. Muhammad Imran (MCS, MS CS)',
       desc: isUrdu 
-        ? 'سافٹ ویئر انجینئرنگ، آئی ٹی نیٹ ورکنگ، ڈیٹا بیس مینجमेंट، اور پروگرامنگ کے بنیادی اصولوں پر توجہ مرکوز کرتا ہے۔ یہ شعبہ 30 سے زائد کمپیوٹرز پر مشتمل لیبارٹری سے لیس ہے۔' 
+        ? 'سافٹ ویئر انجینئرنگ، آئی ٹی نیٹ ورکنگ، ڈیٹا بیس مینجمنٹ، اور پروگرامنگ کے بنیادی اصولوں پر توجہ مرکوز کرتا ہے۔ یہ شعبہ 30 سے زائد کمپیوٹرز پر مشتمل لیبارٹری سے لیس ہے۔' 
         : 'Focuses on software engineering, IT networks, database management, and programming basics. Fully equipped with an air-conditioned laboratory containing 30+ network-linked PCs.',
       degree: isUrdu ? 'ICS، بی ایس کمپیوٹر سائنس' : 'ICS, BS Computer Science'
     },
@@ -67,8 +65,6 @@ export default function Departments() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
-
       <div className="flex-grow">
         {/* Banner */}
         <section className="bg-slate-900 text-white py-16 relative">
@@ -124,8 +120,6 @@ export default function Departments() {
           </div>
         </section>
       </div>
-
-      <Footer />
     </div>
   );
 }

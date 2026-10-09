@@ -44,10 +44,10 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : ''}`}>
-      {/* News Ticker - Hidden on Admin Dashboard and Home */}
-      {!isAdminRoute && !isHomeRoute && <NewsTicker />}
+      {/* News Ticker - Show on all pages except Admin */}
+      {!isAdminRoute && <NewsTicker />}
 
-      {/* Navigation - Hidden on Admin Dashboard and Home (Home has its own Navbar) */}
+      {/* Navigation - Hidden ONLY on Home (Home has its own navbar) and Admin */}
       {!isAdminRoute && !isHomeRoute && <Navbar />}
 
       {/* Main Content Area */}
@@ -74,7 +74,7 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* Footer - Hidden on Admin Dashboard and Home (Home manages its footer inside Home.jsx) */}
+      {/* Footer - Hidden ONLY on Home (Home manages its footer) and Admin */}
       {!isAdminRoute && !isHomeRoute && <Footer />}
     </div>
   );

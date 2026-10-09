@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { Download, Landmark, FileText, CheckSquare, ShieldAlert, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import campusImg from '../assets/campus.png';
@@ -48,9 +46,6 @@ export default function Examination() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
-      <Navbar />
-
       <div className="flex-grow">
         {/* Banner */}
         <section className="bg-slate-900 text-white py-16 relative">
@@ -234,9 +229,6 @@ export default function Examination() {
           </div>
         </section>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

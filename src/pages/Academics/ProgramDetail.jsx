@@ -421,6 +421,58 @@ export default function ProgramDetail() {
   };
 
   const programData = isUrdu ? programDataUr : programDataEn;
+
+  // اگر یوزر صرف /academics پر آئے (کوئی specific programId نہ ہو) تو تمام پروگرامز کا اوورویو دکھائیں
+  if (!programId) {
+    return (
+      <div className="w-full bg-slate-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="inline-flex items-center gap-1.5 text-xs text-teal-600 font-bold uppercase tracking-widest bg-teal-50 border border-teal-200 px-4 py-1.5 rounded-full mb-4">
+              <GraduationCap className="w-4 h-4" /> {isUrdu ? 'کیپٹن اشفاق شہید ڈگری کالج ٹانک' : 'Captain Ashfaq Shaheed Degree College Tank'}
+            </span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif text-slate-900 mb-4">
+              {isUrdu ? 'ہمارے تعلیمی پروگرامز' : 'Our Academic Programs'}
+            </h1>
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+              {isUrdu 
+                ? 'انٹرمیڈیٹ (HSSC) اور 4 سالہ بی ایس (BS) ڈگری پروگرامز جو طلباء کو روشن مستقبل اور پیشہ ورانہ کامیابی کے لیے تیار کرتے ہیں۔'
+                : 'Explore our intermediate and undergraduate programs designed to shape your academic and professional career.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Object.entries(programData).map(([id, prog]) => (
+              <div key={id} className="bg-white border border-slate-200/80 rounded-2xl p-7 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold mb-5 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 font-serif mb-2 group-hover:text-teal-700 transition-colors">
+                    {prog.title}
+                  </h3>
+                  <p className="text-teal-600 text-xs font-semibold uppercase tracking-wider mb-3">
+                    {prog.level}
+                  </p>
+                  <p className="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3">
+                    {prog.description}
+                  </p>
+                </div>
+                <Link
+                  to={`/academics/${id}`}
+                  onClick={() => window.scrollTo(0, 0)}
+                  className="w-full flex items-center justify-center gap-2 text-center bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-xl text-xs sm:text-sm transition-all shadow-sm shadow-teal-600/20"
+                >
+                  {isUrdu ? 'تفصیلات دیکھیں' : 'View Program Details'} <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentProgram = programData[programId] || programData['pre-medical'];
 
   return (

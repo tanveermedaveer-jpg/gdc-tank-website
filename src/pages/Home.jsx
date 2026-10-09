@@ -92,7 +92,6 @@ export default function Home() {
                 >
                   {t('applyOnline')}
                 </Link>
-                {/* Permanent Fix for Explore Programs Button */}
                 <Link 
                   to="/academics" 
                   onClick={() => window.scrollTo(0, 0)}
@@ -194,7 +193,7 @@ export default function Home() {
                   </div>
                   <div className="mt-6 space-y-5">
                     {homeContent.notices.map((notice) => (
-                      <Link key={notice.id} to="/examination" onClick={() => window.scrollTo(0, 0)} className="flex gap-4 group cursor-pointer border-b border-slate-50 dark:border-slate-800/60 pb-4 last:border-0 last:pb-0 block">
+                      <Link key={notice.id} to={`/announcement/${notice.id}`} onClick={() => window.scrollTo(0, 0)} className="flex gap-4 group cursor-pointer border-b border-slate-50 dark:border-slate-800/60 pb-4 last:border-0 last:pb-0 block">
                         <div className="flex-shrink-0 bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-50 dark:group-hover:bg-slate-700 text-slate-600 dark:text-slate-400 group-hover:text-teal-700 dark:group-hover:text-teal-350 w-24 h-16 rounded-xl flex flex-col items-center justify-center transition-colors">
                           <Calendar className="w-4 h-4 mb-1" />
                           <span className="text-[10px] font-bold uppercase tracking-wider text-center">
@@ -212,7 +211,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="pt-6 border-t border-slate-100 dark:border-slate-800 mt-6 text-right">
-                  <Link to="/examination" onClick={() => window.scrollTo(0, 0)} className="text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-bold text-sm inline-flex items-center group">
+                  <Link to="/all-announcements" onClick={() => window.scrollTo(0, 0)} className="text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 font-bold text-sm inline-flex items-center group">
                     {t('viewAllAnnouncements')}
                     <ArrowRight className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" />
                   </Link>
@@ -351,7 +350,6 @@ export default function Home() {
                       {t('bsProgramsDesc')}
                     </p>
                   </div>
-                  {/* Permanent Fix for Explore Majors Button */}
                   <Link 
                     to="/academics/bs-programs"
                     onClick={() => window.scrollTo(0, 0)}

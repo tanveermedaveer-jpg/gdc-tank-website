@@ -19,7 +19,8 @@ import {
 } from '../lib/adminApi';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
 import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
-
+import { db } from '../lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 const isVideoMediaFile = (file) =>
   file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
 
@@ -693,7 +694,11 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
     setIsSavingHomeContent(true);
     try {
-      await adminRequest('admin.homeContent.save', { homeContent: content });
+      const docRef = doc(db, 'siteContent', 'homepage');
+await setDoc(docRef, {
+  homeContent: content,
+  updatedAt: new Date().toISOString()
+}, { merge: true });
       setHomeContentDraft(content);
       showToast('Shared homepage content and announcements saved.', 'success');
     } catch (error) {

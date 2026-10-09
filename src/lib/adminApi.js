@@ -8,7 +8,7 @@ import { DEFAULT_HOME_CONTENT } from './siteContentDefaults';
 const SESSION_MARKER_KEY = 'casdct_admin_session_active';
 const SESSION_USERNAME_KEY = 'casdct_local_admin_username';
 const DEFAULT_ADMIN_USERNAME = 'Shabir Ahmad';
-const DEFAULT_ADMIN_PASSWORD = '1271573';
+const DEFAULT_ADMIN_PASSWORD = '122011578';
 
 const MAX_CIRCULAR_SIZE = 10 * 1024 * 1024;
 export const MAX_CIRCULAR_SIZE_BYTES = MAX_CIRCULAR_SIZE;

@@ -696,9 +696,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     try {
       const docRef = doc(db, 'siteContent', 'homepage');
 await setDoc(docRef, {
-  homeContent: content,
+  ...content,
   updatedAt: new Date().toISOString()
-}, { merge: true });
+});
       setHomeContentDraft(content);
       showToast('Shared homepage content and announcements saved.', 'success');
     } catch (error) {

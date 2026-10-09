@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { Eye, Image as ImageIcon, X, Download, Plus, Upload, CheckCircle2, Video } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
@@ -140,9 +138,6 @@ export default function Gallery() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
-      {/* Navbar */}
-      <Navbar />
-
       <div className="flex-grow">
         {/* Banner */}
         <section className="bg-slate-900 text-white py-16 relative">
@@ -495,9 +490,6 @@ export default function Gallery() {
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

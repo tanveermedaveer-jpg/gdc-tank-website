@@ -1,6 +1,4 @@
 import React from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import { Laptop, BookOpen, Microscope, Trophy, Home as HomeIcon, Bus } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
@@ -43,9 +41,6 @@ export default function Facilities() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
-      <Navbar />
-
       <div className="flex-grow">
         {/* Banner */}
         <section className="bg-slate-900 text-white py-16 relative">
@@ -87,9 +82,6 @@ export default function Facilities() {
           </div>
         </section>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

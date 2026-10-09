@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Bell, Calendar, ArrowLeft } from 'lucide-react';
+import { subscribeHomeContent } from '../lib/adminApi';
 
 export default function AnnouncementDetail() {
   const { id } = useParams();
@@ -16,9 +17,26 @@ export default function AnnouncementDetail() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const found = defaultAnnouncements.find(item => String(item.id) === String(id));
+
+    // Pehle default list mein check karte hain
+    let found = defaultAnnouncements.find(item => String(item.id) === String(id));
+
     if (found) {
       setAnnouncement(found);
+    } else {
+      // Agar default mein na mile, toh Firebase / admin API se live notices fetch karte hain
+      const unsubscribe = subscribeHomeContent((content) => {
+        if (content && Array.isArray(content.notices)) {
+          const liveFound = content.notices.find(item => String(item.id) === String(id));
+          if (liveFound) {
+            setAnnouncement(liveFound);
+          }
+        }
+      }, (error) => console.error('Error fetching notice details:', error));
+
+      return () => {
+        if (typeof unsubscribe === 'function') unsubscribe();
+      };
     }
   }, [id]);
 
@@ -63,7 +81,7 @@ export default function AnnouncementDetail() {
           {/* Content Description */}
           <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed space-y-4">
             <p className="whitespace-pre-line">
-              {announcement.description}
+              {announcement.description || 'No detailed description available for this notice.'}
             </p>
           </div>
 

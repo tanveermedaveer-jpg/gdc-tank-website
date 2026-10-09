@@ -11,14 +11,17 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault();
     
-    // Yahan aap apna admin username aur password set kar rahe hain
-    // Misal ke taur par username: admin aur password: 12345
-    if (username === 'admin' && password === '12345') {
+    // LocalStorage se updated admin credentials check honge, 
+    // agar wahan nahi honge toh aap ka default username aur password use hoga.
+    const savedAdminUser = localStorage.getItem('admin_username') || 'Shabir Ahmad';
+    const savedAdminPass = localStorage.getItem('admin_password') || '122011577';
+
+    if (username.trim() === savedAdminUser && password === savedAdminPass) {
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userRole', 'admin');
       navigate('/admin');
     } else {
-      setError('غلط یوزر نام یا پاسورڈ! براہ کرم دوبارہ کوشش کریں۔');
+      setError('Ghalat username ya password! Barah-e-karam dobara koshish karein.');
     }
   };
 

@@ -1,6 +1,4 @@
 import React from 'react';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
 import { Eye, Target, Award, Heart, Shield, Globe } from 'lucide-react';
 import campusImg from '../../assets/campus.png';
 import { useLanguage } from '../../context/LanguageContext';
@@ -42,9 +40,6 @@ export default function Vision() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
-      <Navbar />
-
       <div className="flex-grow">
         {/* Banner */}
         <section className="bg-slate-900 text-white py-16 relative">
@@ -137,9 +132,6 @@ export default function Vision() {
           </div>
         </section>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

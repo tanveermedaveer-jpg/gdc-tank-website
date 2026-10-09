@@ -23,14 +23,15 @@ import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import ApplyNow from './pages/ApplyNow';
 import AdminDashboard from './pages/AdminDashboard';
+import Login from './pages/Login'; // <-- یہ نئی لائن لاگ ان پیج کے لیے جوڑی گئی ہے
 
-// --- نئے صفحات جو یہاں امپورٹ کیے گئے ہیں ---
+// Announcement Pages
 import AnnouncementDetail from './pages/AnnouncementDetail';
 import AllAnnouncements from './pages/AllAnnouncements';
 
 function AppContent() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/login');
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('casdct_dark_mode') === 'true';
@@ -48,7 +49,7 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : ''}`}>
-      {/* News Ticker - Sirf Admin ke ilawa sabhi jagah aayega */}
+      {/* News Ticker - Sirf Admin aur Login ke ilawa sabhi jagah aayega */}
       {!isAdminRoute && <NewsTicker />}
 
       {/* Global Navbar - Har page par sirf ek hi dafa aayega */}
@@ -72,10 +73,14 @@ function AppContent() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/apply" element={<ApplyNow />} />
 
-          {/* --- یہ دو اہم روٹس (Routes) یہاں جوڑے گئے ہیں --- */}
+          {/* Announcement Routes */}
           <Route path="/announcement/:id" element={<AnnouncementDetail />} />
           <Route path="/all-announcements" element={<AllAnnouncements />} />
 
+          {/* Login Route */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Protected Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
           

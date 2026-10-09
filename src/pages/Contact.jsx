@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -44,10 +42,7 @@ export default function Contact() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       
-      {/* 1. پروجیکٹ کا اصل نیویگیشن بار */}
-      <Navbar />
-
-      {/* 2. مین کانٹیکٹ سیکشن */}
+      {/* مین کانٹیکٹ سیکشن */}
       <main className="flex-grow">
         {/* بینر ہیڈر */}
         <section className="bg-slate-900 text-white py-12 relative overflow-hidden shadow-inner">
@@ -236,9 +231,6 @@ export default function Contact() {
           </div>
         </section>
       </main>
-
-      {/* 3. پروجیکٹ کا اصل فوٹر */}
-      <Footer />
 
     </div>
   );

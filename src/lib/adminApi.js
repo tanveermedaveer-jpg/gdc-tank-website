@@ -10,6 +10,9 @@ const SESSION_USERNAME_KEY = 'casdct_local_admin_username';
 const DEFAULT_ADMIN_USERNAME = 'Shabir Ahmad';
 const DEFAULT_ADMIN_PASSWORD = '1271573';
 
+const MAX_CIRCULAR_SIZE = 10 * 1024 * 1024;
+export const MAX_CIRCULAR_SIZE_BYTES = MAX_CIRCULAR_SIZE;
+
 const DEFAULT_SETTINGS = {
   principal_name: 'Prof. Shabir Ahmad',
   principal_message: '',
@@ -204,6 +207,15 @@ export const subscribeHomeContent = (onContent) => {
       onContent(DEFAULT_HOME_CONTENT);
     }
   });
+};
+
+export const subscribeApprovedGallery = (onItems) => {
+  onItems([]);
+  return () => {};
+};
+
+export const subscribeLocalChanges = (keys, onChange) => {
+  return () => {};
 };
 
 export const subscribeMeritList = (onMeritList) => {

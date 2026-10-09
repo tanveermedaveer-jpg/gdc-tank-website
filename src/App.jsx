@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import { LanguageProvider } from './context/LanguageContext';
-import NewsTicker from './components/NewsTicker';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -26,7 +23,6 @@ import AdminDashboard from './pages/AdminDashboard';
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const isHomeRoute = location.pathname === '/';
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('casdct_dark_mode') === 'true';
@@ -44,12 +40,6 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : ''}`}>
-      {/* News Ticker - Show on all pages except Admin */}
-      {!isAdminRoute && <NewsTicker />}
-
-      {/* Navigation - Hidden ONLY on Home (Home has its own navbar) and Admin */}
-      {!isAdminRoute && !isHomeRoute && <Navbar />}
-
       {/* Main Content Area */}
       <main className="flex-grow flex flex-col">
         <Routes>
@@ -73,9 +63,6 @@ function AppContent() {
           <Route path="*" element={<Home />} />
         </Routes>
       </main>
-
-      {/* Footer - Hidden ONLY on Home (Home manages its footer) and Admin */}
-      {!isAdminRoute && !isHomeRoute && <Footer />}
     </div>
   );
 }

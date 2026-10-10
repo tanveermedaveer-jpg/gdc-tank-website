@@ -219,34 +219,34 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         
         if (supabaseError) throw supabaseError;
 
-        const mappedAdmissions = (supabaseAdmissions || []).map(row => ({
-          regId: row.id,
-          fullName: row.full_name || row.name || 'N/A',
-          fatherName: row.father_name || '',
-          program: row.program || '',
-          marksText: `${row.obtained_marks || ''}/${row.total_marks || ''}`,
-          meritPct: Number(row.percentage || 0),
-          matricMarks: row.obtained_marks || 0,
-          matricTotal: row.total_marks || 1100,
-          status: row.status || 'pending',
-          appliedAt: row.created_at,
-          ...row
-        }));
-
-        const data = await adminRequest('admin.bootstrap');
-        if (!isMounted) return;
-        setAdmissions(sortMeritDescending(mappedAdmissions));
-        setMediaUploads(data.gallery || []);
-        setFacultyMembers(data.faculty || []);
-        setCirculars(data.circulars || []);
-        setAdminName(data.username || getAdminSessionUsername());
-        setPrincipalName(data.settings.principal_name || '');
-        setPrincipalMessage(data.settings.principal_message || '');
-        setPrincipalImage(data.settings.principal_image_url || principalImg);
-        setCollegePhone(data.settings.phone || COLLEGE_PHONE);
-        setCollegeAddress(data.settings.address || COLLEGE_ADDRESS);
-        setIsMeritListLive(data.settings.merit_list_live === true);
-        setAdminDataError('');
+    const mappedAdmissions = (supabaseAdmissions || []).map(row => ({
+        regId: row.id,
+        studentName: row.studentName || row.full_name || row.name || 'N/A',
+        fullName: row.studentName || row.full_name || row.name || 'N/A',
+        fatherName: row.fatherName || row.father_name || '',
+        program: row.program || '',
+        marksText: `${row.obtained_marks || row.marks || ''}/${row.total_marks || ''}`,
+        meritPct: Number(row.meritPct || row.percentage || 0),
+        matricMarks: row.obtained_marks || row.marks || 0,
+        matricTotal: row.total_marks || 1100,
+        status: row.status || 'pending',
+        appliedAt: row.created_at,
+        ...row
+      }));
+const data = await adminRequest('admin.bootstrap');
+      if (!isMounted) return;
+      setAdmissions(sortMeritDescending(mappedAdmissions));
+      setMediaUploads(data?.gallery || []);
+      setFacultyMembers(data?.faculty || []);
+      setCirculars(data?.circulars || []);
+      setAdminName(data?.username || getAdminSessionUsername());
+      setPrincipalName(data?.settings?.principal_name || '');
+      setPrincipalMessage(data?.settings?.principal_message || '');
+      setPrincipalImage(data?.settings?.principal_image_url || principalImg);
+      setCollegePhone(data?.settings?.phone || COLLEGE_PHONE);
+      setCollegeAddress(data?.settings?.address || COLLEGE_ADDRESS);
+      setIsMeritListLive(data?.settings?.merit_list_live === true);
+      setAdminDataError('');
       } catch (error) {
         if (!isMounted) return;
         console.error('Unable to load shared admin records:', error);

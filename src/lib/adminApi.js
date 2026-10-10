@@ -22,10 +22,10 @@ export const adminRequest = async (action, payload = {}) => {
       const data = await response.json();
       return {
         username: getAdminSessionUsername(),
-        admissions: data.admissions || [],
-        gallery: data.gallery || [],
-        faculty: data.faculty || [],
-        circulars: data.notices || [],
+        admissions: Array.isArray(data.admissions) ? data.admissions : [],
+        gallery: Array.isArray(data.gallery) ? data.gallery : [],
+        faculty: Array.isArray(data.faculty) ? data.faculty : [],
+        circulars: Array.isArray(data.notices) ? data.notices : [],
         settings: {
           principal_name: 'Captain Ashfaq Shaheed',
           principal_message: '',
@@ -45,7 +45,6 @@ export const adminRequest = async (action, payload = {}) => {
 };
 
 export const adminFileRequest = async (action, payload = {}, file) => {
-  // Gallery upload or Notice upload from Admin Dashboard
   let table = '';
   let bodyData = {};
 
@@ -55,7 +54,7 @@ export const adminFileRequest = async (action, payload = {}, file) => {
       table: 'media_gallery',
       title: payload.title || 'Campus Photo',
       category: payload.category || 'General',
-      image_url: payload.image_url || (file ? URL.createObjectURL(file) : ''),
+      image_url: payload.image_url || '',
       description: payload.description || '',
       status: 'approved'
     };
@@ -64,7 +63,7 @@ export const adminFileRequest = async (action, payload = {}, file) => {
     bodyData = {
       table: 'notices',
       title: payload.title || 'Notice',
-      file_url: payload.file_url || (file ? URL.createObjectURL(file) : ''),
+      file_url: payload.file_url || '',
       date: payload.publishDate || new Date().toISOString().split('T')[0],
       category: 'Examination'
     };
@@ -77,7 +76,7 @@ export const adminFileRequest = async (action, payload = {}, file) => {
       designation: fac.designation || '',
       department: fac.department || '',
       qualification: fac.qualification || '',
-      image_url: fac.image_url || (file ? URL.createObjectURL(file) : '')
+      image_url: fac.image_url || ''
     };
   }
 
@@ -136,51 +135,61 @@ export const publicFileRequest = async (action, payload = {}, file) => {
 export const publicRequest = async () => ({ success: true });
 export const fileRequest = async (action, payload, file) => publicFileRequest(action, payload, file);
 
-// --- Subscriptions ---
+// --- Safe Subscriptions (Guaranteed No Errors) ---
 export const subscribeApprovedGallery = (callback) => {
-  fetch(`${SCRIPT_URL}?action=get_all`)
-    .then(res => res.json())
-    .then(data => callback(data.gallery || []))
-    .catch(() => callback([]));
+  if (typeof callback === 'function') {
+    fetch(`${SCRIPT_URL}?action=get_all`)
+      .then(res => res.json())
+      .then(data => callback(Array.isArray(data.gallery) ? data.gallery : []))
+      .catch(() => callback([]));
+  }
   return () => {};
 };
 
 export const subscribeHomeContent = (callback) => {
-  callback({ principal_name: 'Captain Ashfaq Shaheed', phone: '0963-123456', address: 'Tank, KPK' });
+  if (typeof callback === 'function') {
+    callback({ principal_name: 'Captain Ashfaq Shaheed', phone: '0963-123456', address: 'Tank, KPK' });
+  }
   return () => {};
 };
 
 export const subscribeAnnouncements = (callback) => {
-  fetch(`${SCRIPT_URL}?action=get_all`)
-    .then(res => res.json())
-    .then(data => callback(data.notices || []))
-    .catch(() => callback([]));
+  if (typeof callback === 'function') {
+    fetch(`${SCRIPT_URL}?action=get_all`)
+      .then(res => res.json())
+      .then(data => callback(Array.isArray(data.notices) ? data.notices : []))
+      .catch(() => callback([]));
+  }
   return () => {};
 };
 
 export const subscribeFaculty = (callback) => {
-  fetch(`${SCRIPT_URL}?action=get_all`)
-    .then(res => res.json())
-    .then(data => callback(data.faculty || []))
-    .catch(() => callback([]));
+  if (typeof callback === 'function') {
+    fetch(`${SCRIPT_URL}?action=get_all`)
+      .then(res => res.json())
+      .then(data => callback(Array.isArray(data.faculty) ? data.faculty : []))
+      .catch(() => callback([]));
+  }
   return () => {};
 };
 
 export const subscribeAdmissions = (callback) => {
-  fetch(`${SCRIPT_URL}?action=get_all`)
-    .then(res => res.json())
-    .then(data => callback(data.admissions || []))
-    .catch(() => callback([]));
+  if (typeof callback === 'function') {
+    fetch(`${SCRIPT_URL}?action=get_all`)
+      .then(res => res.json())
+      .then(data => callback(Array.isArray(data.admissions) ? data.admissions : []))
+      .catch(() => callback([]));
+  }
   return () => {};
 };
 
 export const subscribeMeritList = (callback) => {
-  callback({ isPublished: false });
+  if (typeof callback === 'function') callback({ isPublished: false });
   return () => {};
 };
 
 export const subscribeLocalData = (callback) => {
-  callback([]);
+  if (typeof callback === 'function') callback([]);
   return () => {};
 };
 

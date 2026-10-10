@@ -2,20 +2,23 @@ import { supabase } from './supabase.js';
 
 export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
 
+// --- Helper Functions to Resolve File URLs Safely ---
 export const getLocalFileUrl = (file) => {
+  if (!file) return '';
   if (typeof file === 'string') return file;
-  return file?.image_url || file?.file_url || file?.photo_url || file?.url || '';
+  return file.image_url || file.file_url || file.photo_url || file.url || '';
 };
 export const getFileUrl = (file) => getLocalFileUrl(file);
 export const getPublicFileUrl = (file) => getLocalFileUrl(file);
+export const publicFileUrl = (file) => getLocalFileUrl(file);
+export const localFileUrl = (file) => getLocalFileUrl(file);
 
 export const getAdminSessionUsername = () => localStorage.getItem('adminUser') || 'admin';
 export const signOutAdmin = () => localStorage.removeItem('adminUser');
 
-// --- Universal Supabase Storage File Upload ---
+// --- Supabase Storage File Upload Handler ---
 const uploadFileToSupabaseStorage = async (file, bucketName = 'media') => {
   if (!file) return '';
-  
   try {
     const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
@@ -25,7 +28,7 @@ const uploadFileToSupabaseStorage = async (file, bucketName = 'media') => {
       .upload(fileName, file, { upsert: true, cacheControl: '3600' });
 
     if (uploadError) {
-      console.error(`Upload Error (${bucketName}):`, uploadError.message);
+      console.error(`Storage Upload Error (${bucketName}):`, uploadError.message);
       return '';
     }
 
@@ -37,14 +40,14 @@ const uploadFileToSupabaseStorage = async (file, bucketName = 'media') => {
   }
 };
 
-// --- Admin Data Handler ---
+// --- Main Admin Requests (Data Operations) ---
 export const adminRequest = async (action, payload = {}) => {
   switch (action) {
     case 'admin.bootstrap': {
       const [admissionsRes, galleryRes, facultyRes, noticesRes, settingsRes] = await Promise.all([
         supabase.from('admissions').select('*').order('created_at', { ascending: false }),
         supabase.from('media_gallery').select('*').order('created_at', { ascending: false }),
-        supabase.from('faculty').select('*'),
+        supabase.from('faculty').select('*').order('created_at', { ascending: false }),
         supabase.from('notices').select('*').order('created_at', { ascending: false }),
         supabase.from('site_content').select('*')
       ]);
@@ -136,8 +139,9 @@ export const adminRequest = async (action, payload = {}) => {
   }
 };
 
-// --- File Upload Handler for Gallery, Faculty, & Circulars ---
+// --- File Upload Requests (Admin & User Submissions) ---
 export const adminFileRequest = async (action, payload = {}, file) => {
+  // Admin Media Gallery Upload
   if (action === 'admin.gallery.upload') {
     const publicUrl = await uploadFileToSupabaseStorage(file, 'media');
     const { title, category, description } = payload;
@@ -147,7 +151,6 @@ export const adminFileRequest = async (action, payload = {}, file) => {
         title: title || 'Campus Photo', 
         category: category || 'General', 
         image_url: publicUrl, 
-        url: publicUrl,
         description: description || '', 
         status: 'approved' 
       }])
@@ -157,6 +160,7 @@ export const adminFileRequest = async (action, payload = {}, file) => {
     return data;
   }
 
+  // Circulars / Examinations PDF Upload
   if (action === 'admin.circular.save') {
     const publicUrl = await uploadFileToSupabaseStorage(file, 'circulars');
     const { title, publishDate } = payload;
@@ -169,19 +173,22 @@ export const adminFileRequest = async (action, payload = {}, file) => {
     return data;
   }
 
+  // Faculty Profile Save / Upload
   if (action === 'admin.faculty.save') {
     let photoUrl = payload.faculty?.image_url || payload.faculty?.photo_url || '';
     if (file) {
       photoUrl = await uploadFileToSupabaseStorage(file, 'faculty');
     }
     const facultyData = { 
-      ...payload.faculty, 
-      image_url: photoUrl, 
-      photo_url: photoUrl 
+      name: payload.faculty?.name || '',
+      designation: payload.faculty?.designation || '',
+      department: payload.faculty?.department || '',
+      qualification: payload.faculty?.qualification || '',
+      image_url: photoUrl
     };
 
-    const query = facultyData.id
-      ? supabase.from('faculty').update(facultyData).eq('id', facultyData.id).select().single()
+    const query = payload.faculty?.id
+      ? supabase.from('faculty').update(facultyData).eq('id', payload.faculty.id).select().single()
       : supabase.from('faculty').insert([facultyData]).select().single();
 
     const { data, error } = await query;
@@ -192,11 +199,35 @@ export const adminFileRequest = async (action, payload = {}, file) => {
   return { success: true };
 };
 
-export const publicFileRequest = async () => ({ success: true });
-export const publicRequest = async () => ({ success: true });
-export const fileRequest = async () => ({ success: true });
+// --- Public / User Submissions (When User Shares Media with Admin) ---
+export const publicFileRequest = async (action, payload = {}, file) => {
+  if (action === 'public.gallery.upload' || action === 'user.gallery.share') {
+    const publicUrl = await uploadFileToSupabaseStorage(file, 'media');
+    const { title, category, description, uploaderName } = payload;
+    
+    // Inserts user submission directly into media_gallery for Admin Moderation
+    const { data, error } = await supabase
+      .from('media_gallery')
+      .insert([{ 
+        title: title || 'User Submitted Photo', 
+        category: category || 'General', 
+        image_url: publicUrl, 
+        description: description ? `${description} (Uploaded by: ${uploaderName || 'Student'})` : `Uploaded by: ${uploaderName || 'Student'}`, 
+        status: 'pending' 
+      }])
+      .select()
+      .single();
 
-// --- Realtime Subscriptions ---
+    if (error) throw error;
+    return data;
+  }
+  return { success: true };
+};
+
+export const publicRequest = async () => ({ success: true });
+export const fileRequest = async (action, payload, file) => publicFileRequest(action, payload, file);
+
+// --- Realtime Subscriptions (Syncs Home Page & Admin Instantly) ---
 export const subscribeApprovedGallery = (callback) => {
   const fetchGallery = async () => {
     const { data } = await supabase.from('media_gallery').select('*').order('created_at', { ascending: false });
@@ -205,7 +236,7 @@ export const subscribeApprovedGallery = (callback) => {
   fetchGallery();
 
   const channel = supabase
-    .channel('public:media_gallery')
+    .channel('public:media_gallery_all')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'media_gallery' }, () => {
       fetchGallery();
     })
@@ -214,29 +245,73 @@ export const subscribeApprovedGallery = (callback) => {
   return () => supabase.removeChannel(channel);
 };
 
-export const subscribeLocalData = (callback) => {
-  if (typeof callback === 'function') callback([]);
-  return () => {};
-};
-
 export const subscribeHomeContent = (callback) => {
-  supabase.from('site_content').select('*').then(({ data }) => {
+  const fetchHomeContent = async () => {
+    const { data } = await supabase.from('site_content').select('*');
     const homeSetting = (data || []).find(item => item.key === 'home_settings')?.value || {};
     if (typeof callback === 'function') callback(homeSetting);
-  });
-  return () => {};
+  };
+  fetchHomeContent();
+
+  const channel = supabase
+    .channel('public:site_content')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'site_content' }, () => {
+      fetchHomeContent();
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
 };
 
-export const subscribeWaitList = (callback) => {
-  if (typeof callback === 'function') callback([]);
-  return () => {};
+export const subscribeAnnouncements = (callback) => {
+  const fetchNotices = async () => {
+    const { data } = await supabase.from('notices').select('*').order('created_at', { ascending: false });
+    if (typeof callback === 'function') callback(data || []);
+  };
+  fetchNotices();
+
+  const channel = supabase
+    .channel('public:notices')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, () => {
+      fetchNotices();
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+};
+
+export const subscribeFaculty = (callback) => {
+  const fetchFaculty = async () => {
+    const { data } = await supabase.from('faculty').select('*').order('created_at', { ascending: false });
+    if (typeof callback === 'function') callback(data || []);
+  };
+  fetchFaculty();
+
+  const channel = supabase
+    .channel('public:faculty')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'faculty' }, () => {
+      fetchFaculty();
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
 };
 
 export const subscribeAdmissions = (callback) => {
-  supabase.from('admissions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+  const fetchAdmissions = async () => {
+    const { data } = await supabase.from('admissions').select('*').order('created_at', { ascending: false });
     if (typeof callback === 'function') callback(data || []);
-  });
-  return () => {};
+  };
+  fetchAdmissions();
+
+  const channel = supabase
+    .channel('public:admissions')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'admissions' }, () => {
+      fetchAdmissions();
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
 };
 
 export const subscribeMeritList = (callback) => {
@@ -247,18 +322,17 @@ export const subscribeMeritList = (callback) => {
   return () => {};
 };
 
-export const subscribeLocalChanges = subscribeApprovedGallery;
-export const subscribeAnnouncements = (callback) => {
-  supabase.from('notices').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-    if (typeof callback === 'function') callback(data || []);
-  });
+// Aliases for fallback components
+export const subscribeLocalData = (callback) => {
+  if (typeof callback === 'function') callback([]);
   return () => {};
 };
+export const subscribeWaitList = subscribeLocalData;
+export const subscribeWaitlist = subscribeLocalData;
+export const subscribeLocalChanges = subscribeApprovedGallery;
 export const subscribeSiteContent = subscribeHomeContent;
 export const subscribeAdminData = subscribeHomeContent;
-
 export const subscribeLocalDataList = subscribeLocalData;
-export const subscribeWaitlist = subscribeWaitList;
 export const subscribeApprovedGalleryList = subscribeApprovedGallery;
 export const subscribeGallery = subscribeApprovedGallery;
 
@@ -272,5 +346,6 @@ export default {
   subscribeLocalChanges,
   subscribeAnnouncements,
   subscribeSiteContent,
-  subscribeAdminData
+  subscribeAdminData,
+  subscribeFaculty
 };

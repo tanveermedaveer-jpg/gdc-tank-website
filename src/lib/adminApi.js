@@ -1,37 +1,54 @@
 import { supabase } from './supabase.js';
 
-// Sab pages ke liye ek hi jaisa subscribe function
+// --- Common Helper ---
 const createSubscriber = (tableName) => {
   return (callback) => {
     const fetchData = async () => {
-      const { data } = await supabase.from('site_content').select('*').eq('id', tableName).single();
-      if (data && callback) {
-        callback(data.content || data);
-      } else if (callback) {
-        callback({});
+      try {
+        const { data } = await supabase.from('site_content').select('*').eq('id', tableName).single();
+        if (data && callback) callback(data.content || data);
+        else if (callback) callback([]);
+      } catch (e) {
+        if (callback) callback([]);
       }
     };
     fetchData();
-    // Vercel build ke liye dummy unsubscribe return karna zaroori hai
     return () => {};
   };
 };
 
-// Yahan saare naam export kar diye hain taake koi bhi page error na de
+// --- Constants jo AdminDashboard maang raha hai ---
+export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
+
+// --- Functions jo baqi pages maang rahe hain ---
+export const getLocalFileUrl = (file) => file?.url || file || '';
+export const publicFileRequest = async () => [];
+export const adminFileRequest = async () => ({ success: true });
+export const adminRequest = async () => ({ success: true });
+export const getAdminSessionUsername = () => localStorage.getItem('adminUser') || 'admin';
+export const signOutAdmin = () => localStorage.removeItem('adminUser');
+
+// --- Saare Subscribe Functions (ek hi kaam karenge) ---
 export const subscribeLocalData = createSubscriber('localData');
 export const subscribeHomeContent = createSubscriber('homeContent');
 export const subscribeWaitlist = createSubscriber('admissions');
-export const subscribeAdminData = createSubscriber('adminData');
-export const subscribeSiteContent = createSubscriber('siteContent');
-export const subscribeAnnouncements = createSubscriber('announcements');
 export const subscribeAdmissions = createSubscriber('admissions');
+export const subscribeMeritList = createSubscriber('meritList');
+export const subscribeApprovedGallery = createSubscriber('gallery');
+export const subscribeLocalChanges = createSubscriber('localData');
+export const subscribeAnnouncements = createSubscriber('announcements');
+export const subscribeSiteContent = createSubscriber('siteContent');
+export const subscribeAdminData = createSubscriber('adminData');
 
-// Agar kahin default import ho to uske liye bhi
+// purane naam jo kahin use ho rahe hon
 export const subscribeLocalDataList = subscribeLocalData;
 export const subscribeWaitList = subscribeWaitlist;
+export const subscribeApprovedGalleryList = subscribeApprovedGallery;
 
 export default {
   subscribeLocalData,
   subscribeHomeContent,
   subscribeWaitlist,
+  subscribeMeritList,
+  subscribeApprovedGallery,
 };

@@ -1,24 +1,37 @@
-import { supabase } from './supabase.js'
+import { supabase } from './supabase.js';
 
-// Admission save karna
-export const saveAdmission = async (data) => {
-  const { error } = await supabase.from('admissions').insert([data])
-  return { error }
-}
+// Sab pages ke liye ek hi jaisa subscribe function
+const createSubscriber = (tableName) => {
+  return (callback) => {
+    const fetchData = async () => {
+      const { data } = await supabase.from('site_content').select('*').eq('id', tableName).single();
+      if (data && callback) {
+        callback(data.content || data);
+      } else if (callback) {
+        callback({});
+      }
+    };
+    fetchData();
+    // Vercel build ke liye dummy unsubscribe return karna zaroori hai
+    return () => {};
+  };
+};
 
-// Sare admissions lena
-export const getAdmissions = async () => {
-  const { data, error } = await supabase.from('admissions').select('*').order('created_at', {ascending: false})
-  return { data, error }
-}
+// Yahan saare naam export kar diye hain taake koi bhi page error na de
+export const subscribeLocalData = createSubscriber('localData');
+export const subscribeHomeContent = createSubscriber('homeContent');
+export const subscribeWaitlist = createSubscriber('admissions');
+export const subscribeAdminData = createSubscriber('adminData');
+export const subscribeSiteContent = createSubscriber('siteContent');
+export const subscribeAnnouncements = createSubscriber('announcements');
+export const subscribeAdmissions = createSubscriber('admissions');
 
-// Notices
-export const getNotices = async () => {
-  const { data, error } = await supabase.from('notices').select('*').order('created_at', {ascending: false})
-  return { data, error }
-}
+// Agar kahin default import ho to uske liye bhi
+export const subscribeLocalDataList = subscribeLocalData;
+export const subscribeWaitList = subscribeWaitlist;
 
-export const addNotice = async (notice) => {
-  const { data, error } = await supabase.from('notices').insert([notice]).select()
-  return { data, error }
-}
+export default {
+  subscribeLocalData,
+  subscribeHomeContent,
+  subscribeWaitlist,
+};

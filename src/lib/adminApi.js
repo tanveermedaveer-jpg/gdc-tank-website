@@ -2,7 +2,6 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrugcvacClSlDHN38Gn
 
 export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
 
-// Safe File Helpers
 export const getLocalFileUrl = (file) => {
   if (!file) return '';
   if (typeof file === 'string') return file;
@@ -13,11 +12,9 @@ export const getPublicFileUrl = (file) => getLocalFileUrl(file);
 export const publicFileUrl = (file) => getLocalFileUrl(file);
 export const localFileUrl = (file) => getLocalFileUrl(file);
 
-// Session Helpers
 export const getAdminSessionUsername = () => localStorage.getItem('adminUser') || 'admin';
 export const signOutAdmin = () => localStorage.removeItem('adminUser');
 
-// File to Base64 Converter for Google Apps Script
 const fileToBase64 = (file) => new Promise((resolve) => {
   if (!file) { resolve(''); return; }
   const reader = new FileReader();
@@ -27,7 +24,6 @@ const fileToBase64 = (file) => new Promise((resolve) => {
   reader.onerror = () => resolve('');
 });
 
-// Main Admin API Requests
 export const adminRequest = async (action, payload = {}) => {
   if (action === 'admin.bootstrap') {
     try {
@@ -67,7 +63,6 @@ export const adminRequest = async (action, payload = {}) => {
   }
 };
 
-// Admin File Upload Handler
 export const adminFileRequest = async (action, payload = {}, file) => {
   let table = '';
   let bodyData = {};
@@ -129,7 +124,6 @@ export const adminFileRequest = async (action, payload = {}, file) => {
   return { success: true };
 };
 
-// Public Forms Submission Handler (Admissions & User Uploads)
 export const publicFileRequest = async (action, payload = {}, file) => {
   let fileBase64 = '';
   if (file) {
@@ -183,7 +177,6 @@ export const publicFileRequest = async (action, payload = {}, file) => {
 export const publicRequest = async () => ({ success: true });
 export const fileRequest = async (action, payload, file) => publicFileRequest(action, payload, file);
 
-// --- Safe Subscriptions (Guarantees site opens without white screen) ---
 export const subscribeApprovedGallery = (callback) => {
   if (typeof callback === 'function') {
     fetch(`${SCRIPT_URL}?action=get_all`)
@@ -196,3 +189,70 @@ export const subscribeApprovedGallery = (callback) => {
 
 export const subscribeHomeContent = (callback) => {
   if (typeof callback === 'function') {
+    callback({ principal_name: 'Captain Ashfaq Shaheed', phone: '0963-123456', address: 'Tank, KPK' });
+  }
+  return () => {};
+};
+
+export const subscribeAnnouncements = (callback) => {
+  if (typeof callback === 'function') {
+    fetch(`${SCRIPT_URL}?action=get_all`)
+      .then(res => res.json())
+      .then(data => callback(Array.isArray(data.notices) ? data.notices : []))
+      .catch(() => callback([]));
+  }
+  return () => {};
+};
+
+export const subscribeFaculty = (callback) => {
+  if (typeof callback === 'function') {
+    fetch(`${SCRIPT_URL}?action=get_all`)
+      .then(res => res.json())
+      .then(data => callback(Array.isArray(data.faculty) ? data.faculty : []))
+      .catch(() => callback([]));
+  }
+  return () => {};
+};
+
+export const subscribeAdmissions = (callback) => {
+  if (typeof callback === 'function') {
+    fetch(`${SCRIPT_URL}?action=get_all`)
+      .then(res => res.json())
+      .then(data => callback(Array.isArray(data.admissions) ? data.admissions : []))
+      .catch(() => callback([]));
+  }
+  return () => {};
+};
+
+export const subscribeMeritList = (callback) => {
+  if (typeof callback === 'function') callback({ isPublished: false });
+  return () => {};
+};
+
+export const subscribeLocalData = (callback) => {
+  if (typeof callback === 'function') callback([]);
+  return () => {};
+};
+
+export const subscribeWaitList = subscribeLocalData;
+export const subscribeWaitlist = subscribeLocalData;
+export const subscribeLocalChanges = subscribeApprovedGallery;
+export const subscribeSiteContent = subscribeHomeContent;
+export const subscribeAdminData = subscribeHomeContent;
+export const subscribeLocalDataList = subscribeLocalData;
+export const subscribeApprovedGalleryList = subscribeApprovedGallery;
+export const subscribeGallery = subscribeApprovedGallery;
+
+export default {
+  subscribeLocalData,
+  subscribeHomeContent,
+  subscribeWaitList,
+  subscribeAdmissions,
+  subscribeMeritList,
+  subscribeApprovedGallery,
+  subscribeLocalChanges,
+  subscribeAnnouncements,
+  subscribeSiteContent,
+  subscribeAdminData,
+  subscribeFaculty
+};

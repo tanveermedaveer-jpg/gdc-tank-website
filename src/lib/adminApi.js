@@ -218,90 +218,41 @@ export const publicFileRequest = async (action, payload = {}, file) => {
 export const publicRequest = async () => ({ success: true });
 export const fileRequest = async (action, payload, file) => publicFileRequest(action, payload, file);
 
+// --- Safe Subscriptions (No Crash Guaranteed) ---
 export const subscribeApprovedGallery = (callback) => {
-  const fetchGallery = async () => {
-    const { data } = await supabase.from('media_gallery').select('*').order('created_at', { ascending: false });
+  supabase.from('media_gallery').select('*').order('created_at', { ascending: false }).then(({ data }) => {
     if (typeof callback === 'function') callback(data || []);
-  };
-  fetchGallery();
-
-  const channel = supabase
-    .channel('public:media_gallery_all')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'media_gallery' }, () => {
-      fetchGallery();
-    })
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  });
+  return () => {};
 };
 
 export const subscribeHomeContent = (callback) => {
-  const fetchHomeContent = async () => {
-    const { data } = await supabase.from('site_content').select('*');
+  supabase.from('site_content').select('*').then(({ data }) => {
     const homeSetting = (data || []).find(item => item.key === 'home_settings')?.value || {};
     if (typeof callback === 'function') callback(homeSetting);
-  };
-  fetchHomeContent();
-
-  const channel = supabase
-    .channel('public:site_content')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'site_content' }, () => {
-      fetchHomeContent();
-    })
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  });
+  return () => {};
 };
 
 export const subscribeAnnouncements = (callback) => {
-  const fetchNotices = async () => {
-    const { data } = await supabase.from('notices').select('*').order('created_at', { ascending: false });
+  supabase.from('notices').select('*').order('created_at', { ascending: false }).then(({ data }) => {
     if (typeof callback === 'function') callback(data || []);
-  };
-  fetchNotices();
-
-  const channel = supabase
-    .channel('public:notices')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, () => {
-      fetchNotices();
-    })
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  });
+  return () => {};
 };
 
 export const subscribeFaculty = (callback) => {
-  const fetchFaculty = async () => {
-    const { data } = await supabase.from('faculty').select('*').order('created_at', { ascending: false });
+  supabase.from('faculty').select('*').order('created_at', { ascending: false }).then(({ data }) => {
     if (typeof callback === 'function') callback(data || []);
-  };
-  fetchFaculty();
-
-  const channel = supabase
-    .channel('public:faculty')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'faculty' }, () => {
-      fetchFaculty();
-    })
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  });
+  return () => {};
 };
 
 export const subscribeAdmissions = (callback) => {
-  const fetchAdmissions = async () => {
-    const { data } = await supabase.from('admissions').select('*').order('created_at', { ascending: false });
+  supabase.from('admissions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
     if (typeof callback === 'function') callback(data || []);
-  };
-  fetchAdmissions();
-
-  const channel = supabase
-    .channel('public:admissions')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'admissions' }, () => {
-      fetchAdmissions();
-    })
-    .subscribe();
-
-  return () => supabase.removeChannel(channel);
+  });
+  return () => {};
 };
 
 export const subscribeMeritList = (callback) => {

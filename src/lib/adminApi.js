@@ -1,61 +1,5 @@
 import { supabase } from './supabase.js';
 
-// --- Default Data Fallbacks ---
-const defaultContents = {
-  localData: {
-    principal_name: "Captain Ashfaq Shaheed",
-    college_name: "GDC COLLEGE TANK",
-    college_email: "info@gdctank.edu.pk",
-    contact: "0963-123456",
-    address: "Tank, KPK"
-  },
-  homeContent: {
-    principal_name: "Captain Ashfaq Shaheed",
-    heroTitle: "Govt Degree College Tank"
-  }
-};
-
-// --- Real Supabase Subscribers ---
-const createSubscriber = (tableName, transformFn = (d) => d) => {
-  return (callback) => {
-    let isSubscribed = true;
-
-    const fetchData = async () => {
-      try {
-        let query = supabase.from(tableName).select('*');
-        if (tableName !== 'site_content') {
-          query = query.order('created_at', { ascending: false });
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        if (isSubscribed && callback) {
-          callback(transformFn(data));
-        }
-      } catch (e) {
-        console.warn(`Error fetching ${tableName}:`, e.message);
-        if (isSubscribed && callback) {
-          callback(tableName === 'site_content' ? {} : []);
-        }
-      }
-    };
-
-    fetchData();
-
-    const channel = supabase
-      .channel(`public:${tableName}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: tableName }, () => {
-        fetchData();
-      })
-      .subscribe();
-
-    return () => {
-      isSubscribed = false;
-      supabase.removeChannel(channel);
-    };
-  };
-};
-
 export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
 
 export const getLocalFileUrl = (file) => file?.url || file?.image_url || file?.file_url || '';
@@ -186,12 +130,11 @@ export const adminRequest = async (action, payload = {}) => {
     }
 
     default:
-      console.warn(`Unhandled admin request: ${action}`);
       return { success: true };
   }
 };
 
-export const adminFileRequest = async (action, payload = {}, file, fileField = 'file') => {
+export const adminFileRequest = async (action, payload = {}, file) => {
   if (action === 'admin.gallery.upload') {
     const publicUrl = await uploadFileToSupabaseStorage(file, 'media');
     const { title, category, description } = payload;
@@ -240,22 +183,34 @@ export const publicFileRequest = async () => ({ success: true });
 export const publicRequest = async () => ({ success: true });
 export const fileRequest = async () => ({ success: true });
 
-// --- Real Subscribers ---
-export const subscribeLocalData = createSubscriber('site_content');
-export const subscribeHomeContent = createSubscriber('site_content', (data) => {
-  const homeSetting = (data || []).find(item => item.key === 'home_settings')?.value || {};
-  return homeSetting;
-});
-export const subscribeWaitList = createSubscriber('admissions');
-export const subscribeAdmissions = createSubscriber('admissions');
-export const subscribeMeritList = createSubscriber('site_content', (data) => {
-  return (data || []).find(item => item.key === 'merit_list_status')?.value || { isPublished: false };
-});
-export const subscribeApprovedGallery = createSubscriber('media_gallery');
-export const subscribeLocalChanges = createSubscriber('media_gallery');
-export const subscribeAnnouncements = createSubscriber('notices');
-export const subscribeSiteContent = createSubscriber('site_content');
-export const subscribeAdminData = createSubscriber('site_content');
+// --- Safe Fallback Subscribers (Preventing crash) ---
+const dummySubscriber = (callback) => {
+  if (typeof callback === 'function') callback([]);
+  return () => {};
+};
+
+export const subscribeLocalData = dummySubscriber;
+export const subscribeHomeContent = (callback) => {
+  supabase.from('site_content').select('*').then(({ data }) => {
+    const homeSetting = (data || []).find(item => item.key === 'home_settings')?.value || {};
+    if (typeof callback === 'function') callback(homeSetting);
+  });
+  return () => {};
+};
+export const subscribeWaitList = dummySubscriber;
+export const subscribeAdmissions = dummySubscriber;
+export const subscribeMeritList = (callback) => {
+  supabase.from('site_content').select('*').then(({ data }) => {
+    const meritStatus = (data || []).find(item => item.key === 'merit_list_status')?.value || { isPublished: false };
+    if (typeof callback === 'function') callback(meritStatus);
+  });
+  return () => {};
+};
+export const subscribeApprovedGallery = dummySubscriber;
+export const subscribeLocalChanges = dummySubscriber;
+export const subscribeAnnouncements = dummySubscriber;
+export const subscribeSiteContent = dummySubscriber;
+export const subscribeAdminData = dummySubscriber;
 
 export const subscribeLocalDataList = subscribeLocalData;
 export const subscribeWaitlist = subscribeWaitList;

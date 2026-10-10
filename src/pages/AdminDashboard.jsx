@@ -19,18 +19,7 @@ import {
 } from '../lib/adminApi';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
 import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
-import { supabase } from '../lib/supabase.js';
-// Firebase ko Supabase se replace kar diya hai taake build fail na ho
-const db = supabase;
-const doc = (database, collectionName, docId) => ({ collectionName, docId, id: docId });
-const getDoc = async (docRef) => {
-  const { data } = await supabase.from('site_content').select('*').eq('id', docRef.id).single();
-  return { exists: () => !!data, data: () => data?.content || data };
-};
-const setDoc = async (docRef, newData) => {
-  const { error } = await supabase.from('site_content').upsert({ id: docRef.id, content: newData });
-  if (error) console.log(error);
-};
+
 const isVideoMediaFile = (file) =>
   file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
 
@@ -209,48 +198,23 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Load shared dashboard data and refresh it periodically for new applications.
   useEffect(() => {
-  let isMounted = true;
-  const loadSharedData = async (showFailure = false) => {
-    try {
-      const { data: supabaseAdmissions, error: supabaseError } = await supabase
-          .from('admissions')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (supabaseError) throw supabaseError;
-const mappedAdmissions = (supabaseAdmissions || []).map(row => {
-  const obtained = Number(row.obtained_marks || row.marks || row.matricMarks || 0);
-  const total = Number(row.total_marks || row.matricTotal || 1100);
-  const calculatedMerit = total > 0 ? ((obtained / total) * 100).toFixed(2) : '0';
-
-  return {
-    regId: row.student_id || row.regId || row.id || `CASDCT-${row.id}`,
-    studentName: row.studentName || row.full_name || row.name || row.student_name || 'N/A',
-    fullName: row.studentName || row.full_name || row.name || row.student_name || 'N/A',
-    fatherName: row.fatherName || row.father_name || '',
-    program: row.program || row.course || row.selected_program || 'N/A',
-    marksText: `${obtained}/${total}`,
-    meritPct: row.meritPct || row.percentage || calculatedMerit,
-    paymentStatus: row.payment_status || row.paymentStatus || 'Pending',
-    status: row.status || 'pending',
-    appliedAt: row.created_at,
-    ...row
-  };
-});
-const data = await adminRequest('admin.bootstrap');
-      if (!isMounted) return;
-      setAdmissions(sortMeritDescending(mappedAdmissions));
-      setMediaUploads(data?.gallery || []);
-      setFacultyMembers(data?.faculty || []);
-      setCirculars(data?.circulars || []);
-      setAdminName(data?.username || getAdminSessionUsername());
-      setPrincipalName(data?.settings?.principal_name || '');
-      setPrincipalMessage(data?.settings?.principal_message || '');
-      setPrincipalImage(data?.settings?.principal_image_url || principalImg);
-      setCollegePhone(data?.settings?.phone || COLLEGE_PHONE);
-      setCollegeAddress(data?.settings?.address || COLLEGE_ADDRESS);
-      setIsMeritListLive(data?.settings?.merit_list_live === true);
-      setAdminDataError('');
+    let isMounted = true;
+    const loadSharedData = async (showFailure = false) => {
+      try {
+        const data = await adminRequest('admin.bootstrap');
+        if (!isMounted) return;
+        setAdmissions(sortMeritDescending(data.admissions || []));
+        setMediaUploads(data.gallery || []);
+        setFacultyMembers(data.faculty || []);
+        setCirculars(data.circulars || []);
+        setAdminName(data.username || getAdminSessionUsername());
+        setPrincipalName(data.settings.principal_name || '');
+        setPrincipalMessage(data.settings.principal_message || '');
+        setPrincipalImage(data.settings.principal_image_url || principalImg);
+        setCollegePhone(data.settings.phone || COLLEGE_PHONE);
+        setCollegeAddress(data.settings.address || COLLEGE_ADDRESS);
+        setIsMeritListLive(data.settings.merit_list_live === true);
+        setAdminDataError('');
       } catch (error) {
         if (!isMounted) return;
         console.error('Unable to load shared admin records:', error);
@@ -729,11 +693,7 @@ const data = await adminRequest('admin.bootstrap');
 
     setIsSavingHomeContent(true);
     try {
-      const docRef = doc(db, 'siteContent', 'homepage');
-await setDoc(docRef, {
-  ...content,
-  updatedAt: new Date().toISOString()
-});
+      await adminRequest('admin.homeContent.save', { homeContent: content });
       setHomeContentDraft(content);
       showToast('Shared homepage content and announcements saved.', 'success');
     } catch (error) {
@@ -2108,7 +2068,7 @@ await setDoc(docRef, {
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Access & College Settings</h2>
-                <p className="text-xs text-slate-500">Manage this browser's local prototype admin credentials, along with institutional information and the principal desk message. These credentials are not secure for production.</p>
+                <p className="text-xs text-slate-500">Manage admin credentials securely in the server database, along with institutional information and the principal desk message.</p>
               </div>
 
               {settingsSaved && (
@@ -2349,6 +2309,7 @@ await setDoc(docRef, {
             </form>
             </>
           )}
+
           {/* ---------------- HELP & SUPPORT TAB ---------------- */}
           {activeTab === 'help' && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">

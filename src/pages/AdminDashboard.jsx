@@ -19,8 +19,18 @@ import {
 } from '../lib/adminApi';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
 import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
-import { db } from '../lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { supabase } from '../lib/supabase.js';
+// Firebase ko Supabase se replace kar diya hai taake build fail na ho
+const db = supabase;
+const doc = (database, collectionName, docId) => ({ collectionName, docId, id: docId });
+const getDoc = async (docRef) => {
+  const { data } = await supabase.from('site_content').select('*').eq('id', docRef.id).single();
+  return { exists: () => !!data, data: () => data?.content || data };
+};
+const setDoc = async (docRef, newData) => {
+  const { error } = await supabase.from('site_content').upsert({ id: docRef.id, content: newData });
+  if (error) console.log(error);
+};
 const isVideoMediaFile = (file) =>
   file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
 

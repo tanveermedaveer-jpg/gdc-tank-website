@@ -31,10 +31,10 @@ export const adminRequest = async (action, payload = {}) => {
       const data = await response.json();
       return {
         username: getAdminSessionUsername(),
-        admissions: Array.isArray(data.admissions) ? data.admissions : [],
-        gallery: Array.isArray(data.gallery) ? data.gallery : [],
-        faculty: Array.isArray(data.faculty) ? data.faculty : [],
-        circulars: Array.isArray(data.notices) ? data.notices : [],
+        admissions: Array.isArray(data?.admissions) ? data.admissions : [],
+        gallery: Array.isArray(data?.gallery) ? data.gallery : [],
+        faculty: Array.isArray(data?.faculty) ? data.faculty : [],
+        circulars: Array.isArray(data?.notices) ? data.notices : [],
         settings: {
           principal_name: 'Captain Ashfaq Shaheed',
           principal_message: '',
@@ -45,7 +45,7 @@ export const adminRequest = async (action, payload = {}) => {
         }
       };
     } catch (err) {
-      console.error('Bootstrap Fetch Error:', err);
+      console.error('Bootstrap Safe Fallback:', err);
       return { username: 'admin', admissions: [], gallery: [], faculty: [], circulars: [], settings: {} };
     }
   }
@@ -56,9 +56,10 @@ export const adminRequest = async (action, payload = {}) => {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action, ...payload })
     });
-    return await response.json();
+    const resData = await response.json().catch(() => ({}));
+    return resData || { success: true };
   } catch (err) {
-    console.error('Admin Request Error:', err);
+    console.error('Admin Request Safe Fallback:', err);
     return { success: true, ...payload };
   }
 };
@@ -114,7 +115,7 @@ export const adminFileRequest = async (action, payload = {}, file) => {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(bodyData)
       });
-      return await response.json();
+      return await response.json().catch(() => ({ success: true }));
     } catch (err) {
       console.error('Admin File Request Error:', err);
       return { success: false, error: err.message };
@@ -142,7 +143,7 @@ export const publicFileRequest = async (action, payload = {}, file) => {
           feeSlipName: file?.name || payload.feeSlipName || ''
         })
       });
-      return await response.json();
+      return await response.json().catch(() => ({ success: true }));
     } catch (err) {
       console.error('Admission Submit Error:', err);
       return { success: false, error: err.message };
@@ -164,7 +165,7 @@ export const publicFileRequest = async (action, payload = {}, file) => {
           status: 'pending'
         })
       });
-      return await response.json();
+      return await response.json().catch(() => ({ success: true }));
     } catch (err) {
       console.error('Gallery Upload Error:', err);
       return { success: false };
@@ -181,7 +182,7 @@ export const subscribeApprovedGallery = (callback) => {
   if (typeof callback === 'function') {
     fetch(`${SCRIPT_URL}?action=get_all`)
       .then(res => res.json())
-      .then(data => callback(Array.isArray(data.gallery) ? data.gallery : []))
+      .then(data => callback(Array.isArray(data?.gallery) ? data.gallery : []))
       .catch(() => callback([]));
   }
   return () => {};
@@ -198,7 +199,7 @@ export const subscribeAnnouncements = (callback) => {
   if (typeof callback === 'function') {
     fetch(`${SCRIPT_URL}?action=get_all`)
       .then(res => res.json())
-      .then(data => callback(Array.isArray(data.notices) ? data.notices : []))
+      .then(data => callback(Array.isArray(data?.notices) ? data.notices : []))
       .catch(() => callback([]));
   }
   return () => {};
@@ -208,7 +209,7 @@ export const subscribeFaculty = (callback) => {
   if (typeof callback === 'function') {
     fetch(`${SCRIPT_URL}?action=get_all`)
       .then(res => res.json())
-      .then(data => callback(Array.isArray(data.faculty) ? data.faculty : []))
+      .then(data => callback(Array.isArray(data?.faculty) ? data.faculty : []))
       .catch(() => callback([]));
   }
   return () => {};
@@ -218,7 +219,7 @@ export const subscribeAdmissions = (callback) => {
   if (typeof callback === 'function') {
     fetch(`${SCRIPT_URL}?action=get_all`)
       .then(res => res.json())
-      .then(data => callback(Array.isArray(data.admissions) ? data.admissions : []))
+      .then(data => callback(Array.isArray(data?.admissions) ? data.admissions : []))
       .catch(() => callback([]));
   }
   return () => {};

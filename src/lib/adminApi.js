@@ -1,259 +1,151 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZQ-2NU28epOYdFRE_cx02MzoEgunRMvJ6KjN_zNFM-YuRFYmdsoKhT5vXbei2MwrU/exec';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { adminRequest, getAdminSessionUsername, signOutAdmin } from '../lib/adminApi';
 
-export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('admissions');
+  const [data, setData] = useState({
+    username: getAdminSessionUsername(),
+    admissions: [],
+    gallery: [],
+    faculty: [],
+    circulars: [],
+    settings: {}
+  });
 
-export const getLocalFileUrl = (file) => {
-  if (!file) return '';
-  if (typeof file === 'string') return file;
-  return file.image_url || file.file_url || file.photo_url || file.url || '';
-};
-export const getFileUrl = (file) => getLocalFileUrl(file);
-export const getPublicFileUrl = (file) => getLocalFileUrl(file);
-export const publicFileUrl = (file) => getLocalFileUrl(file);
-export const localFileUrl = (file) => getLocalFileUrl(file);
-
-export const getAdminSessionUsername = () => localStorage.getItem('adminUser') || 'admin';
-export const signOutAdmin = () => localStorage.removeItem('adminUser');
-
-const fileToBase64 = (file) => new Promise((resolve) => {
-  if (!file) { resolve(''); return; }
-  const reader = new FileReader();
-  const blob = file instanceof Blob ? file : new Blob([file]);
-  reader.readAsDataURL(blob);
-  reader.onload = () => resolve(reader.result || '');
-  reader.onerror = () => resolve('');
-});
-
-export const adminRequest = async (action, payload = {}) => {
-  if (action === 'admin.bootstrap') {
-    try {
-      const response = await fetch(`${SCRIPT_URL}?action=get_all`);
-      const data = await response.json();
-      return {
-        username: getAdminSessionUsername(),
-        admissions: Array.isArray(data?.admissions) ? data.admissions : [],
-        gallery: Array.isArray(data?.gallery) ? data.gallery : [],
-        faculty: Array.isArray(data?.faculty) ? data.faculty : [],
-        circulars: Array.isArray(data?.notices) ? data.notices : [],
-        settings: {
-          principal_name: 'Captain Ashfaq Shaheed',
-          principal_message: '',
-          principal_image_url: '',
-          phone: '0963-123456',
-          address: 'Tank, KPK',
-          merit_list_live: false
+  useEffect(() => {
+    let isMounted = true;
+    adminRequest('admin.bootstrap')
+      .then(res => {
+        if (isMounted && res) {
+          setData(prev => ({ ...prev, ...res }));
+          setLoading(false);
         }
-      };
-    } catch (err) {
-      console.error('Bootstrap Safe Fallback:', err);
-      return { username: 'admin', admissions: [], gallery: [], faculty: [], circulars: [], settings: {} };
-    }
-  }
-
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, ...payload })
-    });
-    const resData = await response.json().catch(() => ({}));
-    return resData || { success: true };
-  } catch (err) {
-    console.error('Admin Request Safe Fallback:', err);
-    return { success: true, ...payload };
-  }
-};
-
-export const adminFileRequest = async (action, payload = {}, file) => {
-  let table = '';
-  let bodyData = {};
-  let fileBase64 = '';
-
-  if (file) {
-    fileBase64 = await fileToBase64(file);
-  }
-
-  if (action === 'admin.gallery.upload') {
-    table = 'media_gallery';
-    bodyData = {
-      table: 'media_gallery',
-      title: payload.title || 'Campus Photo',
-      category: payload.category || 'General',
-      image_url: fileBase64 || payload.image_url || '',
-      filename: file?.name || '',
-      description: payload.description || '',
-      status: 'approved'
-    };
-  } else if (action === 'admin.circular.save') {
-    table = 'notices';
-    bodyData = {
-      table: 'notices',
-      title: payload.title || 'Notice',
-      file_url: fileBase64 || payload.file_url || '',
-      filename: file?.name || '',
-      date: payload.publishDate || new Date().toISOString().split('T')[0],
-      category: 'Examination'
-    };
-  } else if (action === 'admin.faculty.save') {
-    table = 'faculty';
-    const fac = payload.faculty || {};
-    bodyData = {
-      table: 'faculty',
-      name: fac.name || '',
-      designation: fac.designation || '',
-      department: fac.department || '',
-      qualification: fac.qualification || '',
-      image_url: fileBase64 || fac.image_url || '',
-      filename: file?.name || ''
-    };
-  }
-
-  if (table) {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(bodyData)
+      })
+      .catch(err => {
+        console.error('Admin Dashboard Load Error:', err);
+        if (isMounted) {
+          setError(err.message || 'Failed to load data');
+          setLoading(false);
+        }
       });
-      return await response.json().catch(() => ({ success: true }));
-    } catch (err) {
-      console.error('Admin File Request Error:', err);
-      return { success: false, error: err.message };
-    }
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleLogout = () => {
+    signOutAdmin();
+    navigate('/login');
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f4f6f8', fontFamily: 'sans-serif' }}>
+        <h2>ایڈمن ڈیش بورڈ لوڈ ہو رہا ہے، براہ کرم انتظار کریں...</h2>
+      </div>
+    );
   }
 
-  return { success: true };
-};
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f4f6f8', fontFamily: 'sans-serif' }}>
+      {/* Sidebar */}
+      <div style={{ width: '260px', background: '#0f172a', color: '#fff', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div>
+          <h2 style={{ fontSize: '18px', marginBottom: '30px', color: '#38bdf8' }}>کالج ایڈمن پینل</h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            <li style={{ padding: '12px 15px', cursor: 'pointer', background: activeTab === 'admissions' ? '#1e293b' : 'transparent', borderRadius: '6px', marginBottom: '8px' }} onClick={() => setActiveTab('admissions')}>
+              ادارہ جاتی داخلے (Admissions)
+            </li>
+            <li style={{ padding: '12px 15px', cursor: 'pointer', background: activeTab === 'gallery' ? '#1e293b' : 'transparent', borderRadius: '6px', marginBottom: '8px' }} onClick={() => setActiveTab('gallery')}>
+              فوٹو گیلری (Gallery)
+            </li>
+            <li style={{ padding: '12px 15px', cursor: 'pointer', background: activeTab === 'faculty' ? '#1e293b' : 'transparent', borderRadius: '6px', marginBottom: '8px' }} onClick={() => setActiveTab('faculty')}>
+              فیکلٹی ممبران (Faculty)
+            </li>
+            <li style={{ padding: '12px 15px', cursor: 'pointer', background: activeTab === 'circulars' ? '#1e293b' : 'transparent', borderRadius: '6px', marginBottom: '8px' }} onClick={() => setActiveTab('circulars')}>
+              نوٹسز اور سرکولرز (Notices)
+            </li>
+          </ul>
+        </div>
+        <div>
+          <button onClick={handleLogout} style={{ width: '100%', padding: '10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+            لاگ آؤٹ (Logout)
+          </button>
+        </div>
+      </div>
 
-export const publicFileRequest = async (action, payload = {}, file) => {
-  let fileBase64 = '';
-  if (file) {
-    fileBase64 = await fileToBase64(file);
-  }
+      {/* Main Content Area */}
+      <div style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <h1 style={{ margin: 0, fontSize: '24px', color: '#1e293b' }}>خوش آمدید، {data.username}</h1>
+          <span style={{ background: '#dcfce7', color: '#166534', padding: '6px 12px', borderRadius: '20px', fontSize: '14px', fontWeight: 'bold' }}>گوگل شیٹس کنیکتد</span>
+        </div>
 
-  if (action === 'public.admission.submit' || payload.table === 'admissions') {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          table: 'admissions',
-          ...payload,
-          feeSlipUrl: fileBase64 || payload.feeSlipUrl || '',
-          feeSlipName: file?.name || payload.feeSlipName || ''
-        })
-      });
-      return await response.json().catch(() => ({ success: true }));
-    } catch (err) {
-      console.error('Admission Submit Error:', err);
-      return { success: false, error: err.message };
-    }
-  }
+        {error && (
+          <div style={{ background: '#fee2e2', color: '#991b1b', padding: '15px', borderRadius: '6px', marginBottom: '20px' }}>
+            خرابی پیش آئی: {error}
+          </div>
+        )}
 
-  if (action === 'public.gallery.upload' || action === 'user.gallery.share') {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          table: 'media_gallery',
-          title: payload.title || 'User Photo',
-          category: payload.category || 'General',
-          image_url: fileBase64 || payload.image_url || '',
-          filename: file?.name || '',
-          description: payload.description ? `${payload.description} (By: ${payload.uploaderName || 'Student'})` : `By: ${payload.uploaderName || 'Student'}`,
-          status: 'pending'
-        })
-      });
-      return await response.json().catch(() => ({ success: true }));
-    } catch (err) {
-      console.error('Gallery Upload Error:', err);
-      return { success: false };
-    }
-  }
+        {/* Admissions Tab */}
+        {activeTab === 'admissions' && (
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3>تمام داخلہ فارمز ({Array.isArray(data.admissions) ? data.admissions.length : 0})</h3>
+            {Array.isArray(data.admissions) && data.admissions.length > 0 ? (
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                    <th style={{ padding: '10px', borderBottom: '1px solid #cbd5e1' }}>Student ID</th>
+                    <th style={{ padding: '10px', borderBottom: '1px solid #cbd5e1' }}>Name</th>
+                    <th style={{ padding: '10px', borderBottom: '1px solid #cbd5e1' }}>Father Name</th>
+                    <th style={{ padding: '10px', borderBottom: '1px solid #cbd5e1' }}>Program</th>
+                    <th style={{ padding: '10px', borderBottom: '1px solid #cbd5e1' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.admissions.map((adm, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '10px' }}>{adm[0] || adm.regId || adm.student_id || '-'}</td>
+                      <td style={{ padding: '10px' }}>{adm[1] || adm.fullName || adm.name || '-'}</td>
+                      <td style={{ padding: '10px' }}>{adm[2] || adm.fatherName || '-'}</td>
+                      <td style={{ padding: '10px' }}>{adm[10] || adm.program || '-'}</td>
+                      <td style={{ padding: '10px' }}>{adm[28] || adm.status || 'Pending'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p style={{ color: '#64748b', marginTop: '10px' }}>ابھی تک کوئی داخلہ فارم جمع نہیں ہوا یا گوگل شیٹس سے ڈیٹا لوڈ ہو رہا ہے۔</p>
+            )}
+          </div>
+        )}
 
-  return { success: true };
-};
+        {/* Gallery Tab */}
+        {activeTab === 'gallery' && (
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3>فوٹو گیلری ({Array.isArray(data.gallery) ? data.gallery.length : 0})</h3>
+            <p style={{ color: '#64748b', marginTop: '10px' }}>گیلری کا ڈیٹا یہاں ظاہر ہوگا۔</p>
+          </div>
+        )}
 
-export const publicRequest = async () => ({ success: true });
-export const fileRequest = async (action, payload, file) => publicFileRequest(action, payload, file);
+        {/* Faculty Tab */}
+        {activeTab === 'faculty' && (
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3>فیکلٹی ممبران ({Array.isArray(data.faculty) ? data.faculty.length : 0})</h3>
+            <p style={{ color: '#64748b', marginTop: '10px' }}>فیکلٹی کا ڈیٹا یہاں ظاہر ہوگا۔</p>
+          </div>
+        )}
 
-export const subscribeApprovedGallery = (callback) => {
-  if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => callback(Array.isArray(data?.gallery) ? data.gallery : []))
-      .catch(() => callback([]));
-  }
-  return () => {};
-};
-
-export const subscribeHomeContent = (callback) => {
-  if (typeof callback === 'function') {
-    callback({ principal_name: 'Captain Ashfaq Shaheed', phone: '0963-123456', address: 'Tank, KPK' });
-  }
-  return () => {};
-};
-
-export const subscribeAnnouncements = (callback) => {
-  if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => callback(Array.isArray(data?.notices) ? data.notices : []))
-      .catch(() => callback([]));
-  }
-  return () => {};
-};
-
-export const subscribeFaculty = (callback) => {
-  if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => callback(Array.isArray(data?.faculty) ? data.faculty : []))
-      .catch(() => callback([]));
-  }
-  return () => {};
-};
-
-export const subscribeAdmissions = (callback) => {
-  if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => callback(Array.isArray(data?.admissions) ? data.admissions : []))
-      .catch(() => callback([]));
-  }
-  return () => {};
-};
-
-export const subscribeMeritList = (callback) => {
-  if (typeof callback === 'function') callback({ isPublished: false });
-  return () => {};
-};
-
-export const subscribeLocalData = (callback) => {
-  if (typeof callback === 'function') callback([]);
-  return () => {};
-};
-
-export const subscribeWaitList = subscribeLocalData;
-export const subscribeWaitlist = subscribeLocalData;
-export const subscribeLocalChanges = subscribeApprovedGallery;
-export const subscribeSiteContent = subscribeHomeContent;
-export const subscribeAdminData = subscribeHomeContent;
-export const subscribeLocalDataList = subscribeLocalData;
-export const subscribeApprovedGalleryList = subscribeApprovedGallery;
-export const subscribeGallery = subscribeApprovedGallery;
-
-export default {
-  subscribeLocalData,
-  subscribeHomeContent,
-  subscribeWaitList,
-  subscribeAdmissions,
-  subscribeMeritList,
-  subscribeApprovedGallery,
-  subscribeLocalChanges,
-  subscribeAnnouncements,
-  subscribeSiteContent,
-  subscribeAdminData,
-  subscribeFaculty
-};
+        {/* Notices Tab */}
+        {activeTab === 'circulars' && (
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <h3>نوٹسز اور سرکولرز ({Array.isArray(data.circulars) ? data.circulars.length : 0})</h3>
+            <p style={{ color: '#64748b', marginTop: '10px' }}>نوٹسز کا ڈیٹا یہاں ظاہر ہوگا۔</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

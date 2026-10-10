@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-      import { supabase } from '../lib/supabase.js';
+import { publicFileRequest } from '../lib/adminApi.js';
+
 const ApplyPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -41,26 +42,25 @@ const ApplyPage = () => {
 
     const studentId = 'CASDCT-' + Math.floor(100000 + Math.random() * 900000);
 
-    const newApplication = {
-      id: studentId,
-     ...formData,
-      appliedAt: new Date().toISOString()
-    };
+    try {
+      // Google Sheets backend ko data bhejna
+      await publicFileRequest('public.admission.submit', {
+        table: 'admissions',
+        student_id: studentId,
+        name: formData.studentName,
+        father_name: formData.fatherName,
+        phone: formData.mobile,
+        program: formData.programType,
+        discipline: formData.program,
+        obtained_marks: formData.intermediateMarks || formData.matricMarks,
+        total_marks: formData.intermediateTotal || formData.matricTotal
+      });
 
-    const { data, error } = await supabase
-     .from('admissions')
-     .insert([newApplication])
-     .select();
+      setLoading(false);
 
-    setLoading(false);
-
-    if (error) {
-      alert("Error: " + error.message);
-      console.log(error);
-    } else {
-      // Local backup bhi rakh lete hain
+      // Local backup
       const existing = JSON.parse(localStorage.getItem('admissions_list') || '[]');
-      localStorage.setItem('admissions_list', JSON.stringify([newApplication,...existing]));
+      localStorage.setItem('admissions_list', JSON.stringify([{ id: studentId, ...formData, appliedAt: new Date().toISOString() }, ...existing]));
 
       if (language === 'ur') {
         alert(`مبارک ہو! آپ کی داخلہ درخواست کامیابی سے جمع ہو گئی ہے۔\nآپ کی اسٹوڈنٹ آئی ڈی: ${studentId}`);
@@ -68,6 +68,10 @@ const ApplyPage = () => {
         alert(`Application Submitted Successfully!\nYour Student ID: ${studentId}`);
       }
       navigate('/');
+    } catch (err) {
+      setLoading(false);
+      console.error(err);
+      alert('Error submitting application. Please try again.');
     }
   };
 
@@ -110,11 +114,6 @@ const ApplyPage = () => {
       passingYear: "PASSING YEAR *",
       board: "BOARD *",
       intermediateRecord: "INTERMEDIATE RECORD (Required for BS Programs)",
-      step4: "STEP 4: REQUIRED DOCUMENTS SCAN UPLOADS",
-      photo: "PASSPORT SIZE PHOTOGRAPH *",
-      matricDmc: "MATRIC DMC / CERTIFICATE *",
-      intermediateDmc: "INTERMEDIATE DMC *",
-      cnicCopies: "STUDENT CNIC / B-FORM & FATHER CNIC *",
       submit: "SUBMIT ADMISSION APPLICATION",
       guidelines: "Admission Guidelines",
       guideline1: "Ensure all personal and academic records match your original board documents.",
@@ -160,11 +159,6 @@ const ApplyPage = () => {
       passingYear: "پاسنگ سال *",
       board: "بورڈ *",
       intermediateRecord: "انٹرمیڈیٹ کا ریکارڈ (BS پروگرامز کے لیے ضروری)",
-      step4: "مرحلہ 4: مطلوبہ دستاویزات کی اسکین اپ لوڈز",
-      photo: "پاسپورٹ سائز تصویر *",
-      matricDmc: "میٹرک DMC / سرٹیفکیٹ *",
-      intermediateDmc: "انٹرمیڈیٹ DMC *",
-      cnicCopies: "طالب علم CNIC / بے فارم اور والد CNIC *",
       submit: "داخلہ کی درخواست جمع کروائیں",
       guidelines: "داخلہ کے رہنما خطوط",
       guideline1: "یقینی بنائیں کہ تمام ذاتی اور تعلیمی ریکارڈ آپ کے اصل بورڈ دستاویزات سے مماثل ہوں۔",

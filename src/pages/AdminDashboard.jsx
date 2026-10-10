@@ -218,21 +218,25 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
           .order('created_at', { ascending: false });
         
         if (supabaseError) throw supabaseError;
+const mappedAdmissions = (supabaseAdmissions || []).map(row => {
+  const obtained = Number(row.obtained_marks || row.marks || row.matricMarks || 0);
+  const total = Number(row.total_marks || row.matricTotal || 1100);
+  const calculatedMerit = total > 0 ? ((obtained / total) * 100).toFixed(2) : '0';
 
-    const mappedAdmissions = (supabaseAdmissions || []).map(row => ({
-        regId: row.id,
-        studentName: row.studentName || row.full_name || row.name || 'N/A',
-        fullName: row.studentName || row.full_name || row.name || 'N/A',
-        fatherName: row.fatherName || row.father_name || '',
-        program: row.program || '',
-        marksText: `${row.obtained_marks || row.marks || ''}/${row.total_marks || ''}`,
-        meritPct: Number(row.meritPct || row.percentage || 0),
-        matricMarks: row.obtained_marks || row.marks || 0,
-        matricTotal: row.total_marks || 1100,
-        status: row.status || 'pending',
-        appliedAt: row.created_at,
-        ...row
-      }));
+  return {
+    regId: row.student_id || row.regId || row.id || `CASDCT-${row.id}`,
+    studentName: row.studentName || row.full_name || row.name || row.student_name || 'N/A',
+    fullName: row.studentName || row.full_name || row.name || row.student_name || 'N/A',
+    fatherName: row.fatherName || row.father_name || '',
+    program: row.program || row.course || row.selected_program || 'N/A',
+    marksText: `${obtained}/${total}`,
+    meritPct: row.meritPct || row.percentage || calculatedMerit,
+    paymentStatus: row.payment_status || row.paymentStatus || 'Pending',
+    status: row.status || 'pending',
+    appliedAt: row.created_at,
+    ...row
+  };
+});
 const data = await adminRequest('admin.bootstrap');
       if (!isMounted) return;
       setAdmissions(sortMeritDescending(mappedAdmissions));

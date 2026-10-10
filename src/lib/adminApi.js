@@ -2,7 +2,6 @@ import { supabase } from './supabase.js';
 
 export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
 
-// --- Helper Functions to Resolve File URLs Safely ---
 export const getLocalFileUrl = (file) => {
   if (!file) return '';
   if (typeof file === 'string') return file;
@@ -16,7 +15,6 @@ export const localFileUrl = (file) => getLocalFileUrl(file);
 export const getAdminSessionUsername = () => localStorage.getItem('adminUser') || 'admin';
 export const signOutAdmin = () => localStorage.removeItem('adminUser');
 
-// --- Supabase Storage File Upload Handler ---
 const uploadFileToSupabaseStorage = async (file, bucketName = 'media') => {
   if (!file) return '';
   try {
@@ -40,7 +38,6 @@ const uploadFileToSupabaseStorage = async (file, bucketName = 'media') => {
   }
 };
 
-// --- Main Admin Requests (Data Operations) ---
 export const adminRequest = async (action, payload = {}) => {
   switch (action) {
     case 'admin.bootstrap': {
@@ -139,9 +136,7 @@ export const adminRequest = async (action, payload = {}) => {
   }
 };
 
-// --- File Upload Requests (Admin & User Submissions) ---
 export const adminFileRequest = async (action, payload = {}, file) => {
-  // Admin Media Gallery Upload
   if (action === 'admin.gallery.upload') {
     const publicUrl = await uploadFileToSupabaseStorage(file, 'media');
     const { title, category, description } = payload;
@@ -160,7 +155,6 @@ export const adminFileRequest = async (action, payload = {}, file) => {
     return data;
   }
 
-  // Circulars / Examinations PDF Upload
   if (action === 'admin.circular.save') {
     const publicUrl = await uploadFileToSupabaseStorage(file, 'circulars');
     const { title, publishDate } = payload;
@@ -173,7 +167,6 @@ export const adminFileRequest = async (action, payload = {}, file) => {
     return data;
   }
 
-  // Faculty Profile Save / Upload
   if (action === 'admin.faculty.save') {
     let photoUrl = payload.faculty?.image_url || payload.faculty?.photo_url || '';
     if (file) {
@@ -199,13 +192,11 @@ export const adminFileRequest = async (action, payload = {}, file) => {
   return { success: true };
 };
 
-// --- Public / User Submissions (When User Shares Media with Admin) ---
 export const publicFileRequest = async (action, payload = {}, file) => {
   if (action === 'public.gallery.upload' || action === 'user.gallery.share') {
     const publicUrl = await uploadFileToSupabaseStorage(file, 'media');
     const { title, category, description, uploaderName } = payload;
     
-    // Inserts user submission directly into media_gallery for Admin Moderation
     const { data, error } = await supabase
       .from('media_gallery')
       .insert([{ 
@@ -227,7 +218,6 @@ export const publicFileRequest = async (action, payload = {}, file) => {
 export const publicRequest = async () => ({ success: true });
 export const fileRequest = async (action, payload, file) => publicFileRequest(action, payload, file);
 
-// --- Realtime Subscriptions (Syncs Home Page & Admin Instantly) ---
 export const subscribeApprovedGallery = (callback) => {
   const fetchGallery = async () => {
     const { data } = await supabase.from('media_gallery').select('*').order('created_at', { ascending: false });
@@ -322,7 +312,6 @@ export const subscribeMeritList = (callback) => {
   return () => {};
 };
 
-// Aliases for fallback components
 export const subscribeLocalData = (callback) => {
   if (typeof callback === 'function') callback([]);
   return () => {};

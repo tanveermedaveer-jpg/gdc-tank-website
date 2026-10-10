@@ -41,14 +41,59 @@ export const adminRequest = async (action, payload = {}) => {
     }
   }
 
-  if (action === 'admin.admission.update') {
-    return { success: true, ...payload };
-  }
-
-  return { success: true };
+  return { success: true, ...payload };
 };
 
 export const adminFileRequest = async (action, payload = {}, file) => {
+  // Gallery upload or Notice upload from Admin Dashboard
+  let table = '';
+  let bodyData = {};
+
+  if (action === 'admin.gallery.upload') {
+    table = 'media_gallery';
+    bodyData = {
+      table: 'media_gallery',
+      title: payload.title || 'Campus Photo',
+      category: payload.category || 'General',
+      image_url: payload.image_url || (file ? URL.createObjectURL(file) : ''),
+      description: payload.description || '',
+      status: 'approved'
+    };
+  } else if (action === 'admin.circular.save') {
+    table = 'notices';
+    bodyData = {
+      table: 'notices',
+      title: payload.title || 'Notice',
+      file_url: payload.file_url || (file ? URL.createObjectURL(file) : ''),
+      date: payload.publishDate || new Date().toISOString().split('T')[0],
+      category: 'Examination'
+    };
+  } else if (action === 'admin.faculty.save') {
+    table = 'faculty';
+    const fac = payload.faculty || {};
+    bodyData = {
+      table: 'faculty',
+      name: fac.name || '',
+      designation: fac.designation || '',
+      department: fac.department || '',
+      qualification: fac.qualification || '',
+      image_url: fac.image_url || (file ? URL.createObjectURL(file) : '')
+    };
+  }
+
+  if (table) {
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(bodyData)
+      });
+      return await response.json();
+    } catch (err) {
+      console.error('Admin File Request Error:', err);
+      throw err;
+    }
+  }
+
   return { success: true };
 };
 
@@ -72,10 +117,11 @@ export const publicFileRequest = async (action, payload = {}, file) => {
         method: 'POST',
         body: JSON.stringify({ 
           table: 'media_gallery', 
-          title: payload.title || 'Campus Photo',
+          title: payload.title || 'User Submitted Photo',
           category: payload.category || 'General',
           image_url: payload.image_url || '',
-          description: payload.description || ''
+          description: payload.description ? `${payload.description} (By: ${payload.uploaderName || 'Student'})` : `By: ${payload.uploaderName || 'Student'}`,
+          status: 'pending'
         })
       });
       return await response.json();

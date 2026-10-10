@@ -2,7 +2,10 @@ import { supabase } from './supabase.js';
 
 export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
 
-export const getLocalFileUrl = (file) => file?.url || file?.image_url || file?.file_url || '';
+export const getLocalFileUrl = (file) => {
+  if (typeof file === 'string') return file;
+  return file?.image_url || file?.file_url || file?.url || '';
+};
 export const getFileUrl = (file) => getLocalFileUrl(file);
 export const getPublicFileUrl = (file) => getLocalFileUrl(file);
 export const publicFileUrl = (file) => getLocalFileUrl(file);
@@ -13,19 +16,23 @@ export const signOutAdmin = () => localStorage.removeItem('adminUser');
 
 // --- Supabase Storage File Upload Helper ---
 const uploadFileToSupabaseStorage = async (file, bucketName = 'media') => {
-  if (!file) return null;
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-  const filePath = `${fileName}`;
+  if (!file) return '';
+  
+  // Clean file name
+  const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
-    .upload(filePath, file);
+    .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
-  if (uploadError) throw uploadError;
+  if (uploadError) {
+    console.error(`Upload error in ${bucketName}:`, uploadError.message);
+    throw uploadError;
+  }
 
-  const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
-  return data.publicUrl;
+  const { data } = supabase.storage.from(bucketName).getPublicUrl(fileName);
+  return data?.publicUrl || '';
 };
 
 // --- Active Admin API Request Handler ---
@@ -76,9 +83,13 @@ export const adminRequest = async (action, payload = {}) => {
 
     case 'admin.gallery.moderate': {
       const { id, status, category } = payload;
+      const updateData = {};
+      if (status) updateData.status = status;
+      if (category) updateData.category = category;
+
       const { data, error } = await supabase
         .from('media_gallery')
-        .update({ status, category })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -140,7 +151,13 @@ export const adminFileRequest = async (action, payload = {}, file) => {
     const { title, category, description } = payload;
     const { data, error } = await supabase
       .from('media_gallery')
-      .insert([{ title, category: category || 'General', image_url: publicUrl, description, status: 'approved' }])
+      .insert([{ 
+        title: title || 'Campus Photo', 
+        category: category || 'General', 
+        image_url: publicUrl, 
+        description: description || '', 
+        status: 'approved' 
+      }])
       .select()
       .single();
     if (error) throw error;
@@ -183,13 +200,29 @@ export const publicFileRequest = async () => ({ success: true });
 export const publicRequest = async () => ({ success: true });
 export const fileRequest = async () => ({ success: true });
 
-// --- Safe Fallback Subscribers (Preventing crash) ---
-const dummySubscriber = (callback) => {
+// --- Realtime Subscribers for Gallery and Front Page ---
+export const subscribeApprovedGallery = (callback) => {
+  const fetchGallery = async () => {
+    const { data } = await supabase.from('media_gallery').select('*').order('created_at', { ascending: false });
+    if (typeof callback === 'function') callback(data || []);
+  };
+  fetchGallery();
+
+  const channel = supabase
+    .channel('public:media_gallery')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'media_gallery' }, () => {
+      fetchGallery();
+    })
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+};
+
+export const subscribeLocalData = (callback) => {
   if (typeof callback === 'function') callback([]);
   return () => {};
 };
 
-export const subscribeLocalData = dummySubscriber;
 export const subscribeHomeContent = (callback) => {
   supabase.from('site_content').select('*').then(({ data }) => {
     const homeSetting = (data || []).find(item => item.key === 'home_settings')?.value || {};
@@ -197,8 +230,19 @@ export const subscribeHomeContent = (callback) => {
   });
   return () => {};
 };
-export const subscribeWaitList = dummySubscriber;
-export const subscribeAdmissions = dummySubscriber;
+
+export const subscribeWaitList = (callback) => {
+  if (typeof callback === 'function') callback([]);
+  return () => {};
+};
+
+export const subscribeAdmissions = (callback) => {
+  supabase.from('admissions').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+    if (typeof callback === 'function') callback(data || []);
+  });
+  return () => {};
+};
+
 export const subscribeMeritList = (callback) => {
   supabase.from('site_content').select('*').then(({ data }) => {
     const meritStatus = (data || []).find(item => item.key === 'merit_list_status')?.value || { isPublished: false };
@@ -206,11 +250,16 @@ export const subscribeMeritList = (callback) => {
   });
   return () => {};
 };
-export const subscribeApprovedGallery = dummySubscriber;
-export const subscribeLocalChanges = dummySubscriber;
-export const subscribeAnnouncements = dummySubscriber;
-export const subscribeSiteContent = dummySubscriber;
-export const subscribeAdminData = dummySubscriber;
+
+export const subscribeLocalChanges = subscribeApprovedGallery;
+export const subscribeAnnouncements = (callback) => {
+  supabase.from('notices').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+    if (typeof callback === 'function') callback(data || []);
+  });
+  return () => {};
+};
+export const subscribeSiteContent = subscribeHomeContent;
+export const subscribeAdminData = subscribeHomeContent;
 
 export const subscribeLocalDataList = subscribeLocalData;
 export const subscribeWaitlist = subscribeWaitList;

@@ -209,12 +209,33 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
   // Load shared dashboard data and refresh it periodically for new applications.
   useEffect(() => {
-    let isMounted = true;
-    const loadSharedData = async (showFailure = false) => {
-      try {
+  let isMounted = true;
+  const loadSharedData = async (showFailure = false) => {
+    try {
+      const { data: supabaseAdmissions, error: supabaseError } = await supabase
+          .from('admissions')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (supabaseError) throw supabaseError;
+
+        const mappedAdmissions = (supabaseAdmissions || []).map(row => ({
+          regId: row.id,
+          fullName: row.full_name || row.name || 'N/A',
+          fatherName: row.father_name || '',
+          program: row.program || '',
+          marksText: `${row.obtained_marks || ''}/${row.total_marks || ''}`,
+          meritPct: Number(row.percentage || 0),
+          matricMarks: row.obtained_marks || 0,
+          matricTotal: row.total_marks || 1100,
+          status: row.status || 'pending',
+          appliedAt: row.created_at,
+          ...row
+        }));
+
         const data = await adminRequest('admin.bootstrap');
         if (!isMounted) return;
-        setAdmissions(sortMeritDescending(data.admissions || []));
+        setAdmissions(sortMeritDescending(mappedAdmissions));
         setMediaUploads(data.gallery || []);
         setFacultyMembers(data.faculty || []);
         setCirculars(data.circulars || []);

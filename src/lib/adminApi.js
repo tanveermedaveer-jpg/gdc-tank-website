@@ -1,4 +1,4 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrugcvacClSlDHN38GnoxN1fbTs9BElfqfjlm4PY640g16ZbpzKdSx22unMNDSlE/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZQ-2NU28epOYdFRE_cx02MzoEgunRMvJ6KjN_zNFM-YuRFYmdsoKhT5vXbei2MwrU/exec';
 
 export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
 

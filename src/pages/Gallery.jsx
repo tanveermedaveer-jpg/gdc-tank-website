@@ -33,14 +33,14 @@ export default function Gallery() {
 
   useEffect(() => {
     return subscribeApprovedGallery((items) => {
-      setGalleryItems(items.map((item) => ({
+      setGalleryItems((items || []).map((item) => ({
         ...item,
-        type: item.mediaType,
-        desc: item.description,
-        uploadedBy: item.uploadedBy,
-        fileName: item.fileName,
-        image: item.publicUrl,
-        mediaUrl: item.publicUrl
+        type: item.type || item.mediaType || 'image',
+        desc: item.description || item.desc || '',
+        uploadedBy: item.uploadedBy || item.uploaderName || 'College Administration',
+        fileName: item.fileName || item.filename || 'media',
+        image: item.publicUrl || item.image || item.image_url || campusImg,
+        mediaUrl: item.publicUrl || item.mediaUrl || item.image_url || ''
       })));
       setGalleryError('');
     }, (error) => {
@@ -225,32 +225,33 @@ export default function Gallery() {
                     className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
                   >
                     <div>
-                      <div className="relative h-60 overflow-hidden bg-slate-950">
+                      <div className="relative h-60 overflow-hidden bg-slate-100 dark:bg-slate-800">
                         {item.type === 'video' ? (
-                          <video
-                            src={item.mediaUrl}
-                            muted
-                            loop
-                            playsInline
-                            preload="metadata"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
+                          <div className="relative w-full h-full bg-slate-900">
+                            <video
+                              src={item.mediaUrl || item.publicUrl || item.image_url}
+                              muted
+                              loop
+                              playsInline
+                              preload="metadata"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+                              <div className="w-12 h-12 rounded-full bg-teal-500/90 text-slate-950 flex items-center justify-center shadow-lg">
+                                <Video className="w-6 h-6 fill-current" />
+                              </div>
+                            </div>
+                          </div>
                         ) : (
                           <img
-                            src={item.image}
+                            src={item.image || item.publicUrl || item.image_url || campusImg}
                             alt={item.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             onError={(e) => {
+                              e.target.onerror = null;
                               e.target.src = campusImg;
                             }}
                           />
-                        )}
-                        {item.type === 'video' && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <div className="w-12 h-12 rounded-full bg-teal-500/90 text-slate-950 flex items-center justify-center shadow-lg">
-                              <Video className="w-6 h-6 fill-current" />
-                            </div>
-                          </div>
                         )}
                         <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-teal-300 text-[11px] font-extrabold px-3 py-1 rounded-full border border-teal-500/30 uppercase tracking-wider">
                           {item.category}
@@ -365,20 +366,24 @@ export default function Gallery() {
                       } py-5 px-4`}
                     >
                       {uploadFile ? (
-                        <div className="text-center space-y-1">
-                          {uploadFile.type.startsWith('video/') ? (
-                            <Video className="w-8 h-8 text-teal-600 dark:text-teal-400 mx-auto" />
-                          ) : (
-                            <ImageIcon className="w-8 h-8 text-teal-600 dark:text-teal-400 mx-auto" />
+                        <div className="text-center space-y-2 w-full">
+                          {uploadFilePreview && (
+                            <div className="relative w-full h-36 rounded-xl overflow-hidden bg-slate-900 border border-teal-500/40">
+                              {uploadFile.type.startsWith('video/') ? (
+                                <video src={uploadFilePreview} muted playsInline className="w-full h-full object-cover" />
+                              ) : (
+                                <img src={uploadFilePreview} alt="Preview" className="w-full h-full object-cover" />
+                              )}
+                            </div>
                           )}
-                          <p className="text-xs font-bold text-teal-700 dark:text-teal-300 truncate max-w-xs">{uploadFile.name}</p>
+                          <p className="text-xs font-bold text-teal-700 dark:text-teal-300 truncate max-w-xs mx-auto">{uploadFile.name}</p>
                           <p className="text-[10px] text-slate-400">
                             {uploadFile.size > 1024 * 1024
                               ? `${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB`
                               : `${Math.round(uploadFile.size / 1024)} KB`}
                             {' • '}{uploadFile.type.startsWith('video/') ? 'Video' : 'Image'}
                           </p>
-                          <p className="text-[10px] text-teal-500 font-semibold">Click to change file</p>
+                          <p className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold">Click to change file</p>
                         </div>
                       ) : (
                         <div className="text-center space-y-2">

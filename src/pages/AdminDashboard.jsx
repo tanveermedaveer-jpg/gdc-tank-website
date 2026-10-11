@@ -7,6 +7,7 @@ import {
   Moon, Sun, UserCheck, RefreshCw, Edit3,
   Upload, Trophy
 } from 'lucide-react';
+import campusImg from '../assets/campus.png';
 import principalImg from '../assets/principal.jpg';
 import {
   MAX_CIRCULAR_SIZE_BYTES,
@@ -15,13 +16,18 @@ import {
   getAdminSessionUsername,
   signOutAdmin,
   subscribeLocalChanges,
-  subscribeHomeContent
+  subscribeHomeContent,
+  compressImageFile
 } from '../lib/adminApi';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
 import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
 
-const isVideoMediaFile = (file) =>
-  file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(file.name);
+const isVideoMediaFile = (file) => {
+  if (!file) return false;
+  const name = typeof file === 'string' ? file : file.name || '';
+  const type = (file && typeof file === 'object' && file.type) ? file.type : '';
+  return type.startsWith('video/') || /\.(mp4|mov|webm|m4v|ogv|avi)$/i.test(name);
+};
 
 const isSupportedMediaFile = (file) =>
   [
@@ -122,6 +128,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [facultyDraft, setFacultyDraft] = useState({});
   const [facultyPhotoFile, setFacultyPhotoFile] = useState(null);
   const [facultyPhotoName, setFacultyPhotoName] = useState('');
+  const [facultyPhotoPreview, setFacultyPhotoPreview] = useState('');
   const [facultyFormError, setFacultyFormError] = useState('');
   const [isSavingFaculty, setIsSavingFaculty] = useState(false);
 
@@ -134,6 +141,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [adminUploadTitle, setAdminUploadTitle] = useState('');
   const [adminUploadCategory, setAdminUploadCategory] = useState('facilities');
   const [adminUploadFile, setAdminUploadFile] = useState(null);
+  const [adminUploadPreview, setAdminUploadPreview] = useState('');
   const [adminUploadError, setAdminUploadError] = useState('');
   const [isDraggingAdminUpload, setIsDraggingAdminUpload] = useState(false);
   const [isUploadingAdminMedia, setIsUploadingAdminMedia] = useState(false);
@@ -158,6 +166,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [principalName, setPrincipalName] = useState('');
   const [principalMessage, setPrincipalMessage] = useState('');
   const [principalImage, setPrincipalImage] = useState('');
+  const [isUploadingPrincipalImage, setIsUploadingPrincipalImage] = useState(false);
   const [collegePhone, setCollegePhone] = useState('');
   const [collegeAddress, setCollegeAddress] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
@@ -295,6 +304,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     });
     setFacultyPhotoFile(null);
     setFacultyPhotoName('');
+    setFacultyPhotoPreview(profile?.photo_url || profile?.photoUrl || '');
     setFacultyFormError('');
     setIsFacultyModalOpen(true);
   };

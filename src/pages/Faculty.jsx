@@ -16,15 +16,15 @@ export default function Faculty() {
     setIsLoadingFaculty(true);
     const unsubscribe = subscribeLocalData('faculty', (profiles) => {
       if (!isMounted) return;
-      setFaculty(profiles.map((profile) => ({
+      setFaculty((profiles || []).map((profile) => ({
         id: profile.id,
         name: profile.name,
-        role: profile.designation,
-        qual: profile.qualification,
-        dept: profile.department,
-        email: profile.contact,
-        photoUrl: profile.photo_url,
-        isHOD: profile.is_hod
+        role: profile.designation || profile.role,
+        qual: profile.qualification || profile.qual,
+        dept: profile.department || profile.dept,
+        email: profile.contact || profile.email,
+        photoUrl: profile.photo_url || profile.image_url || profile.photoUrl || '',
+        isHOD: profile.is_hod || profile.isHOD
       })));
       setFacultyError('');
       setIsLoadingFaculty(false);
@@ -166,12 +166,21 @@ export default function Faculty() {
                     <div>
                       {/* Avatar */}
                       {member.photoUrl ? (
-                        <img src={member.photoUrl} alt={member.name} className="mb-4 h-16 w-16 rounded-full border border-slate-200 object-cover" />
-                      ) : (
-                        <div className="w-16 h-16 bg-white border border-slate-200 rounded-full flex items-center justify-center mb-4">
-                          <Users className="w-8 h-8 text-teal-600" />
-                        </div>
-                      )}
+                        <img
+                          src={member.photoUrl}
+                          alt={member.name}
+                          className="mb-4 h-16 w-16 rounded-full border-2 border-teal-500/20 object-cover shadow-sm bg-teal-50"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.style.display = 'none';
+                            const fallback = e.target.parentElement?.querySelector('.avatar-fallback');
+                            if (fallback) fallback.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`avatar-fallback w-16 h-16 bg-gradient-to-br from-teal-50 to-teal-100 border border-teal-200 rounded-full items-center justify-center mb-4 text-teal-800 font-bold text-xl shadow-sm ${member.photoUrl ? 'hidden' : 'flex'}`}>
+                        {member.name ? member.name.charAt(0) : <Users className="w-8 h-8 text-teal-600" />}
+                      </div>
                       
                       <h3 className="font-serif font-bold text-lg text-slate-800 leading-tight mb-1">
                         {translateFacultyField(member.name)}

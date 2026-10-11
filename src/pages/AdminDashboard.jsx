@@ -67,6 +67,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       }
     }
   };
+  
 
   // Active Sidebar Tab: 'admissions' | 'dashboard' | 'fee_records' | 'media_gallery' | 'examination_circulars' | 'settings' | 'help'
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1047,10 +1048,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
           {isLoadingAdminData && (
             <p role="status" className="text-sm text-slate-500">Loading local dashboard records…</p>
           )}
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
-            Authentication is verified server-side, but admissions, media, circulars, faculty, and settings remain in this browser only. They do not sync across devices and are not protected by server-side authorization.
-          </div>
-
           {/* Dashboard overview and admissions management */}
           {(activeTab === 'admissions' || activeTab === 'dashboard') && (
             <>
@@ -1320,104 +1317,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     </tbody>
                   </table>
                 </div>
-
-              </div>
-
-              {/* ---------------- MEDIA GALLERY MODERATION SECTION ---------------- */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm p-6 space-y-4">
-                
-                {/* Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white font-sans">
-                    Recent Media Uploads
-                  </h2>
-                  <div className="flex items-center gap-2 bg-cyan-50 dark:bg-cyan-950/50 text-cyan-700 dark:text-cyan-300 border border-cyan-200/70 dark:border-cyan-800 text-xs font-bold px-3 py-1 rounded-full">
-                    <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-                    <span>{pendingMediaCount} Items Pending moderation</span>
-                  </div>
-                </div>
-
-                {/* Grid of Media Upload Thumbnails */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {mediaUploads.map((media) => (
-                    <div 
-                      key={media.id} 
-                      className="border border-slate-200 dark:border-slate-800 rounded-2xl p-3 flex flex-col sm:flex-row gap-4 items-center bg-slate-50/50 dark:bg-slate-850 hover:shadow-md transition-shadow"
-                    >
-                      {/* Media Thumbnail Container */}
-                      <div className="relative w-full sm:w-44 h-28 rounded-xl overflow-hidden bg-slate-900 flex-shrink-0 group">
-                        {media.type === 'video' ? (
-                          <video src={media.publicUrl} muted playsInline preload="metadata" className="h-full w-full object-cover" />
-                        ) : (
-                          <img src={media.publicUrl} alt={media.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90" />
-                        )}
-                        {/* Overlay Icon / Badges */}
-                        {media.type === 'video' ? (
-                          <>
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                              <div className="w-9 h-9 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow-lg">
-                                <Play className="w-4 h-4 fill-slate-900 ml-0.5" />
-                              </div>
-                            </div>
-                            <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                              VIDEO
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="absolute bottom-2 left-2 bg-black/60 text-white p-1 rounded">
-                              <ImageIcon className="w-3.5 h-3.5" />
-                            </div>
-                            <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
-                              {media.fileName?.split('.').pop()?.toUpperCase() || 'IMAGE'}
-                            </span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Details & Actions */}
-                      <div className="flex-1 flex flex-col justify-between w-full">
-                        <div>
-                          <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate">{media.title}</h4>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Uploaded by: <span className="font-semibold text-slate-700 dark:text-slate-300">{media.uploadedBy}</span> • {media.size} • {media.uploadedTime}
-                          </p>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 mt-4">
-                          {media.status === 'approved' ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                              <CheckCircle className="w-4 h-4" /> Approved
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => handleApproveMedia(media.id)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all"
-                            >
-                              <Check className="w-3.5 h-3.5" /> Approve
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => setPreviewMedia(media)}
-                            className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-slate-500" /> View
-                          </button>
-                        </div>
-                      </div>
-
-                    </div>
-                  ))}
-                </div>
-
-              </div>
-                </>
-              )}
-            </>
-          )}
-
           {/* ---------------- FACULTY MANAGEMENT TAB ---------------- */}
           {activeTab === 'faculty' && (
             <div className="space-y-6">
@@ -2065,7 +1964,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
           {/* ---------------- SETTINGS TAB ---------------- */}
           {activeTab === 'settings' && (
             <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-3xl space-y-6">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-7xl space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Access & College Settings</h2>
                 <p className="text-xs text-slate-500">Manage admin credentials securely in the server database, along with institutional information and the principal desk message.</p>

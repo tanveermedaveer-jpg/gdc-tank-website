@@ -1118,11 +1118,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   </div>
                   <Wallet className="w-24 h-24 text-emerald-500/5 dark:text-emerald-500/10 absolute -right-4 -bottom-4 pointer-events-none" />
                 </div>
-
               </div>
-
               {activeTab === 'admissions' && (
-                <>
               {/* ---------------- FILTER & CONTROLS BAR ---------------- */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                 

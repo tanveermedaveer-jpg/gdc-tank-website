@@ -1305,31 +1305,29 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                                   >
                                     <X className="w-3.5 h-3.5" /> Reject
                                   </button>
-                                </div>
-                              )}
-                            </td>
+                             </div>
+               </td>
+                              </tr>
+                            ))
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
 
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-          </div>
-        </>
-      )}
 {/* ------------ FACULTY MANAGEMENT TAB ------------- */}
 {activeTab === 'faculty' && (
-            <div className="space-y-6">
-              <section className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Faculty Management</h1>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage faculty and HOD profiles shown on this browser's public Faculty page.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openFacultyForm()}
-                  className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-teal-800"
-                >
+  <div className="space-y-6">
+    <section className="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Faculty Management</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage faculty and HOD profiles shown on this browser's public Faculty page.</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => openFacultyForm()}
+        className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-teal-800"
+      >
                   <Plus className="h-4 w-4" /> Add Faculty Profile
                 </button>
               </section>

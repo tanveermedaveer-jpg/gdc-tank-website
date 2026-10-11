@@ -1305,15 +1305,20 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                                   >
                                     <X className="w-3.5 h-3.5" /> Reject
                                   </button>
-                        </div>
-                  </tr>
-                ))
-              }
-            </tbody>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
           </table>
         </div>
       </div>
+      </>
     )}
+              </>
+            )}
 
 {/* ------------ FACULTY MANAGEMENT TAB ------------- */}
 {activeTab === 'faculty' && (

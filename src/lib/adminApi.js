@@ -406,14 +406,34 @@ export const adminRequest = async (action, payload = {}) => {
     const list = getStoredData(STORAGE_KEYS.GALLERY, DEFAULT_GALLERY_ITEMS);
     const updated = list.map(item => item.id === payload.id ? { ...item, status: 'approved', isApproved: true } : item);
     setStoredData(STORAGE_KEYS.GALLERY, updated);
-    return { success: true };
+    const approvedItem = updated.find(item => item.id === payload.id);
+    return approvedItem ? normalizeMediaItem(approvedItem) : { success: true };
+  }
+
+  // admin.gallery.moderate: approve/reject with optional category update — used by AdminDashboard moderation
+  if (action === 'admin.gallery.moderate') {
+    const list = getStoredData(STORAGE_KEYS.GALLERY, DEFAULT_GALLERY_ITEMS);
+    const existing = list.find(item => item.id === payload.id);
+    if (!existing) return { success: false, error: 'Media item not found.' };
+    const updatedItem = normalizeMediaItem({
+      ...existing,
+      status: payload.status || existing.status,
+      isApproved: (payload.status || existing.status) === 'approved',
+      ...(payload.category ? { category: payload.category } : {})
+    });
+    const updatedList = list.map(item => item.id === payload.id ? updatedItem : item);
+    setStoredData(STORAGE_KEYS.GALLERY, updatedList);
+    return updatedItem;
   }
 
   if (action === 'admin.gallery.category') {
     const list = getStoredData(STORAGE_KEYS.GALLERY, DEFAULT_GALLERY_ITEMS);
-    const updated = list.map(item => item.id === payload.id ? { ...item, category: payload.category } : item);
-    setStoredData(STORAGE_KEYS.GALLERY, updated);
-    return { success: true };
+    const existing = list.find(item => item.id === payload.id);
+    if (!existing) return { success: false };
+    const updatedItem = normalizeMediaItem({ ...existing, category: payload.category });
+    const updatedList = list.map(item => item.id === payload.id ? updatedItem : item);
+    setStoredData(STORAGE_KEYS.GALLERY, updatedList);
+    return updatedItem;
   }
 
   if (action === 'admin.gallery.reject') {
@@ -457,6 +477,21 @@ export const adminRequest = async (action, payload = {}) => {
     const list = getStoredData(STORAGE_KEYS.ADMISSIONS, DEFAULT_ADMISSIONS);
     const updated = list.map(item => item.regId === payload.regId ? { ...item, ...payload } : item);
     setStoredData(STORAGE_KEYS.ADMISSIONS, updated);
+    const updatedItem = updated.find(item => item.regId === payload.regId);
+    return updatedItem ? normalizeAdmissionItem(updatedItem) : { success: true };
+  }
+
+  // Delete a single admission record
+  if (action === 'admin.admission.delete') {
+    const list = getStoredData(STORAGE_KEYS.ADMISSIONS, DEFAULT_ADMISSIONS);
+    const updated = list.filter(item => item.regId !== payload.regId);
+    setStoredData(STORAGE_KEYS.ADMISSIONS, updated);
+    return { success: true };
+  }
+
+  // Clear all admission records
+  if (action === 'admin.admissions.clear') {
+    setStoredData(STORAGE_KEYS.ADMISSIONS, []);
     return { success: true };
   }
 

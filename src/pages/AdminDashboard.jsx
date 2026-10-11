@@ -403,7 +403,38 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     showToast(`Rejected admission for ${item ? item.fullName : regId}`, 'error');
   };
 
-  // Action: Approve Media
+  // Action: Delete a single admission record permanently
+  const handleDeleteAdmission = async (regId) => {
+    const item = admissions.find(a => a.regId === regId);
+    if (!window.confirm(`Permanently delete the admission record for ${item ? item.fullName : regId}? This cannot be undone.`)) return;
+    try {
+      await adminRequest('admin.admission.delete', { regId });
+      setAdmissions(current => sortMeritDescending(current.filter(a => a.regId !== regId)));
+      showToast(`Deleted admission record for ${item ? item.fullName : regId}.`, 'success');
+    } catch (error) {
+      console.error('Unable to delete admission record:', error);
+      showToast(error.message || 'Unable to delete this admission record.', 'error');
+    }
+  };
+
+  // State for clear-all confirmation modal
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+
+  // Action: Clear all admission records
+  const handleClearAllAdmissions = async () => {
+    try {
+      await adminRequest('admin.admissions.clear');
+      setAdmissions([]);
+      setShowClearAllConfirm(false);
+      showToast('All admission records have been cleared.', 'success');
+    } catch (error) {
+      console.error('Unable to clear all admission records:', error);
+      showToast(error.message || 'Unable to clear all admission records.', 'error');
+      setShowClearAllConfirm(false);
+    }
+  };
+
+
   const handleApproveMedia = async (mediaId, assignedCategory) => {
     const item = mediaUploads.find(media => media.id === mediaId);
     if (!item) return;
@@ -780,7 +811,45 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         </div>
       )}
 
+      {/* Clear All Admissions Confirmation Modal */}
+      {showClearAllConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-rose-200 dark:border-rose-900">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Clear All Admission Records?</h3>
+                <p className="text-xs text-slate-500 mt-0.5">This action is permanent and cannot be undone.</p>
+              </div>
+            </div>
+            <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl p-4 mb-5 text-sm text-rose-800 dark:text-rose-300 font-semibold">
+              ⚠️ All <strong>{admissions.length}</strong> admission record{admissions.length !== 1 ? 's' : ''} will be permanently deleted from the system. This will also reset the merit list and fee statistics.
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowClearAllConfirm(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleClearAllAdmissions}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 shadow-sm transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Yes, Delete All Records
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Media Preview Modal */}
+
       {previewMedia && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 relative shadow-2xl">
@@ -1110,7 +1179,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   <Clock className="w-24 h-24 text-amber-500/5 dark:text-amber-500/10 absolute -right-4 -bottom-4 pointer-events-none" />
                 </div>
 
-                {/* Metric 3: Verified Payments */}
+                {/* Metric 3: Fee Collected */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm relative overflow-hidden flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2.5 mb-2">
@@ -1120,14 +1189,19 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fee Collected</span>
                     </div>
                     <div className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1">
-                      {feeAmountRecordsCount > 0 ? `Rs ${feeCollectedTotal.toLocaleString()}` : 'Not recorded'}
+                      {feeCollectedTotal > 0
+                        ? `Rs ${feeCollectedTotal.toLocaleString()}`
+                        : verifiedPaymentsCount > 0
+                          ? `${verifiedPaymentsCount} verified`
+                          : 'Rs 0'}
                     </div>
                     <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-2">
-                      <span>{verifiedPaymentsCount.toLocaleString()} verified payments</span>
+                      <span>{verifiedPaymentsCount.toLocaleString()} payment{verifiedPaymentsCount !== 1 ? 's' : ''} verified</span>
                     </div>
                   </div>
                   <Wallet className="w-24 h-24 text-emerald-500/5 dark:text-emerald-500/10 absolute -right-4 -bottom-4 pointer-events-none" />
                 </div>
+
               </div>
               {activeTab === 'admissions' && (
               <>
@@ -1205,17 +1279,27 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white font-sans">
-                      Recent Admissions & Merit List
+                      Recent Admissions &amp; Merit List
                     </h2>
                     <p className="text-xs text-slate-500">
                       Public Visibility Status: <span className={isMeritListLive ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'}>{isMeritListLive ? 'Published to Admission Page' : 'Hidden from Public'}</span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800 text-xs font-bold px-3 py-1 rounded-full">
                       <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                       <span>{pendingAdmissionsCount} pending moderation</span>
                     </div>
+                    {admissions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowClearAllConfirm(true)}
+                        className="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl shadow-sm transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Clear All Records
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1231,12 +1315,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         <th className="py-3.5 px-6">Merit %</th>
                         <th className="py-3.5 px-6">Payment Status</th>
                         <th className="py-3.5 px-6 text-center">Admin Action</th>
+                        <th className="py-3.5 px-4 text-center">Delete</th>
                       </tr>
                     </thead>
+
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium text-slate-700 dark:text-slate-200">
                       {filteredAdmissions.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="py-8 text-center text-slate-400 font-semibold">
+                          <td colSpan={8} className="py-8 text-center text-slate-400 font-semibold">
                             No student admission records found matching "{searchQuery}".
                           </td>
                         </tr>
@@ -1318,6 +1404,17 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                                 </div>
                               )}
                             </td>
+
+                            {/* Individual Delete Button */}
+                            <td className="py-4 px-4 whitespace-nowrap text-center">
+                              <button
+                                onClick={() => handleDeleteAdmission(st.regId)}
+                                title="Delete this admission record"
+                                className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1.5 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
                           </tr>
                         ))
                       )}
@@ -1329,6 +1426,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     )}
               </>
             )}
+
 
 {/* ------------ FACULTY MANAGEMENT TAB ------------- */}
 {activeTab === 'faculty' && (

@@ -1,6 +1,34 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZQ-2NU28epOYdFRE_cx02MzoEgunRMvJ6KjN_zNFM-YuRFYmdsoKhT5vXbei2MwrU/exec';
+// Pure Local Storage API implementation - No External Backend Dependencies
 
 export const MAX_CIRCULAR_SIZE_BYTES = 10 * 1024 * 1024;
+
+// Helper utilities for local storage key management
+const STORAGE_KEYS = {
+  ADMISSIONS: 'casdct_admissions',
+  GALLERY: 'casdct_gallery',
+  FACULTY: 'casdct_faculty',
+  NOTICES: 'casdct_notices',
+  SETTINGS: 'casdct_settings'
+};
+
+const getStoredData = (key, fallback = []) => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : fallback;
+  } catch (err) {
+    console.error(`Error reading ${key} from localStorage:`, err);
+    return fallback;
+  }
+};
+
+const setStoredData = (key, data) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    window.dispatchEvent(new Event('casdct_local_storage_updated'));
+  } catch (err) {
+    console.error(`Error writing ${key} to localStorage:`, err);
+  }
+};
 
 export const getLocalFileUrl = (file) => {
   if (!file) return '';
@@ -26,79 +54,90 @@ const fileToBase64 = (file) => new Promise((resolve) => {
 
 export const adminRequest = async (action, payload = {}) => {
   if (action === 'admin.bootstrap') {
-    try {
-      const response = await fetch(`${SCRIPT_URL}?action=get_all`);
-      const data = await response.json();
-      return {
-        username: getAdminSessionUsername(),
-        admissions: Array.isArray(data?.admissions) ? data.admissions : [],
-        gallery: Array.isArray(data?.gallery) ? data.gallery : [],
-        faculty: Array.isArray(data?.faculty) ? data.faculty : [],
-        circulars: Array.isArray(data?.notices) ? data.notices : [],
-        settings: {
-          principal_name: 'Captain Ashfaq Shaheed',
-          principal_message: '',
-          principal_image_url: '',
-          phone: '0963-123456',
-          address: 'Tank, KPK',
-          merit_list_live: false
-        }
-      };
-    } catch (err) {
-      console.error('Bootstrap Safe Fallback:', err);
-      return { username: 'admin', admissions: [], gallery: [], faculty: [], circulars: [], settings: {} };
-    }
+    return {
+      username: getAdminSessionUsername(),
+      admissions: getStoredData(STORAGE_KEYS.ADMISSIONS, []),
+      gallery: getStoredData(STORAGE_KEYS.GALLERY, []),
+      faculty: getStoredData(STORAGE_KEYS.FACULTY, []),
+      circulars: getStoredData(STORAGE_KEYS.NOTICES, []),
+      settings: getStoredData(STORAGE_KEYS.SETTINGS, {
+        principal_name: 'Captain Ashfaq Shaheed',
+        principal_message: 'Welcome to Captain Ashfaq Shaheed Degree College, Tank.',
+        principal_image_url: '',
+        phone: '0963-123456',
+        address: 'Tank, KPK',
+        merit_list_live: true
+      })
+    };
   }
 
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, ...payload })
-    });
-    const resData = await response.json().catch(() => ({}));
-    return resData || { success: true };
-  } catch (err) {
-    console.error('Admin Request Safe Fallback:', err);
-    return { success: true, ...payload };
+  if (action === 'admin.gallery.delete') {
+    const list = getStoredData(STORAGE_KEYS.GALLERY, []);
+    const updated = list.filter(item => item.id !== payload.id);
+    setStoredData(STORAGE_KEYS.GALLERY, updated);
+    return { success: true };
   }
+
+  if (action === 'admin.faculty.delete') {
+    const list = getStoredData(STORAGE_KEYS.FACULTY, []);
+    const updated = list.filter(item => item.id !== payload.id);
+    setStoredData(STORAGE_KEYS.FACULTY, updated);
+    return { success: true };
+  }
+
+  if (action === 'admin.admission.update') {
+    const list = getStoredData(STORAGE_KEYS.ADMISSIONS, []);
+    const updated = list.map(item => item.regId === payload.regId ? { ...item, ...payload } : item);
+    setStoredData(STORAGE_KEYS.ADMISSIONS, updated);
+    return { success: true };
+  }
+
+  return { success: true };
 };
 
 export const adminFileRequest = async (action, payload = {}, file) => {
-  let table = '';
-  let bodyData = {};
   let fileBase64 = '';
-
   if (file) {
     fileBase64 = await fileToBase64(file);
   }
 
   if (action === 'admin.gallery.upload') {
-    table = 'media_gallery';
-    bodyData = {
-      table: 'media_gallery',
+    const list = getStoredData(STORAGE_KEYS.GALLERY, []);
+    const newItem = {
+      id: Date.now().toString(),
       title: payload.title || 'Campus Photo',
       category: payload.category || 'General',
       image_url: fileBase64 || payload.image_url || '',
       filename: file?.name || '',
       description: payload.description || '',
-      status: 'approved'
+      status: 'approved',
+      date: new Date().toISOString().split('T')[0]
     };
-  } else if (action === 'admin.circular.save') {
-    table = 'notices';
-    bodyData = {
-      table: 'notices',
+    list.unshift(newItem);
+    setStoredData(STORAGE_KEYS.GALLERY, list);
+    return newItem;
+  }
+
+  if (action === 'admin.circular.save') {
+    const list = getStoredData(STORAGE_KEYS.NOTICES, []);
+    const newItem = {
+      id: Date.now().toString(),
       title: payload.title || 'Notice',
       file_url: fileBase64 || payload.file_url || '',
       filename: file?.name || '',
       date: payload.publishDate || new Date().toISOString().split('T')[0],
       category: 'Examination'
     };
-  } else if (action === 'admin.faculty.save') {
-    table = 'faculty';
+    list.unshift(newItem);
+    setStoredData(STORAGE_KEYS.NOTICES, list);
+    return newItem;
+  }
+
+  if (action === 'admin.faculty.save') {
+    const list = getStoredData(STORAGE_KEYS.FACULTY, []);
     const fac = payload.faculty || {};
-    bodyData = {
-      table: 'faculty',
+    const newItem = {
+      id: fac.id || Date.now().toString(),
       name: fac.name || '',
       designation: fac.designation || '',
       department: fac.department || '',
@@ -106,20 +145,11 @@ export const adminFileRequest = async (action, payload = {}, file) => {
       image_url: fileBase64 || fac.image_url || '',
       filename: file?.name || ''
     };
-  }
-
-  if (table) {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(bodyData)
-      });
-      return await response.json().catch(() => ({ success: true }));
-    } catch (err) {
-      console.error('Admin File Request Error:', err);
-      return { success: false, error: err.message };
-    }
+    const index = list.findIndex(m => m.id === newItem.id);
+    if (index >= 0) list[index] = newItem;
+    else list.push(newItem);
+    setStoredData(STORAGE_KEYS.FACULTY, list);
+    return newItem;
   }
 
   return { success: true };
@@ -132,44 +162,35 @@ export const publicFileRequest = async (action, payload = {}, file) => {
   }
 
   if (action === 'public.admission.submit' || payload.table === 'admissions') {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          table: 'admissions',
-          ...payload,
-          feeSlipUrl: fileBase64 || payload.feeSlipUrl || '',
-          feeSlipName: file?.name || payload.feeSlipName || ''
-        })
-      });
-      return await response.json().catch(() => ({ success: true }));
-    } catch (err) {
-      console.error('Admission Submit Error:', err);
-      return { success: false, error: err.message };
-    }
+    const list = getStoredData(STORAGE_KEYS.ADMISSIONS, []);
+    const newAdmission = {
+      regId: 'CASDCT-' + Math.floor(100000 + Math.random() * 900000),
+      fullName: payload.fullName || payload.name || 'Applicant',
+      fatherName: payload.fatherName || '',
+      program: payload.program || 'BS Program',
+      status: 'pending',
+      feeSlipUrl: fileBase64 || payload.feeSlipUrl || '',
+      meritPct: payload.meritPct || '80',
+      submittedAt: new Date().toISOString()
+    };
+    list.unshift(newAdmission);
+    setStoredData(STORAGE_KEYS.ADMISSIONS, list);
+    return { success: true, regId: newAdmission.regId };
   }
 
   if (action === 'public.gallery.upload' || action === 'user.gallery.share') {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          table: 'media_gallery',
-          title: payload.title || 'User Photo',
-          category: payload.category || 'General',
-          image_url: fileBase64 || payload.image_url || '',
-          filename: file?.name || '',
-          description: payload.description ? `${payload.description} (By: ${payload.uploaderName || 'Student'})` : `By: ${payload.uploaderName || 'Student'}`,
-          status: 'pending'
-        })
-      });
-      return await response.json().catch(() => ({ success: true }));
-    } catch (err) {
-      console.error('Gallery Upload Error:', err);
-      return { success: false };
-    }
+    const list = getStoredData(STORAGE_KEYS.GALLERY, []);
+    const newItem = {
+      id: Date.now().toString(),
+      title: payload.title || 'User Photo',
+      category: payload.category || 'General',
+      image_url: fileBase64 || payload.image_url || '',
+      status: 'pending',
+      description: payload.description || ''
+    };
+    list.unshift(newItem);
+    setStoredData(STORAGE_KEYS.GALLERY, list);
+    return { success: true };
   }
 
   return { success: true };
@@ -180,69 +201,70 @@ export const fileRequest = async (action, payload, file) => publicFileRequest(ac
 
 export const subscribeApprovedGallery = (callback) => {
   if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => callback(Array.isArray(data?.gallery) ? data.gallery : []))
-      .catch(() => callback([]));
+    const update = () => {
+      const data = getStoredData(STORAGE_KEYS.GALLERY, []);
+      callback(data);
+    };
+    update();
+    window.addEventListener('casdct_local_storage_updated', update);
+    return () => window.removeEventListener('casdct_local_storage_updated', update);
   }
   return () => {};
 };
 
 export const subscribeHomeContent = (callback) => {
   if (typeof callback === 'function') {
-    callback({ principal_name: 'Captain Ashfaq Shaheed', phone: '0963-123456', address: 'Tank, KPK' });
+    callback({
+      principal_name: 'Captain Ashfaq Shaheed',
+      phone: '0963-123456',
+      address: 'Tank, KPK'
+    });
   }
   return () => {};
 };
 
 export const subscribeAnnouncements = (callback) => {
   if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => callback(Array.isArray(data?.notices) ? data.notices : []))
-      .catch(() => callback([]));
+    const update = () => callback(getStoredData(STORAGE_KEYS.NOTICES, []));
+    update();
+    window.addEventListener('casdct_local_storage_updated', update);
+    return () => window.removeEventListener('casdct_local_storage_updated', update);
   }
   return () => {};
 };
 
 export const subscribeFaculty = (callback) => {
   if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => callback(Array.isArray(data?.faculty) ? data.faculty : []))
-      .catch(() => callback([]));
+    const update = () => callback(getStoredData(STORAGE_KEYS.FACULTY, []));
+    update();
+    window.addEventListener('casdct_local_storage_updated', update);
+    return () => window.removeEventListener('casdct_local_storage_updated', update);
   }
   return () => {};
 };
 
 export const subscribeAdmissions = (callback) => {
   if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => callback(Array.isArray(data?.admissions) ? data.admissions : []))
-      .catch(() => callback([]));
+    const update = () => callback(getStoredData(STORAGE_KEYS.ADMISSIONS, []));
+    update();
+    window.addEventListener('casdct_local_storage_updated', update);
+    return () => window.removeEventListener('casdct_local_storage_updated', update);
   }
   return () => {};
 };
 
-export const subscribeMeritList = (callback, errorCallback) => {
+export const subscribeMeritList = (callback) => {
   if (typeof callback === 'function') {
-    fetch(`${SCRIPT_URL}?action=get_all`)
-      .then(res => res.json())
-      .then(data => {
-        const admissionsList = Array.isArray(data?.admissions) ? data.admissions : [];
-        callback({
-          published: true,
-          admissions: admissionsList
-        });
-      })
-      .catch(err => {
-        if (typeof errorCallback === 'function') {
-          errorCallback(err);
-        } else {
-          callback({ published: false, admissions: [] });
-        }
+    const update = () => {
+      const admissionsList = getStoredData(STORAGE_KEYS.ADMISSIONS, []);
+      callback({
+        published: true,
+        admissions: admissionsList
       });
+    };
+    update();
+    window.addEventListener('casdct_local_storage_updated', update);
+    return () => window.removeEventListener('casdct_local_storage_updated', update);
   }
   return () => {};
 };
@@ -254,7 +276,13 @@ export const subscribeLocalData = (callback) => {
 
 export const subscribeWaitList = subscribeLocalData;
 export const subscribeWaitlist = subscribeLocalData;
-export const subscribeLocalChanges = subscribeApprovedGallery;
+export const subscribeLocalChanges = (keys, callback) => {
+  if (typeof callback === 'function') {
+    window.addEventListener('casdct_local_storage_updated', callback);
+    return () => window.removeEventListener('casdct_local_storage_updated', callback);
+  }
+  return () => {};
+};
 export const subscribeSiteContent = subscribeHomeContent;
 export const subscribeAdminData = subscribeHomeContent;
 export const subscribeLocalDataList = subscribeLocalData;

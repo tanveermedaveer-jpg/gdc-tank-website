@@ -71,6 +71,14 @@ export const adminRequest = async (action, payload = {}) => {
     };
   }
 
+  // Admin approval action
+  if (action === 'admin.gallery.approve') {
+    const list = getStoredData(STORAGE_KEYS.GALLERY, []);
+    const updated = list.map(item => item.id === payload.id ? { ...item, status: 'approved' } : item);
+    setStoredData(STORAGE_KEYS.GALLERY, updated);
+    return { success: true };
+  }
+
   if (action === 'admin.gallery.delete') {
     const list = getStoredData(STORAGE_KEYS.GALLERY, []);
     const updated = list.filter(item => item.id !== payload.id);
@@ -110,7 +118,7 @@ export const adminFileRequest = async (action, payload = {}, file) => {
       image_url: fileBase64 || payload.image_url || '',
       filename: file?.name || '',
       description: payload.description || '',
-      status: 'approved',
+      status: 'approved', // Admin direct upload is pre-approved
       date: new Date().toISOString().split('T')[0]
     };
     list.unshift(newItem);
@@ -178,6 +186,7 @@ export const publicFileRequest = async (action, payload = {}, file) => {
     return { success: true, regId: newAdmission.regId };
   }
 
+  // PUBLIC UPLOAD: Always set status to 'pending'
   if (action === 'public.gallery.upload' || action === 'user.gallery.share') {
     const list = getStoredData(STORAGE_KEYS.GALLERY, []);
     const newItem = {
@@ -185,8 +194,10 @@ export const publicFileRequest = async (action, payload = {}, file) => {
       title: payload.title || 'User Photo',
       category: payload.category || 'General',
       image_url: fileBase64 || payload.image_url || '',
-      status: 'pending',
-      description: payload.description || ''
+      status: 'pending', // 🛑 STRICTLY PENDING
+      uploaderName: payload.uploaderName || 'Student',
+      description: payload.description || '',
+      date: new Date().toISOString().split('T')[0]
     };
     list.unshift(newItem);
     setStoredData(STORAGE_KEYS.GALLERY, list);
@@ -199,11 +210,14 @@ export const publicFileRequest = async (action, payload = {}, file) => {
 export const publicRequest = async () => ({ success: true });
 export const fileRequest = async (action, payload, file) => publicFileRequest(action, payload, file);
 
+// 🎯 FIX HERE: Public Gallery Subscriptions ONLY return 'approved' items
 export const subscribeApprovedGallery = (callback) => {
   if (typeof callback === 'function') {
     const update = () => {
       const data = getStoredData(STORAGE_KEYS.GALLERY, []);
-      callback(data);
+      // STRICT FILTER: Public page will ONLY receive approved media items
+      const approvedOnly = data.filter(item => item.status === 'approved');
+      callback(approvedOnly);
     };
     update();
     window.addEventListener('casdct_local_storage_updated', update);

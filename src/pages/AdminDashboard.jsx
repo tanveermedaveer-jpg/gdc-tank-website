@@ -1120,6 +1120,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 </div>
               </div>
               {activeTab === 'admissions' && (
+              <>
               {/* ---------------- FILTER & CONTROLS BAR ---------------- */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                 
@@ -1314,7 +1315,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     </tbody>
                   </table>
                 </div>
-          {/* ---------------- FACULTY MANAGEMENT TAB ---------------- */}
+              </>
+            )}
+         {/* ------------ FACULTY MANAGEMENT TAB ------------- */}
           {activeTab === 'faculty' && (
             <div className="space-y-6">
               <section className="flex flex-wrap items-center justify-between gap-4">

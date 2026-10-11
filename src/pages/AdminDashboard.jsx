@@ -1315,8 +1315,8 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     </tbody>
                   </table>
                 </div>
-              </>
-            )}
+</>
+)}
          {/* ------------ FACULTY MANAGEMENT TAB ------------- */}
           {activeTab === 'faculty' && (
             <div className="space-y-6">

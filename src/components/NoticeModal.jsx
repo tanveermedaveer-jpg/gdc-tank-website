@@ -122,7 +122,7 @@ export default function NoticeModal({
       aria-labelledby="casdct-notice-title"
     >
       <div 
-        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-teal-900/10 dark:border-slate-800 overflow-hidden text-left transform transition-all duration-300 scale-100 flex flex-col max-h-[92vh]"
+        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-teal-900/10 dark:border-slate-800 overflow-hidden text-left transform transition-all duration-300 scale-100 flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Decorative Top Accent Glow */}
@@ -167,7 +167,7 @@ export default function NoticeModal({
         </div>
 
         {/* ---------------- MODAL CONTENT ---------------- */}
-        <div className="p-6 sm:p-7 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+        <div className="p-6 sm:p-7 space-y-4 overflow-y-auto custom-scrollbar">
           
           {/* Urgent Subtitle / Red Badge */}
           {activeNotice.subtitle && (
@@ -192,7 +192,7 @@ export default function NoticeModal({
           </h3>
 
           {/* Body Content with vertical scroll overflow & whitespace-pre-line */}
-          <div className="max-h-64 overflow-y-auto pr-2 custom-scrollbar border-y border-slate-100 dark:border-slate-800/80 py-3.5">
+          <div className="pr-2 border-y border-slate-100 dark:border-slate-800/80 py-3.5">
             <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-sans selection:bg-teal-100">
               {activeNotice.content || 'Please refer to the college admissions & administration office for further details.'}
             </p>

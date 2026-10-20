@@ -1126,7 +1126,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             >
               <div className="flex items-center gap-3">
                 <Megaphone className="w-5 h-5 text-amber-400" />
-                <span>📢 Popup Notice Board</span>
+                <span>📢 College Notice Board</span>
               </div>
               {popupNotice.active ? (
                 <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -1205,13 +1205,13 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 {activeTab === 'fee_records' && 'Fee Records & Receipts'}
                 {activeTab === 'media_gallery' && 'Media Gallery Moderation'}
                 {activeTab === 'examination_circulars' && 'Examination / Circulars Management'}
-                {activeTab === 'popup_notice' && '📢 Popup Notice Board & Modal Settings'}
+                {activeTab === 'popup_notice' && '📢 College Notice Board & Announcements'}
                 {activeTab === 'settings' && 'System & Portal Settings'}
                 {activeTab === 'help' && 'Help & Admin Support'}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                {activeTab === 'popup_notice' 
-                  ? 'Configure site-wide urgent popup announcements, alert badges, and call-to-action buttons'
+                {activeTab === 'popup_notice'
+                  ? 'Manage the site-wide popup modal (Section A) and the homepage static announcements board (Section B) in one place'
                   : 'Review and moderate pending student admissions and media uploads'}
               </p>
             </div>
@@ -2224,7 +2224,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
           {/* ---------------- POPUP NOTICE BOARD TAB ---------------- */}
           {activeTab === 'popup_notice' && (
-            <div className="space-y-6 max-w-7xl">
+            <div className="space-y-8 w-full max-w-6xl mx-auto">
               
               {/* Header Banner */}
               <div className="bg-gradient-to-r from-[#0d3b4c] via-[#10485c] to-[#0a2e3c] rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -2628,15 +2628,108 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               </div>
 
             </div>
+
+            {/* =========================================================== */}
+            {/* SECTION B — Homepage Static Notice Board */}
+            {/* =========================================================== */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+              {/* Section Header */}
+              <div className="bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 px-6 py-5 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Bell className="w-4 h-4 text-teal-400" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-teal-300">Section B</span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold font-serif text-white">🗒️ Homepage Static Notice Board</h2>
+                  <p className="text-slate-300 text-xs mt-1 leading-relaxed">
+                    Controls the "Latest Announcements" card displayed statically on the Home Page. Each line follows the format <code className="bg-white/10 px-1 rounded font-mono">YYYY-MM-DD|Notice Title</code>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveHomeContent}
+                  disabled={isSavingHomeContent}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-lg transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait shrink-0"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{isSavingHomeContent ? 'Saving...' : 'Save Notice Board'}</span>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {homeContentError && (
+                  <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">{homeContentError}</p>
+                )}
+
+                {/* Notice Board Textarea */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    Announcement Entries
+                    <span className="text-xs font-normal text-slate-400">(one per line, max 12)</span>
+                  </label>
+                  <textarea
+                    rows={8}
+                    value={noticeDraftText}
+                    onChange={(event) => setNoticeDraftText(event.target.value)}
+                    placeholder={`2026-10-05|Admissions Open for Session 2026–27\n2026-09-20|Annual Examination Date Sheet Published\n2026-09-01|Merit List Now Available Online`}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-800 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none leading-relaxed transition-all font-mono"
+                  />
+                  <span className="mt-1.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                    Format: <code className="text-teal-600 dark:text-teal-400 font-mono">YYYY-MM-DD|Announcement Title</code>. Each line becomes a clickable card item on the Homepage notice board.
+                  </span>
+                </div>
+
+                {/* Ticker Announcements */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-2">
+                    <Megaphone className="w-4 h-4 text-amber-500" />
+                    Scrolling Ticker Announcements
+                    <span className="text-xs font-normal text-slate-400">(one per line, max 12)</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={tickerDraftText}
+                    onChange={(event) => setTickerDraftText(event.target.value)}
+                    placeholder="One public announcement per line"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-800 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none leading-relaxed transition-all"
+                  />
+                  <span className="mt-1.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                    Appears in the scrolling announcement ticker bar at the top of the site. One plain text message per line.
+                  </span>
+                </div>
+
+                {/* Save Button */}
+                <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Saves to Firestore — updates appear site-wide in real time.</span>
+                  <button
+                    type="button"
+                    onClick={handleSaveHomeContent}
+                    disabled={isSavingHomeContent}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-800 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>{isSavingHomeContent ? 'Saving Notice Board...' : 'Save & Publish Notice Board'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
           )}
 
           {/* ---------------- SETTINGS TAB ---------------- */}
           {activeTab === 'settings' && (
             <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm max-w-7xl space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Admin Access & College Settings</h2>
-                <p className="text-xs text-slate-500">Manage admin credentials securely in the server database, along with institutional information and the principal desk message.</p>
+            <div className="w-full max-w-6xl mx-auto bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-8">
+              {/* Section Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                    System & Portal Settings
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage admin credentials, institutional information, principal desk message, and payment gateway settings.</p>
+                </div>
               </div>
 
               {settingsSaved && (
@@ -2671,9 +2764,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   </button>
                 </div>
 
-                <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950 dark:border-teal-900 dark:bg-teal-950/30 dark:text-teal-100">
-                  <p className="font-semibold">Update Admin Credentials</p>
-                  <p className="mt-1 text-xs leading-relaxed">Credential changes are saved to the secure server-side database. Updating either credential signs out other active sessions. Passwords must be at least 16 characters and are never stored in browser storage.</p>
+                {/* ---- ADMIN CREDENTIALS ---- */}
+                <div className="rounded-2xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/30 p-5 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-bold text-teal-900 dark:text-teal-200">🔐 Admin Login Credentials</span>
+                  </div>
+                  <p className="text-xs text-teal-800 dark:text-teal-300 leading-relaxed">Credential changes are saved to the secure server-side database. Updating either credential signs out other active sessions. Passwords must be at least 16 characters and are never stored in browser storage.</p>
                   <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Admin Username</label>
@@ -2730,7 +2826,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   )}
                 </div>
 
-                {/* ---------------- PAYMENT GATEWAY & FEE MANAGEMENT CARD ---------------- */}
+                {/* ---- PRINCIPAL & CAMPUS CONTACT ---- */}
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-5 space-y-5">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    🏫 Principal & Campus Contact Settings
+                  </h3>
+                </div>
+
+                {/* ---- PAYMENT GATEWAY & FEE MANAGEMENT ---- */}
                 <div className="rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white dark:from-emerald-950/20 dark:via-teal-950/10 dark:to-slate-900 p-6 shadow-sm space-y-6">
                   
                   {/* Card Header */}
@@ -2892,150 +2995,277 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Principal Name</label>
-                  <input 
-                    type="text" 
-                    value={principalName} 
-                    onChange={(e) => setPrincipalName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold"
-                  />
+                {/* ---- PAYMENT GATEWAY & FEE MANAGEMENT ---- */}
+                <div className="rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white dark:from-emerald-950/20 dark:via-teal-950/10 dark:to-slate-900 p-6 shadow-sm space-y-6">
+
+                  {/* Card Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-100 dark:border-emerald-900/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#00ba50] flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
+                        <CreditCard className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                            💳 Payment Gateway & Fee Management
+                          </h3>
+                          <span className="bg-[#00ba50]/15 text-[#00ba50] text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-[#00ba50]/30">
+                            EasyPaisa Live
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Configure EasyPaisa account, fee amounts, and payment instructions for <code className="text-teal-600 dark:text-teal-400 font-mono font-bold">/payment-gateway</code>.
+                        </p>
+                      </div>
+                    </div>
+
+                    <a
+                      href="/payment-gateway"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold hover:bg-teal-50 dark:hover:bg-slate-700 transition-colors shadow-xs shrink-0"
+                    >
+                      <span>View Live Payment Page</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+
+                  {paymentSettingsSaved && (
+                    <div className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 p-3.5 rounded-xl text-xs font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-2 animate-fadeIn">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>Payment Gateway settings updated successfully!</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-5">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#00ba50]"></span>
+                        EasyPaisa Account Settings
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">EasyPaisa Account Title</label>
+                          <input
+                            type="text"
+                            required
+                            value={easypaisaTitle}
+                            onChange={(e) => setEasypaisaTitle(e.target.value)}
+                            placeholder="e.g., GDC Tank Admission Fund"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white"
+                          />
+                          <span className="text-[11px] text-slate-500 mt-1 block">Account holder name displayed to students.</span>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">EasyPaisa Mobile Number</label>
+                          <input
+                            type="text"
+                            required
+                            value={easypaisaNumber}
+                            onChange={(e) => setEasypaisaNumber(e.target.value)}
+                            placeholder="e.g., 0345-9876543"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white font-mono"
+                          />
+                          <span className="text-[11px] text-slate-500 mt-1 block">Official mobile wallet number students transfer to.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                        Dynamic Fee Structure (PKR)
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Intermediate (FA / FSc) Fee</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
+                            <input type="number" min={0} max={100000} required value={interFee} onChange={(e) => setInterFee(Number(e.target.value))} className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white" />
+                          </div>
+                          <span className="text-[11px] text-slate-500 mt-1 block">Default: Rs. 300 for FSc, ICS, FA programs.</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">BS Program (4-Year) Fee</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
+                            <input type="number" min={0} max={100000} required value={bsFee} onChange={(e) => setBsFee(Number(e.target.value))} className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white" />
+                          </div>
+                          <span className="text-[11px] text-slate-500 mt-1 block">Default: Rs. 500 for BS degree programs.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Custom Payment Instructions</label>
+                      <textarea
+                        rows={3}
+                        value={paymentNotice}
+                        onChange={(e) => setPaymentNotice(e.target.value)}
+                        placeholder="Instructions displayed to students on how to send the fee..."
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs leading-relaxed font-medium text-slate-900 dark:text-white"
+                      />
+                      <span className="text-[11px] text-slate-500 mt-0.5 block">Shown inside the EasyPaisa transfer details card on the student payment gateway.</span>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
+                      <span className="text-xs text-slate-500">Syncs immediately with user payment portal</span>
+                      <button
+                        type="button"
+                        onClick={handleSavePaymentSettings}
+                        disabled={isSavingPaymentSettings}
+                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>{isSavingPaymentSettings ? 'Saving...' : 'Save Payment & Fee Settings'}</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Principal Message</label>
-                  <textarea 
-                    rows={4}
-                    value={principalMessage} 
-                    onChange={(e) => setPrincipalMessage(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm"
-                  />
-                </div>
+                {/* ---- PRINCIPAL & CAMPUS CONTACT (fields) ---- */}
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-5 space-y-5">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    🏫 Principal & Campus Contact Settings
+                  </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Principal Name */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">College Phone Helpline</label>
-                    <input 
-                      type="text" 
-                      value={collegePhone} 
-                      onChange={(e) => setCollegePhone(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold"
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Principal Name</label>
+                    <input
+                      type="text"
+                      value={principalName}
+                      onChange={(e) => setPrincipalName(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
                     />
                   </div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1 sm:col-span-2">
-                    Campus Address
+
+                  {/* Principal Message */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Principal's Welcome Message</label>
                     <textarea
-                      rows={2}
-                      value={collegeAddress}
-                      onChange={(e) => setCollegeAddress(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      rows={5}
+                      value={principalMessage}
+                      onChange={(e) => setPrincipalMessage(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all leading-relaxed"
                     />
-                  </label>
+                    <span className="text-[11px] text-slate-500 mt-1 block">Displayed in the Principal's Desk section on the homepage.</span>
+                  </div>
+
+                  {/* Phone & Address */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">College Phone Helpline</label>
+                      <input
+                        type="text"
+                        value={collegePhone}
+                        onChange={(e) => setCollegePhone(e.target.value)}
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Campus Address</label>
+                      <textarea
+                        rows={2}
+                        value={collegeAddress}
+                        onChange={(e) => setCollegeAddress(e.target.value)}
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <button type="submit" className="bg-teal-700 hover:bg-teal-800 text-white font-bold px-6 py-3 rounded-xl text-sm uppercase tracking-wider shadow-md">
-                  Save Changes
+                <button type="submit" className="bg-teal-700 hover:bg-teal-800 text-white font-bold px-6 py-3 rounded-xl text-sm uppercase tracking-wider shadow-md flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Save All Settings
                 </button>
               </form>
             </div>
-            <form onSubmit={handleSaveHomeContent} className="max-w-4xl space-y-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Homepage Content & Announcements</h2>
-                <p className="mt-1 text-xs text-slate-500">Changes are saved to Firestore and appear on every device in real time. Announcement lines use YYYY-MM-DD|Title.</p>
+            {/* Settings — Homepage Headline & Stats (kept here for content editing) */}
+            <form onSubmit={handleSaveHomeContent} className="w-full max-w-6xl mx-auto space-y-6 rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  📊 Homepage Headline & Statistics
+                </h2>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Changes are saved to Firestore and appear on every device in real time.</p>
               </div>
               {homeContentError && (
-                <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">{homeContentError}</p>
+                <div className="mx-6">
+                  <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">{homeContentError}</p>
+                </div>
               )}
-              <div className="space-y-4">
-                <label className="block text-xs font-bold uppercase text-slate-500">
-                  Homepage headline
+              <div className="px-6 pb-6 space-y-5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">Homepage Headline</label>
                   <input
                     type="text"
                     maxLength={180}
                     required
                     value={homeContentDraft.heroTitle}
                     onChange={(event) => setHomeContentDraft((current) => ({ ...current, heroTitle: event.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
                   />
-                </label>
-                <label className="block text-xs font-bold uppercase text-slate-500">
-                  Homepage description
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">Homepage Subtitle / Description</label>
                   <textarea
                     rows={3}
                     maxLength={1000}
                     value={homeContentDraft.heroDesc}
                     onChange={(event) => setHomeContentDraft((current) => ({ ...current, heroDesc: event.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
                   />
-                </label>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {homeContentDraft.stats.map((stat, index) => (
-                    <div key={`home-stat-${index}`} className="grid grid-cols-2 gap-2">
-                      <label className="block text-xs font-bold uppercase text-slate-500">
-                        Statistic {index + 1} value
-                        <input
-                          type="text"
-                          maxLength={40}
-                          required
-                          value={stat.value}
-                          onChange={(event) => setHomeContentDraft((current) => ({
-                            ...current,
-                            stats: current.stats.map((item, itemIndex) =>
-                              itemIndex === index ? { ...item, value: event.target.value } : item
-                            )
-                          }))}
-                          className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                        />
-                      </label>
-                      <label className="block text-xs font-bold uppercase text-slate-500">
-                        Statistic {index + 1} label
-                        <input
-                          type="text"
-                          maxLength={100}
-                          required
-                          value={stat.label}
-                          onChange={(event) => setHomeContentDraft((current) => ({
-                            ...current,
-                            stats: current.stats.map((item, itemIndex) =>
-                              itemIndex === index ? { ...item, label: event.target.value } : item
-                            )
-                          }))}
-                          className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                        />
-                      </label>
-                    </div>
-                  ))}
                 </div>
-                <label className="block text-xs font-bold uppercase text-slate-500">
-                  Homepage notice board
-                  <textarea
-                    rows={6}
-                    value={noticeDraftText}
-                    onChange={(event) => setNoticeDraftText(event.target.value)}
-                    placeholder="2026-10-05|Admissions announcement"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                  <span className="mt-1 block text-[11px] font-medium normal-case text-slate-500">Add, edit, or remove notices, one per line. Maximum 12.</span>
-                </label>
-                <label className="block text-xs font-bold uppercase text-slate-500">
-                  Scrolling ticker announcements
-                  <textarea
-                    rows={5}
-                    value={tickerDraftText}
-                    onChange={(event) => setTickerDraftText(event.target.value)}
-                    placeholder="One public announcement per line"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium normal-case text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  />
-                  <span className="mt-1 block text-[11px] font-medium normal-case text-slate-500">Add, edit, or remove ticker messages, one per line. Maximum 12.</span>
-                </label>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-3">Statistics Counters (4 Items)</label>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {homeContentDraft.stats.map((stat, index) => (
+                      <div key={`home-stat-${index}`} className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Stat {index + 1} Value</label>
+                          <input
+                            type="text"
+                            maxLength={40}
+                            required
+                            value={stat.value}
+                            onChange={(event) => setHomeContentDraft((current) => ({
+                              ...current,
+                              stats: current.stats.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, value: event.target.value } : item
+                              )
+                            }))}
+                            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Stat {index + 1} Label</label>
+                          <input
+                            type="text"
+                            maxLength={100}
+                            required
+                            value={stat.label}
+                            onChange={(event) => setHomeContentDraft((current) => ({
+                              ...current,
+                              stats: current.stats.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, label: event.target.value } : item
+                              )
+                            }))}
+                            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSavingHomeContent}
+                  className="rounded-xl bg-teal-700 hover:bg-teal-800 px-6 py-2.5 text-sm font-bold uppercase tracking-wider text-white shadow-md disabled:cursor-wait disabled:opacity-60 flex items-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {isSavingHomeContent ? 'Saving...' : 'Save Homepage Content'}
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={isSavingHomeContent}
-                className="rounded-xl bg-teal-700 px-6 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-md hover:bg-teal-800 disabled:cursor-wait disabled:opacity-60"
-              >
-                {isSavingHomeContent ? 'Saving local content…' : 'Save Homepage Content'}
-              </button>
             </form>
             </>
           )}

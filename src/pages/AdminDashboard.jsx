@@ -5,10 +5,11 @@ import {
   Menu, Settings, HelpCircle, LogOut, LayoutGrid, FileText, CreditCard, ImageIcon,
   GraduationCap, CheckCircle, XCircle, Plus, Trash2, AlertTriangle, ClipboardList, FileUp,
   Moon, Sun, UserCheck, RefreshCw, Edit3,
-  Upload, Trophy
+  Upload, Trophy, Megaphone, Phone, Mail, ExternalLink, Sparkles
 } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import principalImg from '../assets/principal.jpg';
+import NoticeModal from '../components/NoticeModal';
 import {
   MAX_CIRCULAR_SIZE_BYTES,
   adminFileRequest,
@@ -17,7 +18,8 @@ import {
   signOutAdmin,
   subscribeLocalChanges,
   subscribeHomeContent,
-  compressImageFile
+  compressImageFile,
+  DEFAULT_POPUP_NOTICE
 } from '../lib/adminApi';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
 import { DEFAULT_HOME_CONTENT } from '../lib/siteContentDefaults';
@@ -177,6 +179,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [homeContentError, setHomeContentError] = useState('');
   const [isSavingHomeContent, setIsSavingHomeContent] = useState(false);
 
+  // Popup Notice Board State
+  const [popupNotice, setPopupNotice] = useState(DEFAULT_POPUP_NOTICE);
+  const [isSavingPopupNotice, setIsSavingPopupNotice] = useState(false);
+  const [popupNoticeSaved, setPopupNoticeSaved] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
   useEffect(() => () => {
     if (adminUploadCloseTimer.current) window.clearTimeout(adminUploadCloseTimer.current);
   }, []);
@@ -217,6 +225,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         setMediaUploads(data.gallery || []);
         setFacultyMembers(data.faculty || []);
         setCirculars(data.circulars || []);
+        if (data.popupNotice) {
+          setPopupNotice(data.popupNotice);
+        }
         setAdminName(data.username || getAdminSessionUsername());
         setPrincipalName(data.settings.principal_name || '');
         setPrincipalMessage(data.settings.principal_message || '');
@@ -236,7 +247,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     };
     loadSharedData(true);
     const unsubscribe = subscribeLocalChanges(
-      ['admissions', 'gallery', 'faculty', 'settings', 'circulars'],
+      ['admissions', 'gallery', 'faculty', 'settings', 'circulars', 'popup_notice'],
       () => loadSharedData(false)
     );
     return () => {
@@ -718,6 +729,73 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     }
   };
 
+  // Popup Notice Management Handlers
+  const handleSavePopupNotice = async (e) => {
+    if (e) e.preventDefault();
+    setIsSavingPopupNotice(true);
+    setPopupNoticeSaved(false);
+    try {
+      await adminRequest('admin.popup_notice.save', { notice: popupNotice });
+      setPopupNoticeSaved(true);
+      showToast('Popup Notice Board settings published and saved successfully!', 'success');
+      setTimeout(() => setPopupNoticeSaved(false), 3500);
+    } catch (err) {
+      console.error('Unable to save popup notice:', err);
+      showToast(err.message || 'Unable to save popup notice configuration.', 'error');
+    } finally {
+      setIsSavingPopupNotice(false);
+    }
+  };
+
+  const handleTogglePopupNoticeActive = async (newActiveState) => {
+    const updated = { ...popupNotice, active: newActiveState };
+    setPopupNotice(updated);
+    try {
+      await adminRequest('admin.popup_notice.save', { notice: updated });
+      showToast(
+        newActiveState ? 'Popup Notice enabled & LIVE on website!' : 'Popup Notice paused / disabled site-wide.',
+        newActiveState ? 'success' : 'info'
+      );
+    } catch (err) {
+      console.error('Unable to toggle popup notice active status:', err);
+      showToast('Unable to update active status.', 'error');
+    }
+  };
+
+  const handleApplyNoticePreset = (type) => {
+    if (type === 'admissions') {
+      setPopupNotice(prev => ({
+        ...prev,
+        title: 'Admissions Open - Fall 2026',
+        subtitle: 'Online Application Portal is Now Live',
+        content: `Applications are invited for admission to BS 4-Year Degree Programs (Computer Science, English, Physics, Chemistry, Zoology, Mathematics) and Intermediate for Academic Session 2026-27.\n\nImportant Instructions:\n1. Online registration is compulsory through the admission portal.\n2. Merit lists will be generated and published on the college portal.\n3. Bring original academic credentials, CNIC/B-Form, and paid bank receipt at the time of document verification.\n\nFor any admission queries, please contact our admission helpdesk below.`,
+        buttonText: 'Apply For Admission',
+        buttonLink: '/admission'
+      }));
+      showToast('Applied "Admissions Open" template preset!', 'success');
+    } else if (type === 'examination') {
+      setPopupNotice(prev => ({
+        ...prev,
+        title: 'Annual Examination Date Sheet & Guidelines',
+        subtitle: 'Urgent Circular for All Regular Students',
+        content: `The Examination Section has officially announced the Date Sheet and roll number slip distribution schedule for Annual Examinations 2026.\n\nImportant Guidelines:\n1. Students must collect their official roll number slips from their respective departments.\n2. Entry to the examination hall requires valid college ID and roll number slip.\n3. Mobile phones and digital gadgets are strictly prohibited inside the examination center.`,
+        buttonText: 'View Examination Circulars',
+        buttonLink: '/examination'
+      }));
+      showToast('Applied "Examination Date Sheet" template preset!', 'success');
+    } else if (type === 'emergency') {
+      setPopupNotice(prev => ({
+        ...prev,
+        title: 'Emergency College Schedule Notification',
+        subtitle: 'Official Administration Notification',
+        content: `In compliance with official directives from the Directorate of Higher Education Khyber Pakhtunkhwa, college timings and instructional sessions have been revised until further notice.\n\nStudents, faculty, and administrative staff are requested to adhere to the revised schedule. Normal academic routine will resume as scheduled.\n\nFor queries, reach out to the College Administration office.`,
+        buttonText: 'Contact Office',
+        buttonLink: '/contact'
+      }));
+      showToast('Applied "Emergency Notice" template preset!', 'success');
+    }
+  };
+
   const handleSaveHomeContent = async (event) => {
     event.preventDefault();
     setHomeContentError('');
@@ -994,6 +1072,25 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </button>
 
             <button
+              onClick={() => handleTabSelect('popup_notice')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'popup_notice' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
+            >
+              <div className="flex items-center gap-3">
+                <Megaphone className="w-5 h-5 text-amber-400" />
+                <span>📢 Popup Notice Board</span>
+              </div>
+              {popupNotice.active ? (
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  LIVE
+                </span>
+              ) : (
+                <span className="bg-slate-700/70 text-slate-400 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                  OFF
+                </span>
+              )}
+            </button>
+
+            <button
               onClick={() => handleTabSelect('settings')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === 'settings' ? 'bg-[#13485b] text-white font-semibold shadow-md' : 'text-slate-300 hover:bg-[#0a3345] hover:text-white'}`}
             >
@@ -1047,6 +1144,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               {activeTab === 'fee_records' && <CreditCard className="w-6 h-6" />}
               {activeTab === 'media_gallery' && <ImageIcon className="w-6 h-6" />}
               {activeTab === 'examination_circulars' && <ClipboardList className="w-6 h-6" />}
+              {activeTab === 'popup_notice' && <Megaphone className="w-6 h-6" />}
               {activeTab === 'settings' && <Settings className="w-6 h-6" />}
               {activeTab === 'help' && <HelpCircle className="w-6 h-6" />}
             </div>
@@ -1058,11 +1156,14 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                 {activeTab === 'fee_records' && 'Fee Records & Receipts'}
                 {activeTab === 'media_gallery' && 'Media Gallery Moderation'}
                 {activeTab === 'examination_circulars' && 'Examination / Circulars Management'}
+                {activeTab === 'popup_notice' && '📢 Popup Notice Board & Modal Settings'}
                 {activeTab === 'settings' && 'System & Portal Settings'}
                 {activeTab === 'help' && 'Help & Admin Support'}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Review and moderate pending student admissions and media uploads
+                {activeTab === 'popup_notice' 
+                  ? 'Configure site-wide urgent popup announcements, alert badges, and call-to-action buttons'
+                  : 'Review and moderate pending student admissions and media uploads'}
               </p>
             </div>
           </div>
@@ -2072,6 +2173,414 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             </div>
           )}
 
+          {/* ---------------- POPUP NOTICE BOARD TAB ---------------- */}
+          {activeTab === 'popup_notice' && (
+            <div className="space-y-6 max-w-7xl">
+              
+              {/* Header Banner */}
+              <div className="bg-gradient-to-r from-[#0d3b4c] via-[#10485c] to-[#0a2e3c] rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="relative z-10 max-w-2xl">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Dynamic Announcement System
+                    </span>
+                    {popupNotice.active ? (
+                      <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Status: Live on Website
+                      </span>
+                    ) : (
+                      <span className="bg-slate-700/80 text-slate-300 border border-slate-600 text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                        Status: Disabled / Paused
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold font-serif text-white tracking-tight">
+                    📢 Site-Wide Popup Notice Board Control
+                  </h2>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-1 leading-relaxed">
+                    Instantly broadcast urgent notices, admissions announcements, and examination dates directly to visitors upon landing on the CASDCT college portal.
+                  </p>
+                </div>
+
+                <div className="relative z-10 flex items-center gap-3 shrink-0 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setIsPreviewModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold border border-white/20 backdrop-blur-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+                  >
+                    <Eye className="w-4 h-4 text-amber-300" />
+                    <span>Test Modal Popup</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSavePopupNotice}
+                    disabled={isSavingPopupNotice}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>{isSavingPopupNotice ? 'Publishing...' : 'Publish & Save Notice'}</span>
+                  </button>
+                </div>
+
+                {/* Subtle Decorative glow */}
+                <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-teal-400/10 rounded-full blur-3xl pointer-events-none" />
+              </div>
+
+              {popupNoticeSaved && (
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 p-4 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2.5 shadow-sm animate-fadeIn">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>Notice settings successfully published and saved! Site visitors will now receive this popup according to your settings.</span>
+                </div>
+              )}
+
+              {/* Quick Presets / Templates Bar */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Quick Fill Presets:
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleApplyNoticePreset('admissions')}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-colors cursor-pointer"
+                  >
+                    🎓 Admissions Open
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyNoticePreset('examination')}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 transition-colors cursor-pointer"
+                  >
+                    📝 Exam Date Sheet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyNoticePreset('emergency')}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors cursor-pointer"
+                  >
+                    ⚠️ Emergency Alert
+                  </button>
+                </div>
+              </div>
+
+              {/* Main Content Layout: Form & Live Card Preview */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* Left Form: Notice Configuration (7 Columns) */}
+                <div className="lg:col-span-7 space-y-6">
+                  <form onSubmit={handleSavePopupNotice} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+                    
+                    {/* a) Active Status Switch */}
+                    <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-bold text-slate-900 dark:text-white cursor-pointer">
+                            Active Status Switch
+                          </label>
+                          {popupNotice.active ? (
+                            <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                              Enabled Site-Wide
+                            </span>
+                          ) : (
+                            <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                              Disabled
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          When turned ON, the popup notice modal automatically appears to homepage visitors on their initial session visit.
+                        </p>
+                      </div>
+
+                      {/* Interactive Toggle Switch */}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={popupNotice.active}
+                        onClick={() => handleTogglePopupNoticeActive(!popupNotice.active)}
+                        className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
+                          popupNotice.active ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
+                        }`}
+                      >
+                        <span className="sr-only">Toggle notice modal</span>
+                        <span
+                          className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                            popupNotice.active ? 'translate-x-6' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* b) Notice Title Input */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Notice Title <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={popupNotice.title || ''}
+                        onChange={(e) => setPopupNotice(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="e.g., Admissions Open - Fall 2026 / Examination Notice"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
+                      />
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                        The primary prominent heading displayed to visitors.
+                      </span>
+                    </div>
+
+                    {/* c) Subtitle / Red Badge Input */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                        <span>Subtitle / Urgent Red Badge</span>
+                        <span className="text-[10px] text-slate-400 font-normal">Optional</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={popupNotice.subtitle || ''}
+                        onChange={(e) => setPopupNotice(prev => ({ ...prev, subtitle: e.target.value }))}
+                        placeholder="e.g., Important Procedure for Online Application / Urgent Notice"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
+                      />
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                        Renders in a high-priority red alert pill badge with glowing ping dot above the title.
+                      </span>
+                    </div>
+
+                    {/* d) Notice Body Textarea */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                        Notice Body Content <span className="text-rose-500">*</span>
+                      </label>
+                      <textarea
+                        rows={7}
+                        required
+                        value={popupNotice.content || ''}
+                        onChange={(e) => setPopupNotice(prev => ({ ...prev, content: e.target.value }))}
+                        placeholder="Type detailed instructions, eligibility criteria, date schedules, or procedural guidelines here..."
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none leading-relaxed"
+                      />
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
+                        Preserves multi-line line breaks (<code className="text-teal-600 dark:text-teal-400">whitespace-pre-line</code>). Includes vertical scroll overflow to cleanly support both short notices and multi-page official circulars without layout distortion.
+                      </span>
+                    </div>
+
+                    {/* e) Call-to-Action Link Settings */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                          CTA Button Text
+                        </label>
+                        <input
+                          type="text"
+                          value={popupNotice.buttonText || ''}
+                          onChange={(e) => setPopupNotice(prev => ({ ...prev, buttonText: e.target.value }))}
+                          placeholder="e.g., Apply Online Now"
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                          Target Route / URL
+                        </label>
+                        <input
+                          type="text"
+                          value={popupNotice.buttonLink || ''}
+                          onChange={(e) => setPopupNotice(prev => ({ ...prev, buttonLink: e.target.value }))}
+                          placeholder="e.g., /admission, /examination"
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* f) Contact Information Inputs */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                          <span>Contact Phone Number</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={popupNotice.phone || ''}
+                          onChange={(e) => setPopupNotice(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="e.g., +92 (0963) 510111"
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                          <span>Inquiry Email Address</span>
+                        </label>
+                        <input
+                          type="email"
+                          value={popupNotice.email || ''}
+                          onChange={(e) => setPopupNotice(prev => ({ ...prev, email: e.target.value }))}
+                          placeholder="e.g., admissions@casdct.edu.pk"
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* g) Action Buttons */}
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPopupNotice(DEFAULT_POPUP_NOTICE);
+                          showToast('Reset notice configuration to standard default values.', 'info');
+                        }}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        Reset to College Defaults
+                      </button>
+
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setIsPreviewModalOpen(true)}
+                          className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Eye className="w-4 h-4 text-slate-500" />
+                          <span>Preview Modal</span>
+                        </button>
+
+                        <button
+                          type="submit"
+                          disabled={isSavingPopupNotice}
+                          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-800 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg shadow-teal-700/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>{isSavingPopupNotice ? 'Publishing Notice...' : 'Publish & Save Notice'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                  </form>
+                </div>
+
+                {/* Right Column: Live Interactive Card Preview (5 Columns) */}
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                          Real-Time Visual Preview
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-medium text-slate-400">
+                        Updates as you type
+                      </span>
+                    </div>
+
+                    {/* Rendered Modal Card Replica */}
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950 text-left">
+                      
+                      {/* Replica Header */}
+                      <div className="bg-gradient-to-r from-[#0d3b4c] via-[#0f4457] to-[#0a3140] p-4 text-white flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/30 text-amber-300">
+                            <Bell className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-amber-300">
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>OFFICIAL ANNOUNCEMENT / اہم اطلاع</span>
+                            </div>
+                            <p className="text-[10px] text-teal-100/90 font-medium">
+                              Govt. Captain Ashfaq Shaheed Degree College, Tank
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-teal-200/60 p-1">
+                          <X className="w-4 h-4" />
+                        </span>
+                      </div>
+
+                      {/* Replica Body */}
+                      <div className="p-4 sm:p-5 space-y-3">
+                        {popupNotice.subtitle && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                            <span>{popupNotice.subtitle}</span>
+                          </span>
+                        )}
+
+                        <h4 className="text-base font-bold font-serif text-slate-900 dark:text-white leading-snug">
+                          {popupNotice.title || 'Untitled Notice'}
+                        </h4>
+
+                        <div className="max-h-40 overflow-y-auto pr-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line custom-scrollbar border-y border-slate-100 dark:border-slate-800 py-2">
+                          {popupNotice.content || 'Notice body content will be displayed here...'}
+                        </div>
+
+                        {(popupNotice.phone || popupNotice.email) && (
+                          <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-2.5 border border-slate-200/70 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+                            <div className="font-semibold text-slate-700 dark:text-slate-300">Helpdesk Inquiries:</div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {popupNotice.phone && (
+                                <span className="text-teal-700 dark:text-teal-400 font-bold flex items-center gap-1">
+                                  <Phone className="w-3 h-3" /> {popupNotice.phone}
+                                </span>
+                              )}
+                              {popupNotice.email && (
+                                <span className="text-teal-700 dark:text-teal-400 font-bold flex items-center gap-1">
+                                  <Mail className="w-3 h-3" /> {popupNotice.email}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Replica Footer */}
+                      <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-2">
+                        <span className="text-[10px] text-slate-400">
+                          CASDCT Portal
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-semibold text-slate-500 px-2 py-1">
+                            Close
+                          </span>
+                          {popupNotice.buttonText && (
+                            <span className="bg-gradient-to-r from-teal-700 to-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm">
+                              <span>{popupNotice.buttonText}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                      <span>Full screen test mode:</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsPreviewModalOpen(true)}
+                        className="text-teal-700 dark:text-teal-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        Launch Interactive Modal <ExternalLink className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
           {/* ---------------- SETTINGS TAB ---------------- */}
           {activeTab === 'settings' && (
             <>
@@ -2347,6 +2856,16 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
         </div>
       </main>
+
+      {/* Interactive Fullscreen Notice Modal Preview for Admin */}
+      {isPreviewModalOpen && (
+        <NoticeModal
+          notice={popupNotice}
+          isOpen={isPreviewModalOpen}
+          onClose={() => setIsPreviewModalOpen(false)}
+          isPreview={true}
+        />
+      )}
 
     </div>
   );

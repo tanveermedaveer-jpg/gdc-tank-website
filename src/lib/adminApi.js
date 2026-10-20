@@ -10,7 +10,8 @@ const STORAGE_KEYS = {
   GALLERY: 'casdct_gallery',
   FACULTY: 'casdct_faculty',
   NOTICES: 'casdct_notices',
-  SETTINGS: 'casdct_settings'
+  SETTINGS: 'casdct_settings',
+  POPUP_NOTICE: 'casdct_popup_notice'
 };
 
 // Check if a file is a video
@@ -220,6 +221,18 @@ const DEFAULT_SETTINGS = {
   merit_list_live: true
 };
 
+// Default Dynamic Popup Notice Data
+export const DEFAULT_POPUP_NOTICE = {
+  active: true,
+  title: 'Admissions Open - Academic Session 2026-27',
+  subtitle: 'Important Procedure for Online Application',
+  content: `Applications are invited for admission to BS 4-Year Degree Programs (Computer Science, English, Physics, Chemistry, Zoology, Mathematics) and Intermediate (Pre-Medical, Pre-Engineering, Computer Science, Arts) for Academic Session 2026.\n\nKey Guidelines:\n1. Online portal registration is mandatory before the announced deadline.\n2. Verified merit lists will be published on the official college website.\n3. Bring original academic credentials, CNIC/B-Form, and paid bank vouchers at the time of interview.\n\nFor urgent queries or technical assistance regarding application submission, reach out to our admission helpdesk below.`,
+  buttonText: 'Apply Online Now',
+  buttonLink: '/admission',
+  phone: '+92 (0963) 510111',
+  email: 'admissions@casdct.edu.pk'
+};
+
 // Default Sample Admissions
 const DEFAULT_ADMISSIONS = [
   {
@@ -397,7 +410,8 @@ export const adminRequest = async (action, payload = {}) => {
       gallery: (Array.isArray(rawGallery) && rawGallery.length > 0 ? rawGallery : DEFAULT_GALLERY_ITEMS).map(normalizeMediaItem),
       faculty: (Array.isArray(rawFaculty) && rawFaculty.length > 0 ? rawFaculty : DEFAULT_FACULTY_MEMBERS).map(normalizeFacultyItem),
       circulars: Array.isArray(rawNotices) ? rawNotices : [],
-      settings: { ...DEFAULT_SETTINGS, ...rawSettings }
+      settings: { ...DEFAULT_SETTINGS, ...rawSettings },
+      popupNotice: getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE)
     };
   }
 
@@ -526,6 +540,14 @@ export const adminRequest = async (action, payload = {}) => {
       localStorage.setItem('casdct_admin_pass', payload.password);
     }
     return { success: true };
+  }
+
+  // Popup Notice Settings
+  if (action === 'admin.popup_notice.save' || action === 'admin.popup.save') {
+    const currentNotice = getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
+    const newNotice = { ...currentNotice, ...(payload.notice || payload) };
+    setStoredData(STORAGE_KEYS.POPUP_NOTICE, newNotice);
+    return newNotice;
   }
 
   return { success: true };
@@ -793,9 +815,30 @@ export const subscribeLocalData = (typeOrCallback, maybeCallback) => {
   if (type === 'admissions') return subscribeAdmissions(callback);
   if (type === 'notices' || type === 'circulars') return subscribeAnnouncements(callback);
   if (type === 'settings') return subscribeHomeContent(callback);
+  if (type === 'popup_notice' || type === 'popup' || type === 'popupNotice') return subscribePopupNotice(callback);
 
   // Fallback generic subscriber
   const notify = () => callback([]);
+  notify();
+  window.addEventListener('casdct_local_storage_updated', notify);
+  return () => window.removeEventListener('casdct_local_storage_updated', notify);
+};
+
+export const getPopupNotice = () => getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
+
+export const savePopupNotice = (noticeData) => {
+  const current = getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
+  const updated = { ...current, ...noticeData };
+  setStoredData(STORAGE_KEYS.POPUP_NOTICE, updated);
+  return updated;
+};
+
+export const subscribePopupNotice = (callback) => {
+  if (typeof callback !== 'function') return () => {};
+  const notify = () => {
+    const notice = getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
+    callback(notice);
+  };
   notify();
   window.addEventListener('casdct_local_storage_updated', notify);
   return () => window.removeEventListener('casdct_local_storage_updated', notify);
@@ -827,5 +870,8 @@ export default {
   subscribeAnnouncements,
   subscribeSiteContent,
   subscribeAdminData,
-  subscribeFaculty
+  subscribeFaculty,
+  getPopupNotice,
+  savePopupNotice,
+  subscribePopupNotice
 };

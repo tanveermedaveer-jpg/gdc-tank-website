@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardList, ShieldCheck, CheckCircle2, DollarSign, FileText, Award, Search, Trophy } from 'lucide-react';
+import { ClipboardList, ShieldCheck, CheckCircle2, DollarSign, FileText, Search, Trophy } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import { useLanguage } from '../context/LanguageContext';
 import { subscribeMeritList } from '../lib/adminApi';

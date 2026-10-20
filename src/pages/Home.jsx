@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Calendar, ArrowRight, BookOpen, Award, Users, CheckCircle, Bell } from 'lucide-react';
 import campusImg from '../assets/campus.png';
 import principalImg from '../assets/principal.jpg';
@@ -15,7 +15,7 @@ const DEFAULT_PRINCIPAL_MESSAGE = 'It is a matter of great pride and privilege t
 
 export default function Home() {
   const { t } = useLanguage();
-  const navigate = useNavigate();
+
   const [homeContent, setHomeContent] = useState(DEFAULT_HOME_CONTENT);
   const [principalName, setPrincipalName] = useState('Prof. Shabir Ahmad');
   const [principalImage, setPrincipalImage] = useState(principalImg);
@@ -35,7 +35,20 @@ export default function Home() {
         stats: Array.isArray(content.stats) && content.stats.length === 4
           ? content.stats
           : DEFAULT_HOME_CONTENT.stats,
-        notices: Array.isArray(content.notices) ? content.notices : [],
+        notices: Array.isArray(content.notices) && content.notices.length > 0
+          ? content.notices
+          : (() => {
+              try {
+                const raw = localStorage.getItem('casdct_homepage_notices');
+                if (raw) {
+                  const parsed = JSON.parse(raw);
+                  if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                }
+              } catch {
+                // ignore
+              }
+              return [];
+            })(),
         tickerAnnouncements: Array.isArray(content.tickerAnnouncements) ? content.tickerAnnouncements : []
       });
     }, (error) => console.error('Unable to subscribe to shared homepage content:', error));
@@ -201,7 +214,7 @@ export default function Home() {
                         <div className="flex-shrink-0 bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-50 dark:group-hover:bg-slate-700 text-slate-600 dark:text-slate-400 group-hover:text-teal-700 dark:group-hover:text-teal-350 w-24 h-16 rounded-xl flex flex-col items-center justify-center transition-colors">
                           <Calendar className="w-4 h-4 mb-1" />
                           <span className="text-[10px] font-bold uppercase tracking-wider text-center">
-                            {new Date(`${notice.date}T00:00:00`).toLocaleDateString(t('home') === 'ہوم' ? 'ur' : 'en', { month: 'short', day: 'numeric' })}
+                            {notice.date ? new Date(notice.date.includes('T') ? notice.date : `${notice.date}T00:00:00`).toLocaleDateString(t('home') === 'ہوم' ? 'ur' : 'en', { month: 'short', day: 'numeric' }) : 'Recent'}
                           </span>
                         </div>
                         <div className="flex-grow pt-1">

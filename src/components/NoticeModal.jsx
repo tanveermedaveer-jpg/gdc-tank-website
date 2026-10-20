@@ -191,8 +191,8 @@ export default function NoticeModal({
             {activeNotice.title || 'Official College Notice'}
           </h3>
 
-          {/* Body Content with vertical scroll overflow & whitespace-pre-line */}
-          <div className="pr-2 border-y border-slate-100 dark:border-slate-800/80 py-3.5">
+          {/* Body Content with smart dynamic height: auto scroll for long text, clean natural display for short text */}
+          <div className="max-h-64 overflow-y-auto pr-2 custom-scrollbar border-y border-slate-100 dark:border-slate-800/80 py-3.5">
             <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-sans selection:bg-teal-100">
               {activeNotice.content || 'Please refer to the college admissions & administration office for further details.'}
             </p>

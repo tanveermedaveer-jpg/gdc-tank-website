@@ -1,5 +1,5 @@
 import React from 'react';
-import { Milestone, Shield, Calendar, Users, GraduationCap } from 'lucide-react';
+import { Shield, Calendar, GraduationCap } from 'lucide-react';
 import campusImg from '../../assets/campus.png';
 import { useLanguage } from '../../context/LanguageContext';
 

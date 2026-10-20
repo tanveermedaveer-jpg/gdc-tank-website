@@ -7,7 +7,7 @@ import {
   Moon, Sun, UserCheck, RefreshCw, Edit3,
   Upload, Trophy, Megaphone, Phone, Mail, ExternalLink, Sparkles
 } from 'lucide-react';
-import campusImg from '../assets/campus.png';
+
 import principalImg from '../assets/principal.jpg';
 import NoticeModal from '../components/NoticeModal';
 import {
@@ -18,7 +18,7 @@ import {
   signOutAdmin,
   subscribeLocalChanges,
   subscribeHomeContent,
-  compressImageFile,
+
   DEFAULT_POPUP_NOTICE
 } from '../lib/adminApi';
 import { COLLEGE_ADDRESS, COLLEGE_PHONE } from '../lib/contactDetails';
@@ -134,7 +134,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [facultyDraft, setFacultyDraft] = useState({});
   const [facultyPhotoFile, setFacultyPhotoFile] = useState(null);
   const [facultyPhotoName, setFacultyPhotoName] = useState('');
-  const [facultyPhotoPreview, setFacultyPhotoPreview] = useState('');
+
   const [facultyFormError, setFacultyFormError] = useState('');
   const [isSavingFaculty, setIsSavingFaculty] = useState(false);
 
@@ -147,7 +147,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [adminUploadTitle, setAdminUploadTitle] = useState('');
   const [adminUploadCategory, setAdminUploadCategory] = useState('facilities');
   const [adminUploadFile, setAdminUploadFile] = useState(null);
-  const [adminUploadPreview, setAdminUploadPreview] = useState('');
+
   const [adminUploadError, setAdminUploadError] = useState('');
   const [isDraggingAdminUpload, setIsDraggingAdminUpload] = useState(false);
   const [isUploadingAdminMedia, setIsUploadingAdminMedia] = useState(false);
@@ -172,7 +172,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [principalName, setPrincipalName] = useState('');
   const [principalMessage, setPrincipalMessage] = useState('');
   const [principalImage, setPrincipalImage] = useState('');
-  const [isUploadingPrincipalImage, setIsUploadingPrincipalImage] = useState(false);
+
   const [collegePhone, setCollegePhone] = useState('');
   const [collegeAddress, setCollegeAddress] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
@@ -339,7 +339,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   const handleSaveFaculty = async (event) => {
-    event.preventDefault();
+    if (event) event.preventDefault();
     setIsSavingFaculty(true);
     setFacultyFormError('');
     try {
@@ -785,6 +785,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     setPopupNoticeSaved(false);
     try {
       await adminRequest('admin.popup_notice.save', { notice: popupNotice });
+      try {
+        localStorage.setItem('casdct_popup_notice', JSON.stringify(popupNotice));
+      } catch (err) {
+        console.warn('LocalStorage error:', err);
+      }
+      window.dispatchEvent(new Event('casdct_local_storage_updated'));
       setPopupNoticeSaved(true);
       showToast('Popup Notice Board settings published and saved successfully!', 'success');
       setTimeout(() => setPopupNoticeSaved(false), 3500);
@@ -801,6 +807,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     setPopupNotice(updated);
     try {
       await adminRequest('admin.popup_notice.save', { notice: updated });
+      try {
+        localStorage.setItem('casdct_popup_notice', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('LocalStorage error:', err);
+      }
+      window.dispatchEvent(new Event('casdct_local_storage_updated'));
       showToast(
         newActiveState ? 'Popup Notice enabled & LIVE on website!' : 'Popup Notice paused / disabled site-wide.',
         newActiveState ? 'success' : 'info'
@@ -846,7 +858,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   const handleSaveHomeContent = async (event) => {
-    event.preventDefault();
+    if (event) event.preventDefault();
     setHomeContentError('');
     const notices = noticeDraftText.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
       const separator = line.indexOf('|');
@@ -863,6 +875,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
     setIsSavingHomeContent(true);
     try {
       await adminRequest('admin.homeContent.save', { homeContent: content });
+      try {
+        localStorage.setItem('casdct_homepage_notices', JSON.stringify(notices));
+      } catch (e) {
+        console.warn('LocalStorage error:', e);
+      }
+      window.dispatchEvent(new Event('casdct_local_storage_updated'));
       setHomeContentDraft(content);
       showToast('Shared homepage content and announcements saved.', 'success');
     } catch (error) {
@@ -874,7 +892,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
 
   const handleUploadCircular = async (event) => {
-    event.preventDefault();
+    if (event) event.preventDefault();
     const form = event.currentTarget;
     if (!circularTitle.trim() || !circularPublishDate || !circularFile) {
       showToast('Enter a title and publish date, and select a PDF file.', 'error');
@@ -1126,7 +1144,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
             >
               <div className="flex items-center gap-3">
                 <Megaphone className="w-5 h-5 text-amber-400" />
-                <span>📢 College Notice Board</span>
+                <span>📢 College Notice Board & Announcements</span>
               </div>
               {popupNotice.active ? (
                 <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -1899,12 +1917,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       <label
                         htmlFor="admin-media-file"
                         onDragOver={(event) => {
-                          event.preventDefault();
+                          if (event) event.preventDefault();
                           setIsDraggingAdminUpload(true);
                         }}
                         onDragLeave={() => setIsDraggingAdminUpload(false)}
                         onDrop={(event) => {
-                          event.preventDefault();
+                          if (event) event.preventDefault();
                           setIsDraggingAdminUpload(false);
                           handleAdminUploadFileChange(event.dataTransfer.files[0]);
                         }}
@@ -2224,7 +2242,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
 
           {/* ---------------- POPUP NOTICE BOARD TAB ---------------- */}
           {activeTab === 'popup_notice' && (
-            <div className="space-y-8 w-full max-w-6xl mx-auto">
+            <div className="w-full max-w-6xl mx-auto px-4 space-y-8">
               
               {/* Header Banner */}
               <div className="bg-gradient-to-r from-[#0d3b4c] via-[#10485c] to-[#0a2e3c] rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -2232,25 +2250,25 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" />
-                      Dynamic Announcement System
+                      Unified Announcement Center
                     </span>
                     {popupNotice.active ? (
                       <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Status: Live on Website
+                        Popup Modal: Live
                       </span>
                     ) : (
                       <span className="bg-slate-700/80 text-slate-300 border border-slate-600 text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-slate-400"></span>
-                        Status: Disabled / Paused
+                        Popup Modal: Paused
                       </span>
                     )}
                   </div>
                   <h2 className="text-xl sm:text-2xl font-bold font-serif text-white tracking-tight">
-                    📢 Site-Wide Popup Notice Board Control
+                    📢 College Notice Board & Announcements Control
                   </h2>
                   <p className="text-slate-300 text-xs sm:text-sm mt-1 leading-relaxed">
-                    Instantly broadcast urgent notices, admissions announcements, and examination dates directly to visitors upon landing on the CASDCT college portal.
+                    Manage the site-wide dynamic popup modal (Section A) and the static homepage announcements board (Section B). All changes sync instantly in real time across the portal.
                   </p>
                 </div>
 
@@ -2261,7 +2279,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold border border-white/20 backdrop-blur-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
                   >
                     <Eye className="w-4 h-4 text-amber-300" />
-                    <span>Test Modal Popup</span>
+                    <span>Test Popup Modal</span>
                   </button>
 
                   <button
@@ -2271,7 +2289,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-900/30 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                   >
                     <CheckCircle className="w-4 h-4" />
-                    <span>{isSavingPopupNotice ? 'Publishing...' : 'Publish & Save Notice'}</span>
+                    <span>{isSavingPopupNotice ? 'Publishing...' : 'Publish Popup Notice'}</span>
                   </button>
                 </div>
 
@@ -2282,51 +2300,65 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
               {popupNoticeSaved && (
                 <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 p-4 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2.5 shadow-sm animate-fadeIn">
                   <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>Notice settings successfully published and saved! Site visitors will now receive this popup according to your settings.</span>
+                  <span>Popup notice settings successfully published! Visitors will receive this alert upon opening the website.</span>
                 </div>
               )}
 
-              {/* Quick Presets / Templates Bar */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Quick Fill Presets:
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleApplyNoticePreset('admissions')}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-colors cursor-pointer"
-                  >
-                    🎓 Admissions Open
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleApplyNoticePreset('examination')}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 transition-colors cursor-pointer"
-                  >
-                    📝 Exam Date Sheet
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleApplyNoticePreset('emergency')}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors cursor-pointer"
-                  >
-                    ⚠️ Emergency Alert
-                  </button>
-                </div>
-              </div>
-
-              {/* Main Content Layout: Form & Live Card Preview */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* =========================================================== */}
+              {/* SECTION A — Dynamic Newsletter Popup Modal */}
+              {/* =========================================================== */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-7 shadow-sm space-y-6">
                 
-                {/* Left Form: Notice Configuration (7 Columns) */}
-                <div className="lg:col-span-7 space-y-6">
-                  <form onSubmit={handleSavePopupNotice} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+                {/* Section A Title & Quick Presets */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 text-xs font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-teal-300 dark:border-teal-800">
+                        Section A
+                      </span>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                        Dynamic Newsletter Popup Modal (casdct_popup_notice)
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Controls the interactive alert modal that appears in the center of the screen on visitor arrival.
+                    </p>
+                  </div>
+
+                  {/* Presets */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold uppercase text-slate-400 mr-1">Templates:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyNoticePreset('admissions')}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-colors cursor-pointer"
+                    >
+                      🎓 Admissions Open
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyNoticePreset('examination')}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 transition-colors cursor-pointer"
+                    >
+                      📝 Exam Date Sheet
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyNoticePreset('emergency')}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors cursor-pointer"
+                    >
+                      ⚠️ Emergency
+                    </button>
+                  </div>
+                </div>
+
+                {/* Form & Live Preview Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  
+                  {/* Left Form: Notice Configuration (7 Cols) */}
+                  <div className="lg:col-span-7 space-y-5">
                     
-                    {/* a) Active Status Switch */}
+                    {/* Active Status Switch */}
                     <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
@@ -2348,7 +2380,6 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         </p>
                       </div>
 
-                      {/* Interactive Toggle Switch */}
                       <button
                         type="button"
                         role="switch"
@@ -2367,7 +2398,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       </button>
                     </div>
 
-                    {/* b) Notice Title Input */}
+                    {/* Notice Title */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                         Notice Title <span className="text-rose-500">*</span>
@@ -2380,12 +2411,9 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         placeholder="e.g., Admissions Open - Fall 2026 / Examination Notice"
                         className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
                       />
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-                        The primary prominent heading displayed to visitors.
-                      </span>
                     </div>
 
-                    {/* c) Subtitle / Red Badge Input */}
+                    {/* Subtitle / Urgent Red Badge */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
                         <span>Subtitle / Urgent Red Badge</span>
@@ -2403,13 +2431,13 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       </span>
                     </div>
 
-                    {/* d) Notice Body Textarea */}
+                    {/* Notice Body Content */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                         Notice Body Content <span className="text-rose-500">*</span>
                       </label>
                       <textarea
-                        rows={7}
+                        rows={6}
                         required
                         value={popupNotice.content || ''}
                         onChange={(e) => setPopupNotice(prev => ({ ...prev, content: e.target.value }))}
@@ -2417,12 +2445,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all outline-none leading-relaxed"
                       />
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-                        Preserves multi-line line breaks (<code className="text-teal-600 dark:text-teal-400">whitespace-pre-line</code>). Includes vertical scroll overflow to cleanly support both short notices and multi-page official circulars without layout distortion.
+                        Smart dynamic height: displays cleanly with 0 scrollbars if text is short (3-4 lines), and auto-scrolls vertically when exceeding limit.
                       </span>
                     </div>
 
-                    {/* e) Call-to-Action Link Settings */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    {/* CTA Button Text & Link */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                           CTA Button Text
@@ -2449,7 +2477,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       </div>
                     </div>
 
-                    {/* f) Contact Information Inputs */}
+                    {/* Contact Phone & Email */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
@@ -2479,7 +2507,7 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       </div>
                     </div>
 
-                    {/* g) Action Buttons */}
+                    {/* Actions */}
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                       <button
                         type="button"
@@ -2503,771 +2531,704 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                         </button>
 
                         <button
-                          type="submit"
+                          type="button"
+                          onClick={handleSavePopupNotice}
                           disabled={isSavingPopupNotice}
                           className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-800 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg shadow-teal-700/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                         >
                           <CheckCircle className="w-4 h-4" />
-                          <span>{isSavingPopupNotice ? 'Publishing Notice...' : 'Publish & Save Notice'}</span>
+                          <span>{isSavingPopupNotice ? 'Publishing...' : 'Publish & Save Notice'}</span>
                         </button>
                       </div>
                     </div>
 
-                  </form>
-                </div>
+                  </div>
 
-                {/* Right Column: Live Interactive Card Preview (5 Columns) */}
-                <div className="lg:col-span-5 space-y-4">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                          Real-Time Visual Preview
-                        </h3>
-                      </div>
-                      <span className="text-[10px] font-medium text-slate-400">
-                        Updates as you type
-                      </span>
-                    </div>
-
-                    {/* Rendered Modal Card Replica */}
-                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950 text-left">
-                      
-                      {/* Replica Header */}
-                      <div className="bg-gradient-to-r from-[#0d3b4c] via-[#0f4457] to-[#0a3140] p-4 text-white flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/30 text-amber-300">
-                            <Bell className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-amber-300">
-                              <Sparkles className="w-2.5 h-2.5" />
-                              <span>OFFICIAL ANNOUNCEMENT / اہم اطلاع</span>
-                            </div>
-                            <p className="text-[10px] text-teal-100/90 font-medium">
-                              Govt. Captain Ashfaq Shaheed Degree College, Tank
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-teal-200/60 p-1">
-                          <X className="w-4 h-4" />
-                        </span>
-                      </div>
-
-                      {/* Replica Body */}
-                      <div className="p-4 sm:p-5 space-y-3">
-                        {popupNotice.subtitle && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
-                            <span>{popupNotice.subtitle}</span>
-                          </span>
-                        )}
-
-                        <h4 className="text-base font-bold font-serif text-slate-900 dark:text-white leading-snug">
-                          {popupNotice.title || 'Untitled Notice'}
-                        </h4>
-
-                        <div className="max-h-40 overflow-y-auto pr-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line custom-scrollbar border-y border-slate-100 dark:border-slate-800 py-2">
-                          {popupNotice.content || 'Notice body content will be displayed here...'}
-                        </div>
-
-                        {(popupNotice.phone || popupNotice.email) && (
-                          <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-2.5 border border-slate-200/70 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
-                            <div className="font-semibold text-slate-700 dark:text-slate-300">Helpdesk Inquiries:</div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              {popupNotice.phone && (
-                                <span className="text-teal-700 dark:text-teal-400 font-bold flex items-center gap-1">
-                                  <Phone className="w-3 h-3" /> {popupNotice.phone}
-                                </span>
-                              )}
-                              {popupNotice.email && (
-                                <span className="text-teal-700 dark:text-teal-400 font-bold flex items-center gap-1">
-                                  <Mail className="w-3 h-3" /> {popupNotice.email}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Replica Footer */}
-                      <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-2">
-                        <span className="text-[10px] text-slate-400">
-                          CASDCT Portal
-                        </span>
+                  {/* Right Column: Live Modal Card Preview (5 Cols) */}
+                  <div className="lg:col-span-5 space-y-4">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl p-5 shadow-xs">
+                      <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-semibold text-slate-500 px-2 py-1">
-                            Close
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            Real-Time Visual Preview
+                          </h4>
+                        </div>
+                        <span className="text-[10px] font-medium text-slate-400">
+                          Updates live as you type
+                        </span>
+                      </div>
+
+                      {/* Rendered Modal Replica Card */}
+                      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950 text-left">
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-[#0d3b4c] via-[#0f4457] to-[#0a3140] p-4 text-white flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/30 text-amber-300">
+                              <Bell className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-amber-300">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                <span>OFFICIAL ANNOUNCEMENT</span>
+                              </div>
+                              <p className="text-[10px] text-teal-100/90 font-medium">
+                                Govt. Captain Ashfaq Shaheed Degree College, Tank
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-teal-200/60 p-1">
+                            <X className="w-4 h-4" />
                           </span>
-                          {popupNotice.buttonText && (
-                            <span className="bg-gradient-to-r from-teal-700 to-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm">
-                              <span>{popupNotice.buttonText}</span>
-                              <ExternalLink className="w-3 h-3" />
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-4 space-y-3">
+                          {popupNotice.subtitle && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                              <span>{popupNotice.subtitle}</span>
                             </span>
                           )}
+
+                          <h4 className="text-sm font-bold font-serif text-slate-900 dark:text-white leading-snug">
+                            {popupNotice.title || 'Untitled Notice'}
+                          </h4>
+
+                          <div className="max-h-36 overflow-y-auto pr-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line custom-scrollbar border-y border-slate-100 dark:border-slate-800 py-2">
+                            {popupNotice.content || 'Notice body content will be displayed here...'}
+                          </div>
+
+                          {(popupNotice.phone || popupNotice.email) && (
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-2.5 border border-slate-200/70 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+                              <div className="font-semibold text-slate-700 dark:text-slate-300">Helpdesk Inquiries:</div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {popupNotice.phone && (
+                                  <span className="text-teal-700 dark:text-teal-400 font-bold flex items-center gap-1">
+                                    <Phone className="w-3 h-3" /> {popupNotice.phone}
+                                  </span>
+                                )}
+                                {popupNotice.email && (
+                                  <span className="text-teal-700 dark:text-teal-400 font-bold flex items-center gap-1">
+                                    <Mail className="w-3 h-3" /> {popupNotice.email}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
+
+                        {/* Replica Footer */}
+                        <div className="bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-slate-400">
+                            CASDCT Portal
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-slate-500 px-2 py-1">
+                              Close
+                            </span>
+                            {popupNotice.buttonText && (
+                              <span className="bg-gradient-to-r from-teal-700 to-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-xs">
+                                <span>{popupNotice.buttonText}</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500">
+                        <span>Test modal interaction:</span>
+                        <button
+                          type="button"
+                          onClick={() => setIsPreviewModalOpen(true)}
+                          className="text-teal-700 dark:text-teal-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          Launch Modal <ExternalLink className="w-3 h-3" />
+                        </button>
                       </div>
 
                     </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-                      <span>Full screen test mode:</span>
-                      <button
-                        type="button"
-                        onClick={() => setIsPreviewModalOpen(true)}
-                        className="text-teal-700 dark:text-teal-400 font-bold hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        Launch Interactive Modal <ExternalLink className="w-3 h-3" />
-                      </button>
-                    </div>
-
                   </div>
+
                 </div>
 
               </div>
 
-            </div>
-
-            {/* =========================================================== */}
-            {/* SECTION B — Homepage Static Notice Board */}
-            {/* =========================================================== */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-              {/* Section Header */}
-              <div className="bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 px-6 py-5 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Bell className="w-4 h-4 text-teal-400" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-teal-300">Section B</span>
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-bold font-serif text-white">🗒️ Homepage Static Notice Board</h2>
-                  <p className="text-slate-300 text-xs mt-1 leading-relaxed">
-                    Controls the "Latest Announcements" card displayed statically on the Home Page. Each line follows the format <code className="bg-white/10 px-1 rounded font-mono">YYYY-MM-DD|Notice Title</code>.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSaveHomeContent}
-                  disabled={isSavingHomeContent}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-lg transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait shrink-0"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>{isSavingHomeContent ? 'Saving...' : 'Save Notice Board'}</span>
-                </button>
-              </div>
-
-              <div className="p-6 space-y-6">
-                {homeContentError && (
-                  <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">{homeContentError}</p>
-                )}
-
-                {/* Notice Board Textarea */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                    Announcement Entries
-                    <span className="text-xs font-normal text-slate-400">(one per line, max 12)</span>
-                  </label>
-                  <textarea
-                    rows={8}
-                    value={noticeDraftText}
-                    onChange={(event) => setNoticeDraftText(event.target.value)}
-                    placeholder={`2026-10-05|Admissions Open for Session 2026–27\n2026-09-20|Annual Examination Date Sheet Published\n2026-09-01|Merit List Now Available Online`}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-800 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none leading-relaxed transition-all font-mono"
-                  />
-                  <span className="mt-1.5 block text-[11px] text-slate-500 dark:text-slate-400">
-                    Format: <code className="text-teal-600 dark:text-teal-400 font-mono">YYYY-MM-DD|Announcement Title</code>. Each line becomes a clickable card item on the Homepage notice board.
-                  </span>
-                </div>
-
-                {/* Ticker Announcements */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-2">
-                    <Megaphone className="w-4 h-4 text-amber-500" />
-                    Scrolling Ticker Announcements
-                    <span className="text-xs font-normal text-slate-400">(one per line, max 12)</span>
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={tickerDraftText}
-                    onChange={(event) => setTickerDraftText(event.target.value)}
-                    placeholder="One public announcement per line"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-800 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none leading-relaxed transition-all"
-                  />
-                  <span className="mt-1.5 block text-[11px] text-slate-500 dark:text-slate-400">
-                    Appears in the scrolling announcement ticker bar at the top of the site. One plain text message per line.
-                  </span>
-                </div>
-
-                {/* Save Button */}
-                <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Saves to Firestore — updates appear site-wide in real time.</span>
-                  <button
-                    type="button"
-                    onClick={handleSaveHomeContent}
-                    disabled={isSavingHomeContent}
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-800 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>{isSavingHomeContent ? 'Saving Notice Board...' : 'Save & Publish Notice Board'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-          )}
-
-          {/* ---------------- SETTINGS TAB ---------------- */}
-          {activeTab === 'settings' && (
-            <>
-            <div className="w-full max-w-6xl mx-auto bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-8">
-              {/* Section Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                    System & Portal Settings
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage admin credentials, institutional information, principal desk message, and payment gateway settings.</p>
-                </div>
-              </div>
-
-              {settingsSaved && (
-                <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl text-xs font-bold border border-emerald-200 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" /> Settings saved successfully!
-                </div>
-              )}
-
-              <form onSubmit={handleSaveSettings} className="space-y-5">
-                {/* Merit List Publishing Control Card */}
-                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              {/* =========================================================== */}
+              {/* SECTION B — Homepage Static Notice Board */}
+              {/* =========================================================== */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+                {/* Section Header */}
+                <div className="bg-gradient-to-r from-slate-800 via-slate-800 to-slate-900 px-6 py-5 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Trophy className="w-4 h-4 text-amber-500" />
-                      Public Live Merit Ranking List Control
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Control whether student merit rankings are publicly visible on the Admissions page.
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-extrabold uppercase px-2.5 py-0.5 rounded-full">
+                        Section B
+                      </span>
+                      <h3 className="text-base sm:text-lg font-bold font-serif text-white">
+                        Homepage Static Notice Board (casdct_homepage_notices)
+                      </h3>
+                    </div>
+                    <p className="text-slate-300 text-xs mt-1 leading-relaxed">
+                      Controls the static "Latest Announcements" card on the Home Page. Entries follow the format <code className="bg-white/10 px-1.5 py-0.5 rounded font-mono text-teal-300">YYYY-MM-DD|Notice Title</code>.
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleToggleMeritListLive(!isMeritListLive)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-                      isMeritListLive 
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md' 
-                        : 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
-                    }`}
+                    onClick={handleSaveHomeContent}
+                    disabled={isSavingHomeContent}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-lg transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait shrink-0"
                   >
-                    <span className={`w-2.5 h-2.5 rounded-full ${isMeritListLive ? 'bg-emerald-200 animate-pulse' : 'bg-slate-500'}`} />
-                    <span>{isMeritListLive ? 'Merit List: Published (Live)' : 'Merit List: Unpublished (Hidden)'}</span>
+                    <CheckCircle className="w-4 h-4" />
+                    <span>{isSavingHomeContent ? 'Saving...' : 'Save & Publish Notice Board'}</span>
                   </button>
                 </div>
 
-                {/* ---- ADMIN CREDENTIALS ---- */}
-                <div className="rounded-2xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/30 p-5 space-y-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-bold text-teal-900 dark:text-teal-200">🔐 Admin Login Credentials</span>
-                  </div>
-                  <p className="text-xs text-teal-800 dark:text-teal-300 leading-relaxed">Credential changes are saved to the secure server-side database. Updating either credential signs out other active sessions. Passwords must be at least 16 characters and are never stored in browser storage.</p>
-                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Admin Username</label>
-                      <input
-                        type="text"
-                        required
-                        minLength={3}
-                        maxLength={80}
-                        autoComplete="username"
-                        value={adminName}
-                        onChange={(event) => setAdminName(event.target.value)}
-                        className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">New Admin Password</label>
-                      <div className="relative">
-                        <input
-                          type={showAdminPassword ? 'text' : 'password'}
-                          minLength={16}
-                          maxLength={256}
-                          autoComplete="new-password"
-                          value={adminPassword}
-                          onChange={(event) => setAdminPassword(event.target.value)}
-                          placeholder="Leave blank to keep current password"
-                          className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 pr-12 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                <div className="p-6 sm:p-7 space-y-6">
+                  {homeContentError && (
+                    <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">{homeContentError}</p>
+                  )}
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    {/* Left Form: Inputs (7 Cols) */}
+                    <div className="lg:col-span-7 space-y-5">
+                      {/* Notice Board Textarea */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Bell className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                            Homepage Announcement Entries
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-normal">one per line</span>
+                        </label>
+                        <textarea
+                          rows={8}
+                          value={noticeDraftText}
+                          onChange={(event) => setNoticeDraftText(event.target.value)}
+                          placeholder={`2026-10-05|Admissions Open for Session 2026–27\n2026-09-20|Annual Examination Date Sheet Published\n2026-09-01|Merit List Now Available Online`}
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none leading-relaxed transition-all font-mono"
                         />
+                        <span className="mt-1.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                          Format: <code className="text-teal-600 dark:text-teal-400 font-mono font-bold">YYYY-MM-DD|Notice Title</code>. Saves to <code className="text-teal-600 dark:text-teal-400 font-mono">casdct_homepage_notices</code>.
+                        </span>
+                      </div>
+
+                      {/* Ticker Announcements */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Megaphone className="w-3.5 h-3.5 text-amber-500" />
+                            Scrolling Ticker Announcements
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-normal">one per line</span>
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={tickerDraftText}
+                          onChange={(event) => setTickerDraftText(event.target.value)}
+                          placeholder="One public announcement per line"
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none leading-relaxed transition-all"
+                        />
+                        <span className="mt-1.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                          Appears in the scrolling announcement ticker bar at the top of the portal.
+                        </span>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">Syncs immediately across all homepage visitor sessions.</span>
                         <button
                           type="button"
-                          onClick={() => setShowAdminPassword((visible) => !visible)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-slate-400 dark:hover:text-white"
-                          aria-label={showAdminPassword ? 'Hide new admin password' : 'Show new admin password'}
-                          aria-pressed={showAdminPassword}
+                          onClick={handleSaveHomeContent}
+                          disabled={isSavingHomeContent}
+                          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-emerald-600 hover:from-teal-800 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
                         >
-                          {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          <CheckCircle className="w-4 h-4" />
+                          <span>{isSavingHomeContent ? 'Saving Notice Board...' : 'Save & Publish Notice Board'}</span>
                         </button>
                       </div>
                     </div>
-                  </div>
-                  {adminPassword && (
-                    <div className="mt-4">
-                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Confirm New Admin Password</label>
-                      <input
-                        type={showAdminPassword ? 'text' : 'password'}
-                        required
-                        minLength={16}
-                        maxLength={256}
-                        autoComplete="new-password"
-                        value={confirmAdminPassword}
-                        onChange={(event) => setConfirmAdminPassword(event.target.value)}
-                        className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                      />
-                    </div>
-                  )}
-                </div>
 
-                {/* ---- PRINCIPAL & CAMPUS CONTACT ---- */}
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-5 space-y-5">
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    🏫 Principal & Campus Contact Settings
-                  </h3>
-                </div>
-
-                {/* ---- PAYMENT GATEWAY & FEE MANAGEMENT ---- */}
-                <div className="rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white dark:from-emerald-950/20 dark:via-teal-950/10 dark:to-slate-900 p-6 shadow-sm space-y-6">
-                  
-                  {/* Card Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-100 dark:border-emerald-900/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-[#00ba50] flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
-                        <CreditCard className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                            Payment Gateway & Fee Management
-                          </h3>
-                          <span className="bg-[#00ba50]/15 text-[#00ba50] text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-[#00ba50]/30">
-                            EasyPaisa Live
+                    {/* Right Column: Live Homepage Card Replica Preview (5 Cols) */}
+                    <div className="lg:col-span-5 space-y-4">
+                      <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl p-5 shadow-xs">
+                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
+                          <div className="flex items-center gap-2">
+                            <Bell className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                              Homepage Card Preview
+                            </h4>
+                          </div>
+                          <span className="text-[10px] font-bold text-teal-700 dark:text-teal-300 uppercase bg-teal-100/70 dark:bg-slate-900 px-2.5 py-0.5 rounded-full">
+                            Notice Board
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Configure the official EasyPaisa account credentials, application fee amounts, and instructions for student applicants on <code className="text-teal-600 dark:text-teal-400 font-mono font-bold">/payment-gateway</code>.
-                        </p>
+
+                        <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+                          {noticeDraftText.split('\n').filter(l => l.trim()).length === 0 ? (
+                            <p className="text-xs text-slate-400 italic text-center py-6">
+                              No announcements entered yet. Enter items in format YYYY-MM-DD|Title to preview.
+                            </p>
+                          ) : (
+                            noticeDraftText
+                              .split('\n')
+                              .map(l => l.trim())
+                              .filter(Boolean)
+                              .map((line, idx) => {
+                                const sep = line.indexOf('|');
+                                const d = sep >= 0 ? line.slice(0, sep).trim() : 'Today';
+                                const t = sep >= 0 ? line.slice(sep + 1).trim() : line;
+                                return (
+                                  <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 shadow-xs">
+                                    <div className="w-16 h-12 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex flex-col items-center justify-center shrink-0 border border-teal-100 dark:border-teal-900/60">
+                                      <span className="text-[9px] font-bold uppercase">{d}</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug line-clamp-2">
+                                      {t}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <a
-                      href="/payment-gateway"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold hover:bg-teal-50 dark:hover:bg-slate-700 transition-colors shadow-xs shrink-0"
-                    >
-                      <span>View Live Payment Page</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
                   </div>
 
-                  {paymentSettingsSaved && (
-                    <div className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 p-3.5 rounded-xl text-xs font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-2 animate-fadeIn">
-                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Payment Gateway and Fee parameters updated successfully! Changes are live on the student payment portal.</span>
-                    </div>
-                  )}
+                </div>
+              </div>
 
-                  <div className="space-y-5">
-                    
-                    {/* EasyPaisa Gateway Settings */}
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#00ba50]"></span>
-                        EasyPaisa Account Settings
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
-                            EasyPaisa Account Title
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={easypaisaTitle}
-                            onChange={(e) => setEasypaisaTitle(e.target.value)}
-                            placeholder="e.g., GDC Tank Admission Fund"
-                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white"
-                          />
-                          <span className="text-[11px] text-slate-500 mt-1 block">Account holder name displayed to students.</span>
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
-                            EasyPaisa Mobile Number
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={easypaisaNumber}
-                            onChange={(e) => setEasypaisaNumber(e.target.value)}
-                            placeholder="e.g., 0345-9876543"
-                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white font-mono"
-                          />
-                          <span className="text-[11px] text-slate-500 mt-1 block">Official mobile wallet number students transfer to.</span>
-                        </div>
-                      </div>
-                    </div>
+            </div>
+          )}
 
-                    {/* Dynamic Fee Structure */}
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-                        Dynamic Fee Structure (PKR)
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
-                            Intermediate (FA / FSc) Fee (PKR)
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100000}
-                              required
-                              value={interFee}
-                              onChange={(e) => setInterFee(Number(e.target.value))}
-                              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white"
-                            />
-                          </div>
-                          <span className="text-[11px] text-slate-500 mt-1 block">Default: Rs. 300 for FSc, ICS, FA programs.</span>
-                        </div>
-                        <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
-                            BS Program (4-Year) Fee (PKR)
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100000}
-                              required
-                              value={bsFee}
-                              onChange={(e) => setBsFee(Number(e.target.value))}
-                              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white"
-                            />
-                          </div>
-                          <span className="text-[11px] text-slate-500 mt-1 block">Default: Rs. 500 for BS degree programs.</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Notice / Instructions Text */}
-                    <div>
-                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
-                        Custom Notice & Payment Instructions
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={paymentNotice}
-                        onChange={(e) => setPaymentNotice(e.target.value)}
-                        placeholder="Instructions displayed to students on how to send the fee..."
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs leading-relaxed font-medium text-slate-900 dark:text-white"
-                      />
-                      <span className="text-[11px] text-slate-500 mt-0.5 block">Shown prominently inside the EasyPaisa transfer details card on the student payment gateway.</span>
-                    </div>
-
-                    {/* Individual Save Button for Payment Settings */}
-                    <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
-                      <span className="text-xs text-slate-500">
-                        Syncs immediately with user payment portal
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleSavePaymentSettings}
-                        disabled={isSavingPaymentSettings}
-                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-60"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>{isSavingPaymentSettings ? 'Saving...' : 'Save Payment & Fee Settings'}</span>
-                      </button>
-                    </div>
-
+          {/* ---------------- SETTINGS TAB ---------------- */}
+          {activeTab === 'settings' && (
+            <div className="w-full max-w-6xl mx-auto px-4 space-y-8">
+              
+              {/* Institutional & Admin Credentials Form Card */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm space-y-8">
+                {/* Section Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                      System & Institutional Settings
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Manage administrative security credentials, principal message, and official campus contact information.
+                    </p>
                   </div>
                 </div>
 
-                {/* ---- PAYMENT GATEWAY & FEE MANAGEMENT ---- */}
-                <div className="rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white dark:from-emerald-950/20 dark:via-teal-950/10 dark:to-slate-900 p-6 shadow-sm space-y-6">
+                {settingsSaved && (
+                  <div className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 p-4 rounded-xl text-xs sm:text-sm font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Institutional settings saved successfully!</span>
+                  </div>
+                )}
 
-                  {/* Card Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-100 dark:border-emerald-900/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-[#00ba50] flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
-                        <CreditCard className="w-6 h-6" />
+                <form onSubmit={handleSaveSettings} className="space-y-6">
+                  {/* Merit List Publishing Control Card */}
+                  <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-amber-500" />
+                        Public Live Merit Ranking List Control
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Control whether student merit rankings are publicly visible on the Admissions page.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleMeritListLive(!isMeritListLive)}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                        isMeritListLive 
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md' 
+                          : 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                      }`}
+                    >
+                      <span className={`w-2.5 h-2.5 rounded-full ${isMeritListLive ? 'bg-emerald-200 animate-pulse' : 'bg-slate-500'}`} />
+                      <span>{isMeritListLive ? 'Merit List: Published (Live)' : 'Merit List: Unpublished (Hidden)'}</span>
+                    </button>
+                  </div>
+
+                  {/* 🔐 Admin Login Credentials Card */}
+                  <div className="rounded-2xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/30 p-5 sm:p-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-bold text-teal-900 dark:text-teal-200">🔐 Admin Login Credentials</span>
+                    </div>
+                    <p className="text-xs text-teal-800 dark:text-teal-300 leading-relaxed">
+                      Credential changes are saved to the secure database. Passwords must be at least 16 characters and are never exposed.
+                    </p>
+                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Admin Username</label>
+                        <input
+                          type="text"
+                          required
+                          minLength={3}
+                          maxLength={80}
+                          autoComplete="username"
+                          value={adminName}
+                          onChange={(event) => setAdminName(event.target.value)}
+                          className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-teal-500/20"
+                        />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                            💳 Payment Gateway & Fee Management
-                          </h3>
-                          <span className="bg-[#00ba50]/15 text-[#00ba50] text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-[#00ba50]/30">
-                            EasyPaisa Live
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Configure EasyPaisa account, fee amounts, and payment instructions for <code className="text-teal-600 dark:text-teal-400 font-mono font-bold">/payment-gateway</code>.
-                        </p>
-                      </div>
-                    </div>
-
-                    <a
-                      href="/payment-gateway"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold hover:bg-teal-50 dark:hover:bg-slate-700 transition-colors shadow-xs shrink-0"
-                    >
-                      <span>View Live Payment Page</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-
-                  {paymentSettingsSaved && (
-                    <div className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 p-3.5 rounded-xl text-xs font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-2 animate-fadeIn">
-                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>Payment Gateway settings updated successfully!</span>
-                    </div>
-                  )}
-
-                  <div className="space-y-5">
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#00ba50]"></span>
-                        EasyPaisa Account Settings
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">EasyPaisa Account Title</label>
+                        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">New Admin Password</label>
+                        <div className="relative">
                           <input
-                            type="text"
-                            required
-                            value={easypaisaTitle}
-                            onChange={(e) => setEasypaisaTitle(e.target.value)}
-                            placeholder="e.g., GDC Tank Admission Fund"
-                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white"
+                            type={showAdminPassword ? 'text' : 'password'}
+                            minLength={16}
+                            maxLength={256}
+                            autoComplete="new-password"
+                            value={adminPassword}
+                            onChange={(event) => setAdminPassword(event.target.value)}
+                            placeholder="Leave blank to keep current password"
+                            className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 pr-12 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-teal-500/20"
                           />
-                          <span className="text-[11px] text-slate-500 mt-1 block">Account holder name displayed to students.</span>
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">EasyPaisa Mobile Number</label>
-                          <input
-                            type="text"
-                            required
-                            value={easypaisaNumber}
-                            onChange={(e) => setEasypaisaNumber(e.target.value)}
-                            placeholder="e.g., 0345-9876543"
-                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white font-mono"
-                          />
-                          <span className="text-[11px] text-slate-500 mt-1 block">Official mobile wallet number students transfer to.</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowAdminPassword((visible) => !visible)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:text-slate-400 dark:hover:text-white cursor-pointer"
+                            aria-label={showAdminPassword ? 'Hide new admin password' : 'Show new admin password'}
+                            aria-pressed={showAdminPassword}
+                          >
+                            {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
                         </div>
                       </div>
                     </div>
-
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-                        Dynamic Fee Structure (PKR)
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Intermediate (FA / FSc) Fee</label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
-                            <input type="number" min={0} max={100000} required value={interFee} onChange={(e) => setInterFee(Number(e.target.value))} className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white" />
-                          </div>
-                          <span className="text-[11px] text-slate-500 mt-1 block">Default: Rs. 300 for FSc, ICS, FA programs.</span>
-                        </div>
-                        <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">BS Program (4-Year) Fee</label>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
-                            <input type="number" min={0} max={100000} required value={bsFee} onChange={(e) => setBsFee(Number(e.target.value))} className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white" />
-                          </div>
-                          <span className="text-[11px] text-slate-500 mt-1 block">Default: Rs. 500 for BS degree programs.</span>
-                        </div>
+                    {adminPassword && (
+                      <div className="mt-4">
+                        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Confirm New Admin Password</label>
+                        <input
+                          type={showAdminPassword ? 'text' : 'password'}
+                          required
+                          minLength={16}
+                          maxLength={256}
+                          autoComplete="new-password"
+                          value={confirmAdminPassword}
+                          onChange={(event) => setConfirmAdminPassword(event.target.value)}
+                          className="w-full rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-teal-500/20"
+                        />
                       </div>
-                    </div>
+                    )}
+                  </div>
 
+                  {/* 🏫 Principal & Campus Contact Settings Card */}
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-5 sm:p-6 space-y-5">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      🏫 Principal & Campus Contact Settings
+                    </h3>
+
+                    {/* Principal Name */}
                     <div>
-                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Custom Payment Instructions</label>
-                      <textarea
-                        rows={3}
-                        value={paymentNotice}
-                        onChange={(e) => setPaymentNotice(e.target.value)}
-                        placeholder="Instructions displayed to students on how to send the fee..."
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs leading-relaxed font-medium text-slate-900 dark:text-white"
-                      />
-                      <span className="text-[11px] text-slate-500 mt-0.5 block">Shown inside the EasyPaisa transfer details card on the student payment gateway.</span>
-                    </div>
-
-                    <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
-                      <span className="text-xs text-slate-500">Syncs immediately with user payment portal</span>
-                      <button
-                        type="button"
-                        onClick={handleSavePaymentSettings}
-                        disabled={isSavingPaymentSettings}
-                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-60"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>{isSavingPaymentSettings ? 'Saving...' : 'Save Payment & Fee Settings'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ---- PRINCIPAL & CAMPUS CONTACT (fields) ---- */}
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-5 space-y-5">
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    🏫 Principal & Campus Contact Settings
-                  </h3>
-
-                  {/* Principal Name */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Principal Name</label>
-                    <input
-                      type="text"
-                      value={principalName}
-                      onChange={(e) => setPrincipalName(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
-                    />
-                  </div>
-
-                  {/* Principal Message */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Principal's Welcome Message</label>
-                    <textarea
-                      rows={5}
-                      value={principalMessage}
-                      onChange={(e) => setPrincipalMessage(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all leading-relaxed"
-                    />
-                    <span className="text-[11px] text-slate-500 mt-1 block">Displayed in the Principal's Desk section on the homepage.</span>
-                  </div>
-
-                  {/* Phone & Address */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">College Phone Helpline</label>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Principal Name</label>
                       <input
                         type="text"
-                        value={collegePhone}
-                        onChange={(e) => setCollegePhone(e.target.value)}
+                        value={principalName}
+                        onChange={(e) => setPrincipalName(e.target.value)}
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
                       />
                     </div>
+
+                    {/* Principal Message */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">Campus Address</label>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Principal's Welcome Message</label>
                       <textarea
-                        rows={2}
-                        value={collegeAddress}
-                        onChange={(e) => setCollegeAddress(e.target.value)}
-                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                        rows={5}
+                        value={principalMessage}
+                        onChange={(e) => setPrincipalMessage(e.target.value)}
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all leading-relaxed"
                       />
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Displayed in the Principal's Desk section on the homepage.</span>
+                    </div>
+
+                    {/* Phone & Address */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">College Phone Helpline</label>
+                        <input
+                          type="text"
+                          value={collegePhone}
+                          onChange={(e) => setCollegePhone(e.target.value)}
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Campus Address</label>
+                        <textarea
+                          rows={2}
+                          value={collegeAddress}
+                          onChange={(e) => setCollegeAddress(e.target.value)}
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  <button type="submit" className="bg-teal-700 hover:bg-teal-800 text-white font-bold px-6 py-3 rounded-xl text-sm uppercase tracking-wider shadow-md flex items-center gap-2 cursor-pointer transition-all">
+                    <CheckCircle className="w-4 h-4" />
+                    Save All Institutional Settings
+                  </button>
+                </form>
+              </div>
+
+              {/* 💳 Payment Gateway & Fee Management Card */}
+              <div className="rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white dark:from-emerald-950/20 dark:via-teal-950/10 dark:to-slate-900 p-6 sm:p-8 shadow-sm space-y-6">
+                
+                {/* Card Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-100 dark:border-emerald-900/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#00ba50] flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
+                      <CreditCard className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                          💳 Payment Gateway & Fee Management
+                        </h3>
+                        <span className="bg-[#00ba50]/15 text-[#00ba50] text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-[#00ba50]/30">
+                          EasyPaisa Live
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Configure official EasyPaisa mobile account credentials, program fees, and payment guidelines for <code className="text-teal-600 dark:text-teal-400 font-mono font-bold">/payment-gateway</code>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <a
+                    href="/payment-gateway"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold hover:bg-teal-50 dark:hover:bg-slate-700 transition-colors shadow-xs shrink-0 cursor-pointer"
+                  >
+                    <span>View Live Payment Page</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
                 </div>
 
-                <button type="submit" className="bg-teal-700 hover:bg-teal-800 text-white font-bold px-6 py-3 rounded-xl text-sm uppercase tracking-wider shadow-md flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Save All Settings
-                </button>
-              </form>
-            </div>
-            {/* Settings — Homepage Headline & Stats (kept here for content editing) */}
-            <form onSubmit={handleSaveHomeContent} className="w-full max-w-6xl mx-auto space-y-6 rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm overflow-hidden">
-              <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  📊 Homepage Headline & Statistics
-                </h2>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Changes are saved to Firestore and appear on every device in real time.</p>
-              </div>
-              {homeContentError && (
-                <div className="mx-6">
-                  <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">{homeContentError}</p>
-                </div>
-              )}
-              <div className="px-6 pb-6 space-y-5">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">Homepage Headline</label>
-                  <input
-                    type="text"
-                    maxLength={180}
-                    required
-                    value={homeContentDraft.heroTitle}
-                    onChange={(event) => setHomeContentDraft((current) => ({ ...current, heroTitle: event.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">Homepage Subtitle / Description</label>
-                  <textarea
-                    rows={3}
-                    maxLength={1000}
-                    value={homeContentDraft.heroDesc}
-                    onChange={(event) => setHomeContentDraft((current) => ({ ...current, heroDesc: event.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-3">Statistics Counters (4 Items)</label>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {homeContentDraft.stats.map((stat, index) => (
-                      <div key={`home-stat-${index}`} className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Stat {index + 1} Value</label>
-                          <input
-                            type="text"
-                            maxLength={40}
-                            required
-                            value={stat.value}
-                            onChange={(event) => setHomeContentDraft((current) => ({
-                              ...current,
-                              stats: current.stats.map((item, itemIndex) =>
-                                itemIndex === index ? { ...item, value: event.target.value } : item
-                              )
-                            }))}
-                            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Stat {index + 1} Label</label>
-                          <input
-                            type="text"
-                            maxLength={100}
-                            required
-                            value={stat.label}
-                            onChange={(event) => setHomeContentDraft((current) => ({
-                              ...current,
-                              stats: current.stats.map((item, itemIndex) =>
-                                itemIndex === index ? { ...item, label: event.target.value } : item
-                              )
-                            }))}
-                            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 outline-none"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                {paymentSettingsSaved && (
+                  <div className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 p-3.5 rounded-xl text-xs font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-2 animate-fadeIn">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>Payment Gateway and Fee parameters updated successfully! Changes are live on the student payment portal.</span>
                   </div>
+                )}
+
+                <div className="space-y-5">
+                  {/* EasyPaisa Gateway Settings */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#00ba50]"></span>
+                      EasyPaisa Account Settings
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          EasyPaisa Account Title
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={easypaisaTitle}
+                          onChange={(e) => setEasypaisaTitle(e.target.value)}
+                          placeholder="e.g., GDC Tank Admission Fund"
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        />
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Account holder name displayed to students.</span>
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          EasyPaisa Mobile Number
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={easypaisaNumber}
+                          onChange={(e) => setEasypaisaNumber(e.target.value)}
+                          placeholder="e.g., 0345-9876543"
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white font-mono outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        />
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Official mobile wallet number students transfer to.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Fee Structure */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                      Dynamic Fee Structure (PKR)
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          Intermediate (FA / FSc) Fee (PKR)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={100000}
+                            required
+                            value={interFee}
+                            onChange={(e) => setInterFee(Number(e.target.value))}
+                            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          />
+                        </div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Default: Rs. 300 for FSc, ICS, FA programs.</span>
+                      </div>
+                      <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          BS Program (4-Year) Fee (PKR)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={100000}
+                            required
+                            value={bsFee}
+                            onChange={(e) => setBsFee(Number(e.target.value))}
+                            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          />
+                        </div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Default: Rs. 500 for BS degree programs.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notice / Instructions Text */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Custom Notice & Payment Instructions
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={paymentNotice}
+                      onChange={(e) => setPaymentNotice(e.target.value)}
+                      placeholder="Instructions displayed to students on how to send the fee..."
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs leading-relaxed font-medium text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500/20"
+                    />
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">Shown prominently inside the EasyPaisa transfer card on the student payment gateway.</span>
+                  </div>
+
+                  {/* Save Button for Payment Settings */}
+                  <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      Syncs immediately with user payment portal
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSavePaymentSettings}
+                      disabled={isSavingPaymentSettings}
+                      className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span>{isSavingPaymentSettings ? 'Saving...' : 'Save Payment & Fee Settings'}</span>
+                    </button>
+                  </div>
+
                 </div>
-                <button
-                  type="submit"
-                  disabled={isSavingHomeContent}
-                  className="rounded-xl bg-teal-700 hover:bg-teal-800 px-6 py-2.5 text-sm font-bold uppercase tracking-wider text-white shadow-md disabled:cursor-wait disabled:opacity-60 flex items-center gap-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  {isSavingHomeContent ? 'Saving...' : 'Save Homepage Content'}
-                </button>
               </div>
-            </form>
-            </>
+
+              {/* 📊 Homepage Headline & Statistics Form Card */}
+              <form onSubmit={handleSaveHomeContent} className="rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm overflow-hidden space-y-6">
+                <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/60 dark:to-slate-900 px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    📊 Homepage Headline & Statistics
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Manage hero section headline, subtitle, and counter statistics displayed on the homepage.</p>
+                </div>
+                {homeContentError && (
+                  <div className="mx-6">
+                    <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">{homeContentError}</p>
+                  </div>
+                )}
+                <div className="px-6 pb-6 space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Homepage Headline</label>
+                    <input
+                      type="text"
+                      maxLength={180}
+                      required
+                      value={homeContentDraft.heroTitle}
+                      onChange={(event) => setHomeContentDraft((current) => ({ ...current, heroTitle: event.target.value }))}
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Homepage Subtitle / Description</label>
+                    <textarea
+                      rows={3}
+                      maxLength={1000}
+                      value={homeContentDraft.heroDesc}
+                      onChange={(event) => setHomeContentDraft((current) => ({ ...current, heroDesc: event.target.value }))}
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-800 dark:text-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">Statistics Counters (4 Items)</label>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {homeContentDraft.stats.map((stat, index) => (
+                        <div key={`home-stat-${index}`} className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Stat {index + 1} Value</label>
+                            <input
+                              type="text"
+                              maxLength={40}
+                              required
+                              value={stat.value}
+                              onChange={(event) => setHomeContentDraft((current) => ({
+                                ...current,
+                                stats: current.stats.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, value: event.target.value } : item
+                                )
+                              }))}
+                              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Stat {index + 1} Label</label>
+                            <input
+                              type="text"
+                              maxLength={100}
+                              required
+                              value={stat.label}
+                              onChange={(event) => setHomeContentDraft((current) => ({
+                                ...current,
+                                stats: current.stats.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, label: event.target.value } : item
+                                )
+                              }))}
+                              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-800 dark:text-white focus:border-teal-500 outline-none"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSavingHomeContent}
+                    className="rounded-xl bg-teal-700 hover:bg-teal-800 px-6 py-2.5 text-sm font-bold uppercase tracking-wider text-white shadow-md disabled:cursor-wait disabled:opacity-60 flex items-center gap-2 cursor-pointer transition-all"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    {isSavingHomeContent ? 'Saving...' : 'Save Homepage Headline & Statistics'}
+                  </button>
+                </div>
+              </form>
+
+            </div>
           )}
 
           {/* ---------------- HELP & SUPPORT TAB ---------------- */}

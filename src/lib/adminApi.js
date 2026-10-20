@@ -11,8 +11,39 @@ const STORAGE_KEYS = {
   FACULTY: 'casdct_faculty',
   NOTICES: 'casdct_notices',
   SETTINGS: 'casdct_settings',
-  POPUP_NOTICE: 'casdct_popup_notice'
+  POPUP_NOTICE: 'casdct_popup_notice',
+  HOMEPAGE_NOTICES: 'casdct_homepage_notices'
 };
+
+// Default Examination Circulars
+const DEFAULT_CIRCULAR_ITEMS = [
+  {
+    id: 'circ-1',
+    title: 'Intermediate (FA/FSc) Annual-I Examination Date Sheet 2026',
+    file_url: '#',
+    public_url: '#',
+    storage_path: '#',
+    url: '#',
+    filename: 'intermediate_datesheet_2026.pdf',
+    publish_date: '2026-09-15',
+    created_at: '2026-09-15T09:00:00Z',
+    category: 'Date Sheet',
+    size: '240 KB'
+  },
+  {
+    id: 'circ-2',
+    title: 'BS Semester-End Final Examination Schedule & Instructions',
+    file_url: '#',
+    public_url: '#',
+    storage_path: '#',
+    url: '#',
+    filename: 'bs_examination_instructions_2026.pdf',
+    publish_date: '2026-08-28',
+    created_at: '2026-08-28T10:30:00Z',
+    category: 'Guidelines',
+    size: '185 KB'
+  }
+];
 
 // Check if a file is a video
 export const isVideoMediaFile = (file) => {
@@ -566,7 +597,28 @@ export const adminRequest = async (action, payload = {}) => {
     const currentNotice = getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
     const newNotice = { ...currentNotice, ...(payload.notice || payload) };
     setStoredData(STORAGE_KEYS.POPUP_NOTICE, newNotice);
+    try {
+      localStorage.setItem('casdct_popup_notice', JSON.stringify(newNotice));
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
     return newNotice;
+  }
+
+  // Homepage Content & Announcements (Section B)
+  if (action === 'admin.homeContent.save' || action === 'admin.homepage_notices.save') {
+    const currentSettings = getStoredData(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+    const incoming = payload.homeContent || payload;
+    const newSettings = { ...currentSettings, ...incoming };
+    setStoredData(STORAGE_KEYS.SETTINGS, newSettings);
+    if (incoming.notices) {
+      try {
+        localStorage.setItem('casdct_homepage_notices', JSON.stringify(incoming.notices));
+      } catch (e) {
+        console.warn('LocalStorage error:', e);
+      }
+    }
+    return newSettings;
   }
 
   return { success: true };
@@ -634,13 +686,19 @@ export const adminFileRequest = async (action, payload = {}, file) => {
   }
 
   if (action === 'admin.circular.save') {
-    const list = getStoredData(STORAGE_KEYS.NOTICES, []);
+    const list = getStoredData(STORAGE_KEYS.NOTICES, DEFAULT_CIRCULAR_ITEMS);
+    const pubDate = payload.publishDate || new Date().toISOString().split('T')[0];
+    const effectiveFileUrl = fileData || payload.file_url || payload.public_url || '';
     const newItem = {
       id: 'circ_' + Date.now().toString(),
       title: payload.title || file?.name || 'Notice',
-      file_url: fileData || payload.file_url || '',
-      filename: file?.name || '',
-      publish_date: payload.publishDate || new Date().toISOString().split('T')[0],
+      file_url: effectiveFileUrl,
+      public_url: effectiveFileUrl,
+      storage_path: effectiveFileUrl,
+      url: effectiveFileUrl,
+      filename: file?.name || 'circular.pdf',
+      publish_date: pubDate,
+      created_at: new Date().toISOString(),
       category: payload.category || 'General',
       size: file ? `${Math.round(file.size / 1024)} KB` : 'PDF'
     };
@@ -846,8 +904,8 @@ export const subscribeMeritList = (callback) => {
 export const subscribeAnnouncements = (callback) => {
   if (typeof callback !== 'function') return () => {};
   const notify = () => {
-    const data = getStoredData(STORAGE_KEYS.NOTICES, []);
-    callback(Array.isArray(data) ? data : []);
+    const data = getStoredData(STORAGE_KEYS.NOTICES, DEFAULT_CIRCULAR_ITEMS);
+    callback(Array.isArray(data) && data.length > 0 ? data : DEFAULT_CIRCULAR_ITEMS);
   };
   notify();
   window.addEventListener('casdct_local_storage_updated', notify);
@@ -858,9 +916,24 @@ export const subscribeHomeContent = (callback) => {
   if (typeof callback !== 'function') return () => {};
   const notify = () => {
     const settings = getStoredData(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+    let notices = settings.notices;
+    if (!Array.isArray(notices) || notices.length === 0) {
+      try {
+        const stored = localStorage.getItem('casdct_homepage_notices');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            notices = parsed;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
     callback({
       ...DEFAULT_SETTINGS,
-      ...settings
+      ...settings,
+      notices: Array.isArray(notices) ? notices : []
     });
   };
   notify();
@@ -897,19 +970,32 @@ export const subscribeLocalData = (typeOrCallback, maybeCallback) => {
   return () => window.removeEventListener('casdct_local_storage_updated', notify);
 };
 
-export const getPopupNotice = () => getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
+export const getPopupNotice = () => {
+  try {
+    const raw = localStorage.getItem('casdct_popup_notice');
+    if (raw) return { ...DEFAULT_POPUP_NOTICE, ...JSON.parse(raw) };
+  } catch {
+    // fallback
+  }
+  return getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
+};
 
 export const savePopupNotice = (noticeData) => {
-  const current = getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
+  const current = getPopupNotice();
   const updated = { ...current, ...noticeData };
   setStoredData(STORAGE_KEYS.POPUP_NOTICE, updated);
+  try {
+    localStorage.setItem('casdct_popup_notice', JSON.stringify(updated));
+  } catch (e) {
+    console.warn('LocalStorage error:', e);
+  }
   return updated;
 };
 
 export const subscribePopupNotice = (callback) => {
   if (typeof callback !== 'function') return () => {};
   const notify = () => {
-    const notice = getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
+    const notice = getPopupNotice();
     callback(notice);
   };
   notify();

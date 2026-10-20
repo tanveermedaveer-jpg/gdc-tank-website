@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { BookOpen, Calendar, Award, CheckCircle, ShieldAlert, GraduationCap, ArrowRight } from 'lucide-react';
+import { BookOpen, Calendar, CheckCircle, ShieldAlert, GraduationCap, ArrowRight } from 'lucide-react';
 import campusImg from '../../assets/campus.png';
 import { useLanguage } from '../../context/LanguageContext';
 

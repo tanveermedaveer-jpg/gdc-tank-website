@@ -18,11 +18,11 @@ export default function Examination() {
       try {
         const published = await Promise.all(items.map(async (circular) => ({
           ...circular,
-          public_url: await getLocalFileUrl(circular.storage_path)
+          public_url: circular.public_url || circular.file_url || circular.url || await getLocalFileUrl(circular.storage_path || circular)
         })));
         if (!isMounted) return;
         setCirculars(published.sort((a, b) =>
-          b.publish_date.localeCompare(a.publish_date) || b.created_at.localeCompare(a.created_at)
+          (b.publish_date || '').localeCompare(a.publish_date || '') || (b.created_at || '').localeCompare(a.created_at || '')
         ));
         setCircularsError('');
       } catch (error) {
@@ -192,7 +192,7 @@ export default function Examination() {
                         {language === 'ur' ? 'فی الحال کوئی امتحانی سرکلر شائع نہیں ہوا۔' : 'No examination circulars have been published yet.'}
                       </p>
                     ) : circulars.map((circular) => {
-                      const fileUrl = circular.public_url;
+                      const fileUrl = circular.public_url || circular.file_url || circular.url || '#';
                       const publishedDate = new Date(`${circular.publish_date}T00:00:00`)
                         .toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-PK', {
                           year: 'numeric',
@@ -213,7 +213,8 @@ export default function Examination() {
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`${language === 'ur' ? 'سرکلر کھولیں' : 'Open circular'}: ${circular.title}`}
-                            className="bg-teal-50 group-hover:bg-teal-600 group-hover:text-white p-2 rounded-lg text-teal-700 transition-colors shrink-0"
+                            download={circular.filename || `${circular.title}.pdf`}
+                            className="bg-teal-50 group-hover:bg-teal-600 group-hover:text-white p-2 rounded-lg text-teal-700 transition-colors shrink-0 cursor-pointer shadow-xs"
                           >
                             <Download className="w-4 h-4" />
                           </a>

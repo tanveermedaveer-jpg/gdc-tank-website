@@ -22,7 +22,7 @@ export default function AllAnnouncements() {
       if (data && data.length > 0) {
         setAnnouncements(data);
       }
-    }, (err) => console.log('Loaded default announcement items'));
+    }, (_err) => console.log('Loaded default announcement items'));
   }, []);
 
   // Filter announcements based on search query

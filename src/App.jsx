@@ -22,6 +22,7 @@ import Facilities from './pages/Facilities';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import ApplyNow from './pages/ApplyNow';
+import PaymentGateway from './pages/PaymentGateway';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login'; // <-- یہ نئی لائن لاگ ان پیج کے لیے جوڑی گئی ہے
 
@@ -32,6 +33,7 @@ import AllAnnouncements from './pages/AllAnnouncements';
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/login');
+  const isPaymentGateway = location.pathname === '/payment-gateway';
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('casdct_dark_mode') === 'true';
@@ -49,11 +51,11 @@ function AppContent() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased font-sans transition-colors duration-200 ${darkMode ? 'dark bg-slate-950 text-slate-100' : ''}`}>
-      {/* News Ticker - Sirf Admin aur Login ke ilawa sabhi jagah aayega */}
-      {!isAdminRoute && <NewsTicker />}
+      {/* News Ticker - Sirf Admin, Login aur Payment Gateway ke ilawa sabhi jagah aayega */}
+      {!isAdminRoute && !isPaymentGateway && <NewsTicker />}
 
-      {/* Global Navbar - Har page par sirf ek hi dafa aayega */}
-      {!isAdminRoute && <Navbar />}
+      {/* Global Navbar - Har page par sirf ek hi dafa aayega (Payment Gateway has dedicated header) */}
+      {!isAdminRoute && !isPaymentGateway && <Navbar />}
 
       {/* Main Content Area */}
       <main className="flex-grow flex flex-col">
@@ -73,6 +75,9 @@ function AppContent() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/apply" element={<ApplyNow />} />
 
+          {/* User Payment & Verification Gateway Route */}
+          <Route path="/payment-gateway" element={<PaymentGateway />} />
+
           {/* Announcement Routes */}
           <Route path="/announcement/:id" element={<AnnouncementDetail />} />
           <Route path="/all-announcements" element={<AllAnnouncements />} />
@@ -83,6 +88,7 @@ function AppContent() {
           {/* Protected Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><AdminDashboard darkMode={darkMode} setDarkMode={setDarkMode} initialTab="settings" /></ProtectedRoute>} />
           
           {/* Fallback routing */}
           <Route path="*" element={<Home />} />

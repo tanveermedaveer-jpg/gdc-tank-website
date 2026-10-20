@@ -218,7 +218,21 @@ const DEFAULT_SETTINGS = {
   phone: '+92 (0963) 510111',
   email: 'info@casdct.edu.pk',
   address: 'Captain Ashfaq Shaheed Degree College, Tank, Khyber Pakhtunkhwa, Pakistan',
-  merit_list_live: true
+  merit_list_live: true,
+  easypaisa_title: 'GDC Tank Admission Fund',
+  easypaisa_number: '0345-9876543',
+  fee_inter: 300,
+  fee_bs: 500,
+  payment_instructions: 'Please transfer the exact application processing fee via EasyPaisa App or *786# to the official college account above. After payment, enter your 11-digit TRX ID and upload a clear screenshot of the payment receipt slip for instant administrative verification.'
+};
+
+// Default Payment Gateway & Fee Settings
+export const DEFAULT_PAYMENT_GATEWAY_SETTINGS = {
+  easypaisaTitle: 'GDC Tank Admission Fund',
+  easypaisaNumber: '0345-9876543',
+  interFee: 300,
+  bsFee: 500,
+  instructions: 'Please transfer the exact application processing fee via EasyPaisa App or *786# to the official college account above. After payment, enter your 11-digit TRX ID and upload a clear screenshot of the payment receipt slip for instant administrative verification.'
 };
 
 // Default Dynamic Popup Notice Data
@@ -527,6 +541,11 @@ export const adminRequest = async (action, payload = {}) => {
     if (newSettings.email) localStorage.setItem('casdct_college_email', newSettings.email);
     if (newSettings.principal_message) localStorage.setItem('casdct_principal_message', newSettings.principal_message);
     if (newSettings.merit_list_live !== undefined) localStorage.setItem('casdct_merit_list_live', String(newSettings.merit_list_live));
+    if (newSettings.easypaisa_title) localStorage.setItem('casdct_easypaisa_title', newSettings.easypaisa_title);
+    if (newSettings.easypaisa_number) localStorage.setItem('casdct_easypaisa_number', newSettings.easypaisa_number);
+    if (newSettings.fee_inter !== undefined) localStorage.setItem('casdct_fee_inter', String(newSettings.fee_inter));
+    if (newSettings.fee_bs !== undefined) localStorage.setItem('casdct_fee_bs', String(newSettings.fee_bs));
+    if (newSettings.payment_instructions) localStorage.setItem('casdct_payment_instructions', newSettings.payment_instructions);
     return newSettings;
   }
 
@@ -705,6 +724,59 @@ export const publicFileRequest = async (action, payload = {}, file) => {
     return { success: true, regId: studentId };
   }
 
+  // Payment Verification Submission
+  if (action === 'public.payment.submit' || action === 'user.payment.verify') {
+    const list = getStoredData(STORAGE_KEYS.ADMISSIONS, DEFAULT_ADMISSIONS);
+    const studentId = payload.student_id || payload.regId || payload.studentId || ('CASDCT-' + Math.floor(100000 + Math.random() * 900000));
+    const trxId = payload.trxId || payload.trx_id || '';
+    const feeAmount = Number(payload.amount || payload.feeAmount || 300);
+
+    const existingIndex = list.findIndex(item => item.regId === studentId || item.id === studentId);
+    let updatedAdmission;
+
+    if (existingIndex >= 0) {
+      updatedAdmission = normalizeAdmissionItem({
+        ...list[existingIndex],
+        fullName: payload.studentName || list[existingIndex].fullName || 'Student Applicant',
+        program: payload.program || list[existingIndex].program || 'Intermediate',
+        trxId,
+        paymentMethod: 'EasyPaisa',
+        feeAmount,
+        paymentAmount: feeAmount,
+        feeSlipUrl: fileData || list[existingIndex].feeSlipUrl || '',
+        feeSlipName: file?.name || list[existingIndex].feeSlipName || '',
+        isPaid: true,
+        feeVerified: false,
+        paymentStatus: `EasyPaisa (TRX: ${trxId}) · Pending Verification`,
+        notes: payload.notes || list[existingIndex].notes || '',
+        paymentSubmittedAt: new Date().toISOString()
+      });
+      list[existingIndex] = updatedAdmission;
+    } else {
+      updatedAdmission = normalizeAdmissionItem({
+        regId: studentId,
+        fullName: payload.studentName || payload.name || 'Student Applicant',
+        program: payload.program || 'Intermediate',
+        trxId,
+        paymentMethod: 'EasyPaisa',
+        feeAmount,
+        paymentAmount: feeAmount,
+        feeSlipUrl: fileData || '',
+        feeSlipName: file?.name || '',
+        isPaid: true,
+        feeVerified: false,
+        paymentStatus: `EasyPaisa (TRX: ${trxId}) · Pending Verification`,
+        notes: payload.notes || '',
+        status: 'pending',
+        submittedAt: new Date().toISOString().split('T')[0]
+      });
+      list.unshift(updatedAdmission);
+    }
+
+    setStoredData(STORAGE_KEYS.ADMISSIONS, list);
+    return { success: true, regId: studentId, admission: updatedAdmission };
+  }
+
   return { success: true };
 };
 
@@ -816,6 +888,7 @@ export const subscribeLocalData = (typeOrCallback, maybeCallback) => {
   if (type === 'notices' || type === 'circulars') return subscribeAnnouncements(callback);
   if (type === 'settings') return subscribeHomeContent(callback);
   if (type === 'popup_notice' || type === 'popup' || type === 'popupNotice') return subscribePopupNotice(callback);
+  if (type === 'payment' || type === 'payment_settings') return subscribePaymentSettings(callback);
 
   // Fallback generic subscriber
   const notify = () => callback([]);
@@ -838,6 +911,46 @@ export const subscribePopupNotice = (callback) => {
   const notify = () => {
     const notice = getStoredData(STORAGE_KEYS.POPUP_NOTICE, DEFAULT_POPUP_NOTICE);
     callback(notice);
+  };
+  notify();
+  window.addEventListener('casdct_local_storage_updated', notify);
+  return () => window.removeEventListener('casdct_local_storage_updated', notify);
+};
+
+export const getPaymentSettings = () => {
+  const settings = getStoredData(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+  return {
+    easypaisaTitle: settings.easypaisa_title || settings.easypaisaTitle || DEFAULT_SETTINGS.easypaisa_title,
+    easypaisaNumber: settings.easypaisa_number || settings.easypaisaNumber || DEFAULT_SETTINGS.easypaisa_number,
+    interFee: Number(settings.fee_inter ?? settings.interFee ?? 300),
+    bsFee: Number(settings.fee_bs ?? settings.bsFee ?? 500),
+    instructions: settings.payment_instructions || settings.instructions || DEFAULT_SETTINGS.payment_instructions
+  };
+};
+
+export const savePaymentSettings = (paymentSettings) => {
+  const currentSettings = getStoredData(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+  const updatedSettings = {
+    ...currentSettings,
+    easypaisa_title: paymentSettings.easypaisaTitle ?? paymentSettings.easypaisa_title ?? currentSettings.easypaisa_title,
+    easypaisa_number: paymentSettings.easypaisaNumber ?? paymentSettings.easypaisa_number ?? currentSettings.easypaisa_number,
+    fee_inter: Number(paymentSettings.interFee ?? paymentSettings.fee_inter ?? 300),
+    fee_bs: Number(paymentSettings.bsFee ?? paymentSettings.fee_bs ?? 500),
+    payment_instructions: paymentSettings.instructions ?? paymentSettings.payment_instructions ?? currentSettings.payment_instructions
+  };
+  setStoredData(STORAGE_KEYS.SETTINGS, updatedSettings);
+  if (updatedSettings.easypaisa_title) localStorage.setItem('casdct_easypaisa_title', updatedSettings.easypaisa_title);
+  if (updatedSettings.easypaisa_number) localStorage.setItem('casdct_easypaisa_number', updatedSettings.easypaisa_number);
+  if (updatedSettings.fee_inter !== undefined) localStorage.setItem('casdct_fee_inter', String(updatedSettings.fee_inter));
+  if (updatedSettings.fee_bs !== undefined) localStorage.setItem('casdct_fee_bs', String(updatedSettings.fee_bs));
+  if (updatedSettings.payment_instructions) localStorage.setItem('casdct_payment_instructions', updatedSettings.payment_instructions);
+  return updatedSettings;
+};
+
+export const subscribePaymentSettings = (callback) => {
+  if (typeof callback !== 'function') return () => {};
+  const notify = () => {
+    callback(getPaymentSettings());
   };
   notify();
   window.addEventListener('casdct_local_storage_updated', notify);
@@ -873,5 +986,8 @@ export default {
   subscribeFaculty,
   getPopupNotice,
   savePopupNotice,
-  subscribePopupNotice
+  subscribePopupNotice,
+  getPaymentSettings,
+  savePaymentSettings,
+  subscribePaymentSettings
 };

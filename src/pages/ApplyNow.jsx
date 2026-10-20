@@ -62,12 +62,22 @@ const ApplyPage = () => {
       const existing = JSON.parse(localStorage.getItem('admissions_list') || '[]');
       localStorage.setItem('admissions_list', JSON.stringify([{ id: studentId, ...formData, appliedAt: new Date().toISOString() }, ...existing]));
 
-      if (language === 'ur') {
-        alert(`مبارک ہو! آپ کی داخلہ درخواست کامیابی سے جمع ہو گئی ہے۔\nآپ کی اسٹوڈنٹ آئی ڈی: ${studentId}`);
-      } else {
-        alert(`Application Submitted Successfully!\nYour Student ID: ${studentId}`);
-      }
-      navigate('/');
+      // Save to session for Payment Gateway
+      sessionStorage.setItem('casdct_current_applicant', JSON.stringify({
+        studentId,
+        studentName: formData.studentName,
+        program: formData.program || formData.programType,
+        programType: formData.programType
+      }));
+
+      navigate('/payment-gateway', {
+        state: {
+          studentId,
+          studentName: formData.studentName,
+          program: formData.program || formData.programType,
+          programType: formData.programType
+        }
+      });
     } catch (err) {
       setLoading(false);
       console.error(err);

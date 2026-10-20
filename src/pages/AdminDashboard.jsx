@@ -51,7 +51,7 @@ const formatRecordedFeeAmount = (admission) => {
   return `Rs ${Number(amount).toLocaleString()}`;
 };
 
-export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: propSetDarkMode }) {
+export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: propSetDarkMode, initialTab }) {
   const navigate = useNavigate();
 
   // Dark Mode State
@@ -77,8 +77,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   };
   
 
-  // Active Sidebar Tab: 'admissions' | 'dashboard' | 'fee_records' | 'media_gallery' | 'examination_circulars' | 'settings' | 'help'
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // Active Sidebar Tab: 'admissions' | 'dashboard' | 'fee_records' | 'media_gallery' | 'examination_circulars' | 'popup_notice' | 'settings' | 'help'
+  const [activeTab, setActiveTab] = useState(() => {
+    if (initialTab) return initialTab;
+    if (typeof window !== 'undefined' && window.location.pathname.includes('/settings')) return 'settings';
+    return 'dashboard';
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Interactive Sidebar Badge State (Click-to-clear)
@@ -185,6 +189,15 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
   const [popupNoticeSaved, setPopupNoticeSaved] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
+  // Payment Gateway & Fee Settings State
+  const [easypaisaTitle, setEasypaisaTitle] = useState('GDC Tank Admission Fund');
+  const [easypaisaNumber, setEasypaisaNumber] = useState('0345-9876543');
+  const [interFee, setInterFee] = useState(300);
+  const [bsFee, setBsFee] = useState(500);
+  const [paymentNotice, setPaymentNotice] = useState('Please transfer the exact application processing fee via EasyPaisa App or *786# to the official college account above. After payment, enter your 11-digit TRX ID and upload a clear screenshot of the payment receipt slip for instant administrative verification.');
+  const [isSavingPaymentSettings, setIsSavingPaymentSettings] = useState(false);
+  const [paymentSettingsSaved, setPaymentSettingsSaved] = useState(false);
+
   useEffect(() => () => {
     if (adminUploadCloseTimer.current) window.clearTimeout(adminUploadCloseTimer.current);
   }, []);
@@ -235,6 +248,11 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
         setCollegePhone(data.settings.phone || COLLEGE_PHONE);
         setCollegeAddress(data.settings.address || COLLEGE_ADDRESS);
         setIsMeritListLive(data.settings.merit_list_live === true);
+        if (data.settings.easypaisa_title) setEasypaisaTitle(data.settings.easypaisa_title);
+        if (data.settings.easypaisa_number) setEasypaisaNumber(data.settings.easypaisa_number);
+        if (data.settings.fee_inter !== undefined) setInterFee(Number(data.settings.fee_inter));
+        if (data.settings.fee_bs !== undefined) setBsFee(Number(data.settings.fee_bs));
+        if (data.settings.payment_instructions) setPaymentNotice(data.settings.payment_instructions);
         setAdminDataError('');
       } catch (error) {
         if (!isMounted) return;
@@ -713,7 +731,12 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
           principal_image_url: principalImage === principalImg ? '' : principalImage,
           phone: collegePhone,
           address: collegeAddress,
-          merit_list_live: isMeritListLive
+          merit_list_live: isMeritListLive,
+          easypaisa_title: easypaisaTitle.trim(),
+          easypaisa_number: easypaisaNumber.trim(),
+          fee_inter: Number(interFee) || 300,
+          fee_bs: Number(bsFee) || 500,
+          payment_instructions: paymentNotice.trim()
         }
       });
 
@@ -726,6 +749,32 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
       console.error('Unable to save admin settings:', error);
       setSettingsSaved(false);
       showToast(error.message || 'Settings could not be saved.', 'error');
+    }
+  };
+
+  // Dedicated Payment Gateway & Fee Settings Handler
+  const handleSavePaymentSettings = async (e) => {
+    if (e) e.preventDefault();
+    setIsSavingPaymentSettings(true);
+    setPaymentSettingsSaved(false);
+    try {
+      await adminRequest('admin.settings.save', {
+        settings: {
+          easypaisa_title: easypaisaTitle.trim(),
+          easypaisa_number: easypaisaNumber.trim(),
+          fee_inter: Number(interFee) || 300,
+          fee_bs: Number(bsFee) || 500,
+          payment_instructions: paymentNotice.trim()
+        }
+      });
+      setPaymentSettingsSaved(true);
+      showToast('Payment Gateway & Fee Management settings saved successfully!', 'success');
+      setTimeout(() => setPaymentSettingsSaved(false), 3500);
+    } catch (err) {
+      console.error('Unable to save payment settings:', err);
+      showToast(err.message || 'Unable to save payment settings.', 'error');
+    } finally {
+      setIsSavingPaymentSettings(false);
     }
   };
 
@@ -2679,6 +2728,168 @@ export default function AdminDashboard({ darkMode: propDarkMode, setDarkMode: pr
                       />
                     </div>
                   )}
+                </div>
+
+                {/* ---------------- PAYMENT GATEWAY & FEE MANAGEMENT CARD ---------------- */}
+                <div className="rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white dark:from-emerald-950/20 dark:via-teal-950/10 dark:to-slate-900 p-6 shadow-sm space-y-6">
+                  
+                  {/* Card Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-100 dark:border-emerald-900/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#00ba50] flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
+                        <CreditCard className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                            Payment Gateway & Fee Management
+                          </h3>
+                          <span className="bg-[#00ba50]/15 text-[#00ba50] text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-[#00ba50]/30">
+                            EasyPaisa Live
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          Configure the official EasyPaisa account credentials, application fee amounts, and instructions for student applicants on <code className="text-teal-600 dark:text-teal-400 font-mono font-bold">/payment-gateway</code>.
+                        </p>
+                      </div>
+                    </div>
+
+                    <a
+                      href="/payment-gateway"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold hover:bg-teal-50 dark:hover:bg-slate-700 transition-colors shadow-xs shrink-0"
+                    >
+                      <span>View Live Payment Page</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+
+                  {paymentSettingsSaved && (
+                    <div className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-900 dark:text-emerald-200 p-3.5 rounded-xl text-xs font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-2 animate-fadeIn">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>Payment Gateway and Fee parameters updated successfully! Changes are live on the student payment portal.</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-5">
+                    
+                    {/* EasyPaisa Gateway Settings */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#00ba50]"></span>
+                        EasyPaisa Account Settings
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
+                            EasyPaisa Account Title
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={easypaisaTitle}
+                            onChange={(e) => setEasypaisaTitle(e.target.value)}
+                            placeholder="e.g., GDC Tank Admission Fund"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white"
+                          />
+                          <span className="text-[11px] text-slate-500 mt-1 block">Account holder name displayed to students.</span>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
+                            EasyPaisa Mobile Number
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={easypaisaNumber}
+                            onChange={(e) => setEasypaisaNumber(e.target.value)}
+                            placeholder="e.g., 0345-9876543"
+                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white font-mono"
+                          />
+                          <span className="text-[11px] text-slate-500 mt-1 block">Official mobile wallet number students transfer to.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dynamic Fee Structure */}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                        Dynamic Fee Structure (PKR)
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
+                            Intermediate (FA / FSc) Fee (PKR)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
+                            <input
+                              type="number"
+                              min={0}
+                              max={100000}
+                              required
+                              value={interFee}
+                              onChange={(e) => setInterFee(Number(e.target.value))}
+                              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white"
+                            />
+                          </div>
+                          <span className="text-[11px] text-slate-500 mt-1 block">Default: Rs. 300 for FSc, ICS, FA programs.</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
+                            BS Program (4-Year) Fee (PKR)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rs.</span>
+                            <input
+                              type="number"
+                              min={0}
+                              max={100000}
+                              required
+                              value={bsFee}
+                              onChange={(e) => setBsFee(Number(e.target.value))}
+                              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 pl-10 pr-4 py-2 text-sm font-mono font-bold text-slate-900 dark:text-white"
+                            />
+                          </div>
+                          <span className="text-[11px] text-slate-500 mt-1 block">Default: Rs. 500 for BS degree programs.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notice / Instructions Text */}
+                    <div>
+                      <label className="mb-1 block text-xs font-bold uppercase text-slate-600 dark:text-slate-300">
+                        Custom Notice & Payment Instructions
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={paymentNotice}
+                        onChange={(e) => setPaymentNotice(e.target.value)}
+                        placeholder="Instructions displayed to students on how to send the fee..."
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs leading-relaxed font-medium text-slate-900 dark:text-white"
+                      />
+                      <span className="text-[11px] text-slate-500 mt-0.5 block">Shown prominently inside the EasyPaisa transfer details card on the student payment gateway.</span>
+                    </div>
+
+                    {/* Individual Save Button for Payment Settings */}
+                    <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
+                      <span className="text-xs text-slate-500">
+                        Syncs immediately with user payment portal
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleSavePaymentSettings}
+                        disabled={isSavingPaymentSettings}
+                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>{isSavingPaymentSettings ? 'Saving...' : 'Save Payment & Fee Settings'}</span>
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
 
                 <div>
